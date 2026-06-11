@@ -83,7 +83,7 @@ export default function OfferDashboardPage({ params }: { params: { id: string } 
               </>
             );
             // Ported module editors link out; the rest are backlog (inert).
-            const ported = ["products", "variants", "resources", "forms"];
+            const ported = ["products", "variants", "resources", "forms", "related"];
             return ported.includes(m.key) ? (
               <Link key={m.key} href={`/app/services/${offer.id}/${m.key}`} className={cls}>{inner}</Link>
             ) : (

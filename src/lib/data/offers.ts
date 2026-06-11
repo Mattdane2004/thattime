@@ -54,6 +54,7 @@ export const OFFER_MODULES: { key: string; label: string; desc: string }[] = [
   { key: "products", label: "Products", desc: "Retail add-ons for this offer" },
   { key: "resources", label: "Resources", desc: "Rooms & equipment needed" },
   { key: "forms", label: "Forms", desc: "Intake & consent forms" },
+  { key: "related", label: "Related", desc: "Cross-sell other offers" },
   { key: "settings", label: "Settings", desc: "Booking rules & policies" },
   { key: "notifications", label: "Notifications", desc: "Client reminders & messages" },
 ];

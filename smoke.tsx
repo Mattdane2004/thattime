@@ -14,6 +14,7 @@ import PhotosModulePage from "./src/app/app/services/[id]/photos/page";
 import FormsModulePage from "./src/app/app/services/[id]/forms/page";
 import ResourcesModulePage from "./src/app/app/services/[id]/resources/page";
 import VariantsModulePage from "./src/app/app/services/[id]/variants/page";
+import RelatedModulePage from "./src/app/app/services/[id]/related/page";
 import SetupGuidePage from "./src/app/app/setup/page";
 import AlertsPage from "./src/app/app/alerts/page";
 import ImportDataPage from "./src/app/app/setup/import/page";
@@ -130,6 +131,11 @@ renderContains("Alerts", React.createElement(AlertsPage), [
 ]);
 renderContains("ImportData", React.createElement(ImportDataPage), [
   "Import data", "Upload CSV", "another platform", "Clients", "Bookings",
+]);
+
+// 3m) Related services module.
+renderContains("Related", React.createElement(RelatedModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Related", "suggested at checkout", "Beard trim",
 ]);
 
 // 4) Ported Team roster.

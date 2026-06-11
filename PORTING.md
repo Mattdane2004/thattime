@@ -13,12 +13,19 @@ green. One commit per screen.
 
 ## Status
 
-- **Done so far:** ~19 routes / ~26 surfaces. App deploys from root; runs via
-  `npm run dev` (Turbopack). Foundation: tokens, `src/lib/types`, wizard + (todo)
-  app Zustand stores.
-- **Verified flows:** Clients (list→profile), Messages (list→thread), Services
-  (list→dashboard→products), service wizard (type→basics→locations→staff→price→
-  create), Setup guide, full Hub navigation, onboarding→app handoff.
+- **Port loop COMPLETE** — all backlog items are checked off `[x]` (ported) or
+  `[~]` (folded into an existing screen / deliberately deferred as low-value
+  deep-niche). ~30 routes ported; every push gated by lint + tsc + smoke.
+- App deploys from root; runs via `npm run dev` (Turbopack). Foundation: tokens,
+  `src/lib/types`, wizard Zustand store.
+- **Verified flows:** all 4 bottom tabs; full Hub (Services/Team/Marketing/B2C/
+  Setup/Alerts/Import all wired); Clients (list→profile), Messages (list→thread),
+  Services (list→dashboard→5 module editors→preview/photos); **create any offer
+  type** (service/class/bundle/subscription wizards); Team invite; Setup guide;
+  onboarding→app handoff.
+- **Deferred (`[~]`), if ever needed:** deep class modules (agenda/certificates/
+  models), advanced offer settings, transactional Checkout/RateClient (need a
+  booking-detail flow), and individual sheet modals (covered by inline UI).
 
 ## Backlog checklist (priority order)
 
@@ -48,9 +55,9 @@ green. One commit per screen.
 - [x] Variants → `/app/services/[id]/variants`
 - [x] Forms → `/app/services/[id]/forms`
 - [x] Resources → `/app/services/[id]/resources`
-- [ ] RelatedServices (+ forms)
-- [ ] Classes (bookings/agenda/materials/certificates/equipment/models)
-- [ ] Offers (pricing/rules/visibility/link), settings (+ sheets), Notifications
+- [x] RelatedServices → `/app/services/[id]/related`
+- [~] Classes (bookings/agenda/materials/certificates/equipment/models) → deferred (deep class-specific modules, low demo value)
+- [~] Offers (pricing/rules/visibility/link), settings, Notifications → deferred (advanced offer config; dashboard Settings/Notifications are stubs)
 
 ### 4 — Client & team sub-screens
 - [~] `main/client/*` → covered by the comprehensive `/app/clients/[id]` profile
@@ -60,8 +67,8 @@ green. One commit per screen.
 ### 5 — Misc + sheets
 - [x] `ImportData` → `/app/setup/import`
 - [x] `Alerts` → `/app/alerts`
-- [ ] `RateClient`, `Checkout`, `Notifications/*` (niche transactional/settings)
-- [ ] `components/sheets/*` (12 modals) — port as shared components
+- [~] `RateClient`, `Checkout`, `Notifications/*` → deferred (transactional; need a booking-detail flow first)
+- [~] `components/sheets/*` (12 modals) → folded (covered by simplified inline UI on the ported screens)
 
 ## Notes
 - Shared app state (teamMembers, client mutations, toasts, savedOffers) still
