@@ -23,15 +23,20 @@ See `memory/thattime-consolidation.md` for the why.
   - Home dashboard → `/app` (`lib/data/home.ts`)
   - Clients directory → `/app/clients` (`lib/data/clients.ts`; validates `ClientListItem`)
   - Team roster → `/app/team` (`lib/data/team.ts`; validates `Staff` enums)
-  - IA: `/app` = Home, `/app/hub` = Hub; onboarding "setup hub" → `/app/hub`;
-    tabs wired: Home, Clients. Team reachable from Home/Hub.
+  - Messages → `/app/messages` (`lib/data/messages.ts`)
+  - Schedule "My Day" agenda → `/app/schedule` (`lib/data/schedule.ts`)
+  - **Milestone: the core app is fully navigable** — all four bottom tabs
+    (Home, Schedule, Clients, Message) work, plus Team + Hub, plus the
+    onboarding → `/app/hub` handoff.
   - **Pattern established:** port the screen self-contained (typed `lib/data/*`,
     shared tokens), defer cross-screen *mutations* (block/import/merge, edits)
     to a future shared app-state slice, add a smoke render. Replicate per screen.
-  - **Still to port (the bulk):** Clients detail, Schedule (841 lines), Team
-    schedule/pay tabs (5.7k-line original), Messages, Marketing, B2C client view,
-    and the 20-screen **service wizard** + 40+ module screens — the wizard needs
-    the shared draft/app-state slice decided first (defaulting to a Zustand slice).
+  - **Still to port (the bulk):** detail screens (Client profile, Conversation,
+    full Schedule calendar views, Team schedule/pay tabs), Marketing, B2C client
+    view, and the 20-screen **service wizard** + 40+ module screens. The wizard
+    is the next major effort and needs the shared draft/app-state slice built
+    first (planned: a Zustand `useAppStore` slice, mirroring the legacy App.jsx
+    Outlet context — draft, savedOffers, teamMembers, client mutations, toasts).
 - **Local testing** — `npm run smoke` renders the ported pages with
   `react-dom/server` (bypasses Next's compiler) and checks shared tokens.
   Currently 22 checks, all passing. **Note:** `next dev`/`next build` hang in
