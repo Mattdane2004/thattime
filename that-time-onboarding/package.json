@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "smoke": "TSX_TSCONFIG_PATH=tsconfig.smoke.json npx --yes tsx smoke.tsx"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
