@@ -19,12 +19,13 @@ interface MenuItem {
   label: string;
   desc: string;
   icon: LucideIcon;
+  href?: string;
 }
 
 const operations: MenuItem[] = [
-  { key: "services", label: "Services", desc: "Services, classes, bundles", icon: Scissors },
+  { key: "services", label: "Services", desc: "Services, classes, bundles", icon: Scissors, href: "/app/services" },
   { key: "products", label: "Products", desc: "Internal & retail library", icon: Package },
-  { key: "team", label: "Team", desc: "Staff, roles, hours", icon: Users },
+  { key: "team", label: "Team", desc: "Staff, roles, hours", icon: Users, href: "/app/team" },
   { key: "locations", label: "Locations", desc: "Multi-site management", icon: MapPin },
   { key: "payments", label: "Payments", desc: "Transactions, refunds, tax", icon: Wallet },
   { key: "analytics", label: "Analytics", desc: "Performance & opportunities", icon: BarChart3 },
@@ -52,9 +53,9 @@ const accountItems: MenuItem[] = [
 ];
 
 function GridCard({ item }: { item: MenuItem }) {
-  const { icon: Icon, label, desc } = item;
-  return (
-    <button className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-navy/20">
+  const { icon: Icon, label, desc, href } = item;
+  const inner = (
+    <>
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">
         <Icon size={18} className="text-navy" />
       </span>
@@ -62,8 +63,10 @@ function GridCard({ item }: { item: MenuItem }) {
         <span className="block text-[14px] font-semibold text-navy">{label}</span>
         <span className="mt-0.5 block text-[12px] text-secondary">{desc}</span>
       </span>
-    </button>
+    </>
   );
+  const cls = "flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-navy/20";
+  return href ? <Link href={href} className={cls}>{inner}</Link> : <button className={cls}>{inner}</button>;
 }
 
 function ListCard({ title, items }: { title: string; items: MenuItem[] }) {

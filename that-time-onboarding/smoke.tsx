@@ -4,6 +4,7 @@ import { renderToString } from "react-dom/server";
 import React from "react";
 import HomePage from "./src/app/app/page";
 import HubPage from "./src/app/app/hub/page";
+import ServicesPage from "./src/app/app/services/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
@@ -45,6 +46,11 @@ renderContains("Clients", React.createElement(ClientsPage), [
 // 3b) Client profile detail.
 renderContains("ClientDetail", React.createElement(ClientDetailPage, { params: { id: "sarah-johnson" } }), [
   "Sarah Johnson", "Allergies", "PPD", "Contact", "Reviews", "past appointments", "Cancelled",
+]);
+
+// 3c) Services list.
+renderContains("Services", React.createElement(ServicesPage), [
+  "Services", "Classic haircut", "New", "Active",
 ]);
 
 // 4) Ported Team roster.
