@@ -10,9 +10,8 @@ export function RouteTransition({ children }: { children: ReactNode }) {
     pathname.includes("/value") ||
     pathname.includes("/trial") ||
     pathname.includes("/intro") ||
-    pathname.includes("/save") ||
-    pathname.includes("/setup-") ||
-    pathname.includes("/user-type-benefits") ||
+    pathname.includes("/preparing") ||
+    pathname.includes("/first-step") ||
     pathname.includes("/welcome");
 
   return (

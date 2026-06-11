@@ -21,6 +21,11 @@ const config: Config = {
         success: "#10B981",
         warning: "#F59E0B",
         danger: "#EF4444",
+        // ── New onboarding identity (Figma "🔴 Onbaording" flow) ──
+        ink: "#1C1814", // warm near-black (headlines, black CTAs)
+        coral: "#FF6641", // brand accent (logo colon, stats, selection)
+        cream: "#F5F3EF", // value-reveal / marketing surfaces
+        fog: "#F4F4F6", // form-screen canvas
         // ── Service-category palette (product data colours) ──
         // Colour-codes services/verticals; not brand chrome. Mirrored
         // in src/lib/tokens/categories.ts for runtime/data consumers.
@@ -47,6 +52,10 @@ const config: Config = {
           "Roboto",
           "sans-serif",
         ],
+        // New onboarding flow typography (Figma): Plus Jakarta Sans for
+        // display/headlines, Inter for UI copy.
+        display: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+        body: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       borderRadius: {
         phone: "28px", // mobile-frame outer radius

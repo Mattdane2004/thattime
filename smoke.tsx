@@ -34,10 +34,11 @@ const renderContains = (label: string, el: React.ReactElement, needles: string[]
   for (const txt of needles) check(`${label} shows "${txt}"`, html.includes(txt));
 };
 
-// 1) Ported Home dashboard.
+// 1) Home dashboard (new onboarding identity — Figma 🔴 Onbaording → Home).
 renderContains("Home", React.createElement(HomePage), [
-  "Home", "Good afternoon, Emma", "Up Next", "Sarah Johnson",
-  "Needs Attention", "Team Today", "Upcoming Shifts", "Time Off",
+  "Salon Soho", "Good afternoon, Emma", "Up Next", "Sarah Johnson",
+  "Needs attention", "Team today", "Upcoming Shifts", "Time Off",
+  "Account set up", "Continue set up", "Move Your data from Fresha",
 ]);
 
 // 2) Ported Hub.

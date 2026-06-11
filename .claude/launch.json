@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "thattime-wireframe",
+      "name": "thattime-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "wireframe"],
+      "runtimeArgs": ["run", "dev"],
       "port": 3000
     }
   ]
