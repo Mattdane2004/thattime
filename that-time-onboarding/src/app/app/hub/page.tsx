@@ -147,7 +147,7 @@ export default function HubPage() {
                 ))}
               </div>
             </div>
-            <button className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left hover:border-navy/20">
+            <Link href="/app/marketing" className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left hover:border-navy/20">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">
                 <Megaphone size={18} className="text-navy" />
               </span>
@@ -156,7 +156,7 @@ export default function HubPage() {
                 <span className="mt-0.5 block text-[12px] text-secondary">Campaigns, automations, rewards</span>
               </span>
               <ChevronRight size={16} className="text-muted" />
-            </button>
+            </Link>
             <ListCard title="Business setup" items={setupItems} />
           </div>
         ) : (

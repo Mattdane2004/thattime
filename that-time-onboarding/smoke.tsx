@@ -5,6 +5,7 @@ import React from "react";
 import HomePage from "./src/app/app/page";
 import HubPage from "./src/app/app/hub/page";
 import ServicesPage from "./src/app/app/services/page";
+import MarketingPage from "./src/app/app/marketing/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
@@ -51,6 +52,11 @@ renderContains("ClientDetail", React.createElement(ClientDetailPage, { params: {
 // 3c) Services list.
 renderContains("Services", React.createElement(ServicesPage), [
   "Services", "Classic haircut", "New", "Active",
+]);
+
+// 3d) Marketing hub.
+renderContains("Marketing", React.createElement(MarketingPage), [
+  "Marketing", "Engage", "Campaigns", "Automations", "Rewards", "Discount codes",
 ]);
 
 // 4) Ported Team roster.
