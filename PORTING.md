@@ -25,9 +25,16 @@ See `memory/thattime-consolidation.md` for the why.
   - Team roster → `/app/team` (`lib/data/team.ts`; validates `Staff` enums)
   - Messages → `/app/messages` (`lib/data/messages.ts`)
   - Schedule "My Day" agenda → `/app/schedule` (`lib/data/schedule.ts`)
-  - **Milestone: the core app is fully navigable** — all four bottom tabs
-    (Home, Schedule, Clients, Message) work, plus Team + Hub, plus the
-    onboarding → `/app/hub` handoff.
+  - Client profile → `/app/clients/[id]` (`lib/data/clientDetail.ts`)
+  - Conversation thread → `/app/messages/[id]` (`lib/data/conversationThreads.ts`)
+  - Service wizard → `/new` → `/new/basics` → `/new/price` (`useWizardStore`)
+  - **Milestones reached:**
+    - Core app fully navigable — all four bottom tabs (Home, Schedule, Clients,
+      Message) + Team + Hub + onboarding → `/app/hub` handoff.
+    - Three complete user flows: **Clients** (list → profile), **Messages**
+      (list → thread), **service creation** (type → basics → price → create).
+    - A representative of every screen type is now ported (dashboard, list,
+      detail, chat, multi-step wizard) — the pattern is proven end to end.
   - **Pattern established:** port the screen self-contained (typed `lib/data/*`,
     shared tokens), defer cross-screen *mutations* (block/import/merge, edits)
     to a future shared app-state slice, add a smoke render. Replicate per screen.
