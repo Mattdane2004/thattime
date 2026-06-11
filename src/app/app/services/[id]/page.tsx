@@ -59,6 +59,15 @@ export default function OfferDashboardPage({ params }: { params: { id: string } 
           )}
         </div>
 
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <Link href={`/app/services/${offer.id}/preview`} className="rounded-2xl border border-border bg-surface px-4 py-3 text-center text-[13px] font-medium text-navy hover:bg-canvas">
+            Client preview
+          </Link>
+          <Link href={`/app/services/${offer.id}/photos`} className="rounded-2xl border border-border bg-surface px-4 py-3 text-center text-[13px] font-medium text-navy hover:bg-canvas">
+            Photos
+          </Link>
+        </div>
+
         {/* Module sections */}
         <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Manage</div>
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">

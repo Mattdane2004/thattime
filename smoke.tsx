@@ -9,6 +9,8 @@ import MarketingPage from "./src/app/app/marketing/page";
 import OfferDashboardPage from "./src/app/app/services/[id]/page";
 import B2CPage from "./src/app/app/b2c/page";
 import ProductsModulePage from "./src/app/app/services/[id]/products/page";
+import ServicePreviewPage from "./src/app/app/services/[id]/preview/page";
+import PhotosModulePage from "./src/app/app/services/[id]/photos/page";
 import SetupGuidePage from "./src/app/app/setup/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
@@ -90,6 +92,14 @@ renderContains("SetupGuide", React.createElement(SetupGuidePage), [
 // 3h) Products module editor.
 renderContains("Products", React.createElement(ProductsModulePage, { params: { id: "svc_classic_haircut" } }), [
   "Products", "Oils", "Moroccanoil Treatment", "added to this offer",
+]);
+
+// 3i) Service preview + photos module.
+renderContains("ServicePreview", React.createElement(ServicePreviewPage, { params: { id: "svc_classic_haircut" } }), [
+  "Client preview", "Classic haircut", "Book now",
+]);
+renderContains("Photos", React.createElement(PhotosModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Photos", "Add",
 ]);
 
 // 4) Ported Team roster.

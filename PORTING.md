@@ -39,8 +39,9 @@ green. One commit per screen.
 - [~] `wizard/ScheduleLocation.jsx` → reuse shared `/new/locations`
 
 ### 2 — Offer dashboards (view/manage any offer type)
-- [ ] `ClassDashboard.jsx`, `BundleDashboard.jsx`, `SubscriptionDashboard.jsx`
-- [ ] `ServicePreview.jsx`, `PhotoGallery.jsx`
+- [~] Class/Bundle/SubscriptionDashboard → covered by the generic `/app/services/[id]`
+- [x] `ServicePreview.jsx` → `/app/services/[id]/preview`
+- [x] `PhotoGallery.jsx` → `/app/services/[id]/photos`
 
 ### 3 — Module editors (`routes/modules/*`, 56 files)
 - [ ] Variants (+ editors), Forms, Resources, RelatedServices (+ forms)
