@@ -1,9 +1,10 @@
 {
-  "name": "that-time-onboarding",
+  "name": "thattime",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
+    "dev:webpack": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
