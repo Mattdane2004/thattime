@@ -22,16 +22,15 @@ export default function BasicsPage() {
   const router = useRouter();
   const draft = useWizardStore((s) => s.draft);
   const updateDraft = useWizardStore((s) => s.updateDraft);
-  const resetDraft = useWizardStore((s) => s.resetDraft);
 
   const meta = HINTS[draft.type ?? "service"];
   const canContinue = Boolean(draft.name.trim() && draft.category);
 
   const onContinue = () => {
     if (!canContinue) return;
-    // TODO(phase-4): route to /new/locations once later wizard steps are ported.
-    resetDraft();
-    router.push("/app/hub");
+    // Service path → price. (locations/staff steps are backlog; class/bundle/
+    // subscription branches route here too for now — see PORTING.md.)
+    router.push("/new/price");
   };
 
   return (

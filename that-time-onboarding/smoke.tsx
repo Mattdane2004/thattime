@@ -10,6 +10,7 @@ import MessagesPage from "./src/app/app/messages/page";
 import SchedulePage from "./src/app/app/schedule/page";
 import TypeSelectorPage from "./src/app/new/page";
 import BasicsPage from "./src/app/new/basics/page";
+import PricePage from "./src/app/new/price/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -60,6 +61,9 @@ renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
 ]);
 renderContains("Wizard/basics", React.createElement(BasicsPage), [
   "The basics", "Name", "Category", "Continue", "Hair",
+]);
+renderContains("Wizard/price", React.createElement(PricePage), [
+  "Price", "duration", "Require a deposit", "Create service",
 ]);
 
 // 8) Shared category tokens.
