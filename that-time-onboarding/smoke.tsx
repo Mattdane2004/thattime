@@ -4,6 +4,7 @@ import { renderToString } from "react-dom/server";
 import React from "react";
 import HomePage from "./src/app/app/page";
 import HubPage from "./src/app/app/hub/page";
+import ClientsPage from "./src/app/app/clients/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -28,7 +29,12 @@ renderContains("Hub", React.createElement(HubPage), [
   "Hub", "Operations", "Switch to client view", "Business setup", "Services", "Team", "Marketing",
 ]);
 
-// 3) Shared category tokens.
+// 3) Ported Clients directory.
+renderContains("Clients", React.createElement(ClientsPage), [
+  "Clients", "Search by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
+]);
+
+// 4) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");

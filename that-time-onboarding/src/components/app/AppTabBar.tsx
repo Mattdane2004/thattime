@@ -10,7 +10,7 @@ import { House, Calendar, Users, MessageSquare, Plus } from "lucide-react";
 const TABS = [
   { key: "home", label: "Home", icon: House, href: "/app" },
   { key: "schedule", label: "Schedule", icon: Calendar, href: null },
-  { key: "clients", label: "Clients", icon: Users, href: null },
+  { key: "clients", label: "Clients", icon: Users, href: "/app/clients" },
   { key: "messages", label: "Message", icon: MessageSquare, href: null },
 ] as const;
 
@@ -20,7 +20,7 @@ export function AppTabBar() {
   return (
     <nav className="z-20 grid shrink-0 grid-cols-5 border-t border-border bg-surface px-2 pb-3 pt-2">
       {TABS.map(({ key, label, icon: Icon, href }) => {
-        const active = href === "/app" ? pathname === "/app" : false;
+        const active = href === "/app" ? pathname === "/app" : href ? pathname.startsWith(href) : false;
         const cls = active ? "text-navy" : "text-muted";
         const inner = (
           <>
