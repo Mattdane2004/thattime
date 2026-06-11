@@ -118,7 +118,7 @@ export function FigmaHomeScreen() {
             <button
               type="button"
               aria-label="Open setup hub"
-              onClick={() => router.push("/setup-hub")}
+              onClick={() => router.push("/app")}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1C1814] text-white focus:outline-none focus:ring-2 focus:ring-[#111]"
             >
               <Users size={18} />
@@ -194,7 +194,7 @@ export function FigmaHomeScreen() {
               </button>
               <button
                 type="button"
-                onClick={() => router.push("/setup-hub")}
+                onClick={() => router.push("/app")}
                 className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#FF520D] text-[13px] font-medium text-white"
               >
                 <Store size={16} />
