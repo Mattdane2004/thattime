@@ -11,6 +11,9 @@ import B2CPage from "./src/app/app/b2c/page";
 import ProductsModulePage from "./src/app/app/services/[id]/products/page";
 import ServicePreviewPage from "./src/app/app/services/[id]/preview/page";
 import PhotosModulePage from "./src/app/app/services/[id]/photos/page";
+import FormsModulePage from "./src/app/app/services/[id]/forms/page";
+import ResourcesModulePage from "./src/app/app/services/[id]/resources/page";
+import VariantsModulePage from "./src/app/app/services/[id]/variants/page";
 import SetupGuidePage from "./src/app/app/setup/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
@@ -100,6 +103,17 @@ renderContains("ServicePreview", React.createElement(ServicePreviewPage, { param
 ]);
 renderContains("Photos", React.createElement(PhotosModulePage, { params: { id: "svc_classic_haircut" } }), [
   "Photos", "Add",
+]);
+
+// 3j) Module editors: forms, resources, variants.
+renderContains("Forms", React.createElement(FormsModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Forms", "Health questionnaire", "Consent form", "attached to this offer",
+]);
+renderContains("Resources", React.createElement(ResourcesModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Resources", "Spaces", "Equipment", "Treatment room A",
+]);
+renderContains("Variants", React.createElement(VariantsModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Variants", "Duration", "Staff", "Standard",
 ]);
 
 // 4) Ported Team roster.

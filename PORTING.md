@@ -44,7 +44,11 @@ green. One commit per screen.
 - [x] `PhotoGallery.jsx` → `/app/services/[id]/photos`
 
 ### 3 — Module editors (`routes/modules/*`, 56 files)
-- [ ] Variants (+ editors), Forms, Resources, RelatedServices (+ forms)
+- [x] Products → `/app/services/[id]/products`
+- [x] Variants → `/app/services/[id]/variants`
+- [x] Forms → `/app/services/[id]/forms`
+- [x] Resources → `/app/services/[id]/resources`
+- [ ] RelatedServices (+ forms)
 - [ ] Classes (bookings/agenda/materials/certificates/equipment/models)
 - [ ] Offers (pricing/rules/visibility/link), settings (+ sheets), Notifications
 

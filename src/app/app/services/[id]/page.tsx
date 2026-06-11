@@ -82,9 +82,10 @@ export default function OfferDashboardPage({ params }: { params: { id: string } 
                 <ChevronRight size={16} className="shrink-0 text-muted" />
               </>
             );
-            // Products is ported; other module editors are backlog (inert).
-            return m.key === "products" ? (
-              <Link key={m.key} href={`/app/services/${offer.id}/products`} className={cls}>{inner}</Link>
+            // Ported module editors link out; the rest are backlog (inert).
+            const ported = ["products", "variants", "resources", "forms"];
+            return ported.includes(m.key) ? (
+              <Link key={m.key} href={`/app/services/${offer.id}/${m.key}`} className={cls}>{inner}</Link>
             ) : (
               <button key={m.key} className={cls}>{inner}</button>
             );
