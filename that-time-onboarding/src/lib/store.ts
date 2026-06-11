@@ -1,35 +1,32 @@
 import { create } from "zustand";
 
+// Business-domain enums now live in the shared type layer (single source of
+// truth) and are re-exported here so existing onboarding imports keep working.
+import type {
+  TeamSize,
+  StaffSetupIntent,
+  Vertical,
+  ComingFrom,
+  BookingVolume,
+  LocationType,
+  WorkModel,
+} from "./types/business";
+
+export type {
+  TeamSize,
+  StaffSetupIntent,
+  Vertical,
+  ComingFrom,
+  BookingVolume,
+  LocationType,
+  WorkModel,
+};
+
+// Auth/flow enums specific to the onboarding session stay local to the store.
 export type AuthMethod = "apple" | "google" | "facebook" | "email" | null;
 export type Mode = "business" | "client" | null;
 export type AccountType = "owner" | "staff" | null;
 export type Audience = "owner" | "staff" | "client" | "";
-export type TeamSize = "solo" | "2-5" | "6-10" | "11+" | "";
-export type StaffSetupIntent = "invite_now" | "invite_later" | "not_yet" | "unsure" | "";
-export type Vertical =
-  | "Hair Salon"
-  | "Barbershop"
-  | "Nails"
-  | "Beauty"
-  | "Spa"
-  | "Wellness"
-  | "Fitness"
-  | "Other"
-  | "";
-export type ComingFrom =
-  | "Fresha"
-  | "Booksy"
-  | "Square"
-  | "GlossGenius"
-  | "Treatwell"
-  | "Pen & paper"
-  | "Instagram DMs"
-  | "Just starting out"
-  | "Something else"
-  | "";
-export type BookingVolume = "starting" | "1-10" | "11-30" | "31+" | "";
-export type LocationType = "shop" | "mobile" | "home" | "multiple" | "virtual" | "";
-export type WorkModel = Exclude<LocationType, "">;
 
 export type OnboardingData = {
   authMethod: AuthMethod;
