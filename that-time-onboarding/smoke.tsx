@@ -6,6 +6,7 @@ import HomePage from "./src/app/app/page";
 import HubPage from "./src/app/app/hub/page";
 import ClientsPage from "./src/app/app/clients/page";
 import TeamPage from "./src/app/app/team/page";
+import MessagesPage from "./src/app/app/messages/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -40,7 +41,12 @@ renderContains("Team", React.createElement(TeamPage), [
   "Team", "members", "Alex Morgan", "Manager", "Instructor", "Needs setup",
 ]);
 
-// 5) Shared category tokens.
+// 5) Ported Messages.
+renderContains("Messages", React.createElement(MessagesPage), [
+  "Messages", "Search conversations", "Emily Davis", "Sarah Johnson", "Robert Lee",
+]);
+
+// 6) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");

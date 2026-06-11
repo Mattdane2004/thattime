@@ -11,7 +11,7 @@ const TABS = [
   { key: "home", label: "Home", icon: House, href: "/app" },
   { key: "schedule", label: "Schedule", icon: Calendar, href: null },
   { key: "clients", label: "Clients", icon: Users, href: "/app/clients" },
-  { key: "messages", label: "Message", icon: MessageSquare, href: null },
+  { key: "messages", label: "Message", icon: MessageSquare, href: "/app/messages" },
 ] as const;
 
 export function AppTabBar() {
