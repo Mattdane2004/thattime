@@ -9,7 +9,7 @@ import { House, Calendar, Users, MessageSquare, Plus } from "lucide-react";
 // inert for now rather than 404.
 const TABS = [
   { key: "home", label: "Home", icon: House, href: "/app" },
-  { key: "schedule", label: "Schedule", icon: Calendar, href: null },
+  { key: "schedule", label: "Schedule", icon: Calendar, href: "/app/schedule" },
   { key: "clients", label: "Clients", icon: Users, href: "/app/clients" },
   { key: "messages", label: "Message", icon: MessageSquare, href: "/app/messages" },
 ] as const;

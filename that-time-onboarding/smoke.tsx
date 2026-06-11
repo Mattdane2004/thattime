@@ -7,6 +7,7 @@ import HubPage from "./src/app/app/hub/page";
 import ClientsPage from "./src/app/app/clients/page";
 import TeamPage from "./src/app/app/team/page";
 import MessagesPage from "./src/app/app/messages/page";
+import SchedulePage from "./src/app/app/schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -46,7 +47,12 @@ renderContains("Messages", React.createElement(MessagesPage), [
   "Messages", "Search conversations", "Emily Davis", "Sarah Johnson", "Robert Lee",
 ]);
 
-// 6) Shared category tokens.
+// 6) Ported Schedule agenda.
+renderContains("Schedule", React.createElement(SchedulePage), [
+  "Schedule", "Tuesday 3 March", "Lisa Anderson", "Now", "End of shift",
+]);
+
+// 7) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");
