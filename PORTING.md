@@ -1,9 +1,9 @@
 # Consolidation — port tracker
 
 Repurposing this repo into **one Next.js + TypeScript product app**. The live
-app is `that-time-onboarding/` (Next 14, App Router, TS). The legacy
-`that-time-app/` (Vite + React Router, JS) is kept **only as the porting source**
-for the screens below and is deleted once they land.
+app is now at the **repo root** (Next 14, App Router, TS). The legacy
+`that-time-app/` (Vite + React Router, JS) is kept **on disk only, gitignored**
+as the porting source for the screens below — it is not committed or deployed.
 
 See `memory/thattime-consolidation.md` for the why.
 
@@ -52,7 +52,7 @@ See `memory/thattime-consolidation.md` for the why.
 
 ## Backlog — screens to port from `that-time-app/src/routes` (~135 files)
 
-Port each into `that-time-onboarding/src/app/app/<route>/`, JS→TS, react-router
+Port each into `src/app/app/<route>/`, JS→TS, react-router
 → App Router (`useNavigate`→`useRouter`, `<Link>` from `next/link`,
 `useOutletContext`→ a shared client context/store). Type the mock data it needs
 into `src/lib/data/` as you go (do NOT bulk-port data ahead of screens).
@@ -77,13 +77,12 @@ to a React context provider (or extend the Zustand store) wrapping `/app`.
 
 ## Cleanup (after the relevant ports land)
 
-- Remove `that-time-onboarding/src/app/setup-hub/` — superseded by `/app`.
+- Remove `src/app/setup-hub/` — superseded by `/app`.
 - Delete unused Geist font files in `src/app/fonts/` (the app renders the system
   stack; see Phase 1).
 - Decide on `owner-onboarding/` + `owner-onboarding/B2C/` — separate design
   explorations (coral/Inter), not part of this lineage. Remove or archive.
-- Delete `that-time-app/` once its screens are fully ported.
-- Promote `that-time-onboarding/` to the repo root.
+- Delete the local `that-time-app/` once its screens are fully ported.
 
 ## `ClassDetails`
 
