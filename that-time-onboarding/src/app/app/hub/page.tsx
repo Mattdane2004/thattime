@@ -35,7 +35,7 @@ const operations: MenuItem[] = [
 ];
 
 const setupItems: MenuItem[] = [
-  { key: "setup-guide", label: "Setup guide", desc: "Guided setup & learning", icon: ClipboardCheck },
+  { key: "setup-guide", label: "Setup guide", desc: "Guided setup & learning", icon: ClipboardCheck, href: "/app/setup" },
   { key: "business-profile", label: "Business profile", desc: "Public identity clients see", icon: Building2 },
   { key: "business-settings", label: "Business settings", desc: "Booking rules & policies", icon: Settings2 },
   { key: "import-data", label: "Import data", desc: "Clients & bookings from CSV", icon: Database },
@@ -74,21 +74,22 @@ function ListCard({ title, items }: { title: string; items: MenuItem[] }) {
     <div>
       <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{title}</div>
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-        {items.map(({ key, label, desc, icon: Icon }, i) => (
-          <button
-            key={key}
-            className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas ${i > 0 ? "border-t border-border" : ""}`}
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas">
-              <Icon size={16} className="text-navy" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-medium text-navy">{label}</span>
-              <span className="block truncate text-[12px] text-secondary">{desc}</span>
-            </span>
-            <ChevronRight size={16} className="shrink-0 text-muted" />
-          </button>
-        ))}
+        {items.map(({ key, label, desc, icon: Icon, href }, i) => {
+          const cls = `flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas ${i > 0 ? "border-t border-border" : ""}`;
+          const inner = (
+            <>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas">
+                <Icon size={16} className="text-navy" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-navy">{label}</span>
+                <span className="block truncate text-[12px] text-secondary">{desc}</span>
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-muted" />
+            </>
+          );
+          return href ? <Link key={key} href={href} className={cls}>{inner}</Link> : <button key={key} className={cls}>{inner}</button>;
+        })}
       </div>
     </div>
   );
