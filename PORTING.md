@@ -1,90 +1,63 @@
 # Consolidation — port tracker
 
-Repurposing this repo into **one Next.js + TypeScript product app**. The live
-app is now at the **repo root** (Next 14, App Router, TS). The legacy
-`that-time-app/` (Vite + React Router, JS) is kept **on disk only, gitignored**
-as the porting source for the screens below — it is not committed or deployed.
+Repurposing this repo into **one Next.js + TypeScript product app** (now at the
+**repo root**). Legacy source `that-time-app/` is kept **on disk, gitignored**
+as the porting reference (135 route files). See
+`memory/thattime-consolidation.md` for the why.
 
-See `memory/thattime-consolidation.md` for the why.
+**Workflow per screen:** port JS→TS + react-router→App Router (`useNavigate`→
+`useRouter`, `<Link>`, `useOutletContext`→ Zustand store), type its mock data
+into `src/lib/data/*`, defer cross-screen mutations, add a `smoke.tsx` render
+check. Gate every push on **`next lint` + `tsc --noEmit` + `npm run smoke`** all
+green. One commit per screen.
 
-## Done
+## Status
 
-- **Phase 0** — gitignore, flattened nested repos, pushed clean monorepo.
-- **Phase 1** — unified design tokens (`tailwind.config.ts`, `globals.css`,
-  `src/lib/tokens/categories.ts`). Onboarding's system is canonical; the
-  product's service-category palette folded in as a separate `category.*` scale.
-- **Phase 2** — shared domain types in `src/lib/types/` (`business`, `staff`,
-  `client`, `offer`). `store.ts` sources its enums from here (single source of
-  truth).
-- **Phase 3** — `/app` route group: `AppFrame` + `AppTabBar` shell.
-- **Phase 4 (in progress)** — ported screens (JS→TS, react-router→App Router),
-  each rendered green by `npm run smoke`:
-  - Hub → `/app/hub` (back-nav)
-  - Home dashboard → `/app` (`lib/data/home.ts`)
-  - Clients directory → `/app/clients` (`lib/data/clients.ts`; validates `ClientListItem`)
-  - Team roster → `/app/team` (`lib/data/team.ts`; validates `Staff` enums)
-  - Messages → `/app/messages` (`lib/data/messages.ts`)
-  - Schedule "My Day" agenda → `/app/schedule` (`lib/data/schedule.ts`)
-  - Client profile → `/app/clients/[id]` (`lib/data/clientDetail.ts`)
-  - Conversation thread → `/app/messages/[id]` (`lib/data/conversationThreads.ts`)
-  - Service wizard → `/new` → `/new/basics` → `/new/price` (`useWizardStore`)
-  - **Milestones reached:**
-    - Core app fully navigable — all four bottom tabs (Home, Schedule, Clients,
-      Message) + Team + Hub + onboarding → `/app/hub` handoff.
-    - Three complete user flows: **Clients** (list → profile), **Messages**
-      (list → thread), **service creation** (type → basics → price → create).
-    - A representative of every screen type is now ported (dashboard, list,
-      detail, chat, multi-step wizard) — the pattern is proven end to end.
-  - **Pattern established:** port the screen self-contained (typed `lib/data/*`,
-    shared tokens), defer cross-screen *mutations* (block/import/merge, edits)
-    to a future shared app-state slice, add a smoke render. Replicate per screen.
-  - **Still to port (the bulk):** detail screens (Client profile, Conversation,
-    full Schedule calendar views, Team schedule/pay tabs), Marketing, B2C client
-    view, and the 20-screen **service wizard** + 40+ module screens. The wizard
-    is the next major effort and needs the shared draft/app-state slice built
-    first (planned: a Zustand `useAppStore` slice, mirroring the legacy App.jsx
-    Outlet context — draft, savedOffers, teamMembers, client mutations, toasts).
-- **Local testing** — `npm run smoke` renders the ported pages with
-  `react-dom/server` (bypasses Next's compiler) and checks shared tokens.
-  Currently 22 checks, all passing. **Note:** `next dev`/`next build` hang in
-  some environments (observed with Node 20 & 24) — the smoke test is the
-  fallback runtime check; run `npm run dev` locally for the full click-through.
+- **Done so far:** ~19 routes / ~26 surfaces. App deploys from root; runs via
+  `npm run dev` (Turbopack). Foundation: tokens, `src/lib/types`, wizard + (todo)
+  app Zustand stores.
+- **Verified flows:** Clients (list→profile), Messages (list→thread), Services
+  (list→dashboard→products), service wizard (type→basics→locations→staff→price→
+  create), Setup guide, full Hub navigation, onboarding→app handoff.
 
-## Backlog — screens to port from `that-time-app/src/routes` (~135 files)
+## Backlog checklist (priority order)
 
-Port each into `src/app/app/<route>/`, JS→TS, react-router
-→ App Router (`useNavigate`→`useRouter`, `<Link>` from `next/link`,
-`useOutletContext`→ a shared client context/store). Type the mock data it needs
-into `src/lib/data/` as you go (do NOT bulk-port data ahead of screens).
+### 1 — Wizard branches (complete offer creation for every type)
+- [ ] `wizard/SubscriptionType.jsx` → `/new/subscription-type`
+- [ ] `wizard/SubscriptionBenefits.jsx` → `/new/subscription-benefits`
+- [ ] `wizard/SubscriptionBilling.jsx` → `/new/subscription-billing`
+- [ ] `wizard/FrequencySessions.jsx` → `/new/frequency-sessions`
+- [ ] `wizard/FrequencyBilling.jsx` → `/new/frequency-billing`
+- [ ] `wizard/BundleServices.jsx` → `/new/bundle-services`
+- [ ] `wizard/BundleOrderGaps.jsx` → `/new/bundle-order`
+- [ ] `wizard/BundlePricing.jsx` → `/new/bundle-pricing`
+- [ ] `wizard/ClassParticipants.jsx` → `/new/class-participants`
+- [ ] `wizard/ClassDetails.jsx` → `/new/class-details`
+- [ ] `wizard/ClassSchedule.jsx` + `ClassScheduleTimes.jsx` → `/new/class-schedule`
+- [ ] `wizard/ClassLocation.jsx` + `ClassRemoteSetup.jsx` → `/new/class-location`
+- [ ] `wizard/ClassStaff.jsx` → `/new/class-staff`
+- [ ] `wizard/ScheduleLocation.jsx` → `/new/schedule-location`
 
-| Group | Source | Notes |
-|---|---|---|
-| Home dashboard | `routes/main/Home.jsx` (+ `data/homeToday.js`) | up-next, stats, team-today |
-| Schedule | `routes/main/Schedule.jsx` | calendar |
-| Clients | `routes/main/Clients.jsx`, `routes/main/client/*` | uses `Client` type (done) |
-| Team | `routes/Team.jsx`, `routes/team/*` | uses `Staff` type (done) |
-| Service wizard | `routes/wizard/*` (20 screens) | the big one; needs `ClassDetails` typed |
-| Offer dashboards | `routes/*Dashboard.jsx`, `routes/modules/*` | service/class/bundle/subscription |
-| Marketing / B2C | `routes/Marketing.jsx`, `routes/ClientView.jsx` | public surfaces |
-| Messaging | `routes/main/Messages.jsx`, `Conversation.jsx` | |
-| Sheets / pickers | `components/sheets/*`, pickers | shared UI — promote to `components/ui/` |
+### 2 — Offer dashboards (view/manage any offer type)
+- [ ] `ClassDashboard.jsx`, `BundleDashboard.jsx`, `SubscriptionDashboard.jsx`
+- [ ] `ServicePreview.jsx`, `PhotoGallery.jsx`
 
-## Shared context
+### 3 — Module editors (`routes/modules/*`, 56 files)
+- [ ] Variants (+ editors), Forms, Resources, RelatedServices (+ forms)
+- [ ] Classes (bookings/agenda/materials/certificates/equipment/models)
+- [ ] Offers (pricing/rules/visibility/link), settings (+ sheets), Notifications
 
-`that-time-app/src/App.jsx` holds a single react-router `Outlet` context
-(`draft`, `savedOffers`, `categories`, `teamMembers`, `teamRequests`, …). Port it
-to a React context provider (or extend the Zustand store) wrapping `/app`.
+### 4 — Client & team sub-screens
+- [ ] `main/client/*` (appointments, record, wallet, reviews, settings, details)
+- [ ] `team/*` (QuickAdd, GuidedSetup, StaffView, UpgradePlan, PaySetupFlow)
 
-## Cleanup (after the relevant ports land)
+### 5 — Misc + sheets
+- [ ] `ImportData`, `Alerts`, `RateClient`, `Checkout`, `Notifications/*`
+- [ ] `components/sheets/*` (12 modals) — port as shared components
 
-- Remove `src/app/setup-hub/` — superseded by `/app`.
-- Delete unused Geist font files in `src/app/fonts/` (the app renders the system
-  stack; see Phase 1).
-- Decide on `owner-onboarding/` + `owner-onboarding/B2C/` — separate design
-  explorations (coral/Inter), not part of this lineage. Remove or archive.
-- Delete the local `that-time-app/` once its screens are fully ported.
-
-## `ClassDetails`
-
-Deliberately left open (`[key: string]: unknown`) in `src/lib/types/offer.ts`.
-Type it fully when porting the class wizard/dashboard screens.
+## Notes
+- Shared app state (teamMembers, client mutations, toasts, savedOffers) still
+  needs a Zustand `useAppStore` slice — build it when a screen first needs
+  cross-screen persistence (the wizard branches mostly extend `useWizardStore`).
+- `ClassDetails` type in `src/lib/types/offer.ts` is left open; type it while
+  porting the class wizard/dashboard.
