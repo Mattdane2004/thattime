@@ -16,9 +16,16 @@ See `memory/thattime-consolidation.md` for the why.
 - **Phase 2** — shared domain types in `src/lib/types/` (`business`, `staff`,
   `client`, `offer`). `store.ts` sources its enums from here (single source of
   truth).
-- **Phase 3 (partial)** — `/app` route group: `AppFrame` + `AppTabBar` shell and
-  a ported Hub landing (`src/app/app/page.tsx`). Onboarding completion now routes
-  to `/app`.
+- **Phase 3** — `/app` route group: `AppFrame` + `AppTabBar` shell.
+- **Phase 4 (in progress)** — ported screens (JS→TS, react-router→App Router):
+  - Hub → `/app/hub` (with back-nav)
+  - Home dashboard → `/app` (typed data in `lib/data/home.ts`)
+  - IA: `/app` = Home, `/app/hub` = Hub; onboarding "setup hub" routes to `/app/hub`.
+- **Local testing** — `npm run smoke` renders the ported pages with
+  `react-dom/server` (bypasses Next's compiler) and checks shared tokens.
+  Currently 22 checks, all passing. **Note:** `next dev`/`next build` hang in
+  some environments (observed with Node 20 & 24) — the smoke test is the
+  fallback runtime check; run `npm run dev` locally for the full click-through.
 
 ## Backlog — screens to port from `that-time-app/src/routes` (~135 files)
 
