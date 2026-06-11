@@ -8,6 +8,8 @@ import ClientsPage from "./src/app/app/clients/page";
 import TeamPage from "./src/app/app/team/page";
 import MessagesPage from "./src/app/app/messages/page";
 import SchedulePage from "./src/app/app/schedule/page";
+import TypeSelectorPage from "./src/app/new/page";
+import BasicsPage from "./src/app/new/basics/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -52,7 +54,15 @@ renderContains("Schedule", React.createElement(SchedulePage), [
   "Schedule", "Tuesday 3 March", "Lisa Anderson", "Now", "End of shift",
 ]);
 
-// 7) Shared category tokens.
+// 7) Service wizard entry + basics.
+renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
+  "What are you adding", "Service", "Class", "Bundle", "Subscription",
+]);
+renderContains("Wizard/basics", React.createElement(BasicsPage), [
+  "The basics", "Name", "Category", "Continue", "Hair",
+]);
+
+// 8) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");

@@ -1,4 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "react" }
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "next/navigation": ["./smoke-stubs/next-navigation.ts"]
+    }
+  }
 }

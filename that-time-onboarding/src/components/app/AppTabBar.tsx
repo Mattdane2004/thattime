@@ -40,10 +40,10 @@ export function AppTabBar() {
           </span>
         );
       })}
-      <span className="flex cursor-default flex-col items-center gap-1 py-1 opacity-60">
+      <Link href="/new" aria-label="Add" className="flex flex-col items-center gap-1 py-1">
         <Plus size={20} strokeWidth={1.75} className="text-muted" />
         <span className="text-[11px] font-medium text-muted">Add</span>
-      </span>
+      </Link>
     </nav>
   );
 }
