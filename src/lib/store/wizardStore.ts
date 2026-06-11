@@ -17,7 +17,33 @@ export interface ServiceDraft {
   depositAmount: string;
   locationIds: string[];
   staffIds: string[];
+  subscription: SubscriptionDraft;
 }
+
+// Subscription-branch fields (wizard: type → benefits → billing).
+export interface SubscriptionDraft {
+  subType: "frequency" | "credit" | "membership";
+  benefitType: "sessions" | "credit" | "discount" | "access";
+  billingPeriod: "week" | "month" | "quarter" | "year";
+  includedSessions: number;
+  unlimitedUsage: boolean;
+  storeCreditAmount: string;
+  memberDiscountPercent: string;
+  joiningFee: string;
+  minimumTermMonths: string;
+}
+
+export const emptySubscription: SubscriptionDraft = {
+  subType: "frequency",
+  benefitType: "sessions",
+  billingPeriod: "month",
+  includedSessions: 1,
+  unlimitedUsage: false,
+  storeCreditAmount: "",
+  memberDiscountPercent: "",
+  joiningFee: "",
+  minimumTermMonths: "",
+};
 
 export const emptyDraft: ServiceDraft = {
   type: null,
@@ -30,16 +56,20 @@ export const emptyDraft: ServiceDraft = {
   depositAmount: "",
   locationIds: [],
   staffIds: [],
+  subscription: emptySubscription,
 };
 
 interface WizardState {
   draft: ServiceDraft;
   updateDraft: (patch: Partial<ServiceDraft>) => void;
+  updateSubscription: (patch: Partial<SubscriptionDraft>) => void;
   resetDraft: () => void;
 }
 
 export const useWizardStore = create<WizardState>((set) => ({
   draft: emptyDraft,
   updateDraft: (patch) => set((state) => ({ draft: { ...state.draft, ...patch } })),
+  updateSubscription: (patch) =>
+    set((state) => ({ draft: { ...state.draft, subscription: { ...state.draft.subscription, ...patch } } })),
   resetDraft: () => set({ draft: emptyDraft }),
 }));

@@ -21,6 +21,9 @@ import BasicsPage from "./src/app/new/basics/page";
 import LocationsPage from "./src/app/new/locations/page";
 import StaffPage from "./src/app/new/staff/page";
 import PricePage from "./src/app/new/price/page";
+import SubscriptionTypePage from "./src/app/new/subscription-type/page";
+import SubscriptionBenefitsPage from "./src/app/new/subscription-benefits/page";
+import SubscriptionBillingPage from "./src/app/new/subscription-billing/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -117,6 +120,15 @@ renderContains("Wizard/locations", React.createElement(LocationsPage), [
 ]);
 renderContains("Wizard/staff", React.createElement(StaffPage), [
   "Who can deliver", "Alex Morgan", "Continue",
+]);
+renderContains("Wizard/sub-type", React.createElement(SubscriptionTypePage), [
+  "Subscription type", "Service frequency", "Store credit", "Membership", "Continue",
+]);
+renderContains("Wizard/sub-benefits", React.createElement(SubscriptionBenefitsPage), [
+  "What do members get", "Included sessions", "Member discount", "Access pass",
+]);
+renderContains("Wizard/sub-billing", React.createElement(SubscriptionBillingPage), [
+  "Billing", "Billing period", "Joining fee", "Create subscription",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",

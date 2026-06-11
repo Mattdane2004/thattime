@@ -23,9 +23,9 @@ green. One commit per screen.
 ## Backlog checklist (priority order)
 
 ### 1 — Wizard branches (complete offer creation for every type)
-- [ ] `wizard/SubscriptionType.jsx` → `/new/subscription-type`
-- [ ] `wizard/SubscriptionBenefits.jsx` → `/new/subscription-benefits`
-- [ ] `wizard/SubscriptionBilling.jsx` → `/new/subscription-billing`
+- [x] `wizard/SubscriptionType.jsx` → `/new/subscription-type`
+- [x] `wizard/SubscriptionBenefits.jsx` → `/new/subscription-benefits`
+- [x] `wizard/SubscriptionBilling.jsx` → `/new/subscription-billing`
 - [ ] `wizard/FrequencySessions.jsx` → `/new/frequency-sessions`
 - [ ] `wizard/FrequencyBilling.jsx` → `/new/frequency-billing`
 - [ ] `wizard/BundleServices.jsx` → `/new/bundle-services`

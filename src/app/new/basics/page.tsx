@@ -28,9 +28,10 @@ export default function BasicsPage() {
 
   const onContinue = () => {
     if (!canContinue) return;
-    // Service path → locations → staff → price. (class/bundle/subscription
-    // branches route through here too for now — see PORTING.md.)
-    router.push("/new/locations");
+    // Branch by offer type. (class/bundle still route the service path for now
+    // — see PORTING.md.)
+    if (draft.type === "subscription") router.push("/new/subscription-type");
+    else router.push("/new/locations");
   };
 
   return (
