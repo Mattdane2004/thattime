@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js Onboarding (dev)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "onboarding", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}
