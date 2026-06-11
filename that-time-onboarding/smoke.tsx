@@ -7,6 +7,7 @@ import HubPage from "./src/app/app/hub/page";
 import ServicesPage from "./src/app/app/services/page";
 import MarketingPage from "./src/app/app/marketing/page";
 import OfferDashboardPage from "./src/app/app/services/[id]/page";
+import B2CPage from "./src/app/app/b2c/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
@@ -63,6 +64,11 @@ renderContains("Marketing", React.createElement(MarketingPage), [
 // 3e) Offer dashboard.
 renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }), [
   "Classic haircut", "Price", "Duration", "Manage", "Variants", "Settings",
+]);
+
+// 3f) B2C client view.
+renderContains("B2C", React.createElement(B2CPage), [
+  "Client view", "Coming soon", "That Time for clients", "Switch back to business",
 ]);
 
 // 4) Ported Team roster.

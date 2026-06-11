@@ -124,7 +124,7 @@ export default function HubPage() {
       </header>
 
       <div className="px-4 pb-8 pt-2">
-        <button className="mb-6 flex w-full items-center gap-3 rounded-2xl bg-navy px-4 py-3.5 text-white transition-colors hover:bg-navy/90">
+        <Link href="/app/b2c" className="mb-6 flex w-full items-center gap-3 rounded-2xl bg-navy px-4 py-3.5 text-white transition-colors hover:bg-navy/90">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
             <ArrowLeftRight size={18} />
           </span>
@@ -135,7 +135,7 @@ export default function HubPage() {
           <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-widest">
             B2C
           </span>
-        </button>
+        </Link>
 
         {tab === "business" ? (
           <div className="space-y-6">
