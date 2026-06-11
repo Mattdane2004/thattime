@@ -28,9 +28,9 @@ export default function BasicsPage() {
 
   const onContinue = () => {
     if (!canContinue) return;
-    // Service path → price. (locations/staff steps are backlog; class/bundle/
-    // subscription branches route here too for now — see PORTING.md.)
-    router.push("/new/price");
+    // Service path → locations → staff → price. (class/bundle/subscription
+    // branches route through here too for now — see PORTING.md.)
+    router.push("/new/locations");
   };
 
   return (

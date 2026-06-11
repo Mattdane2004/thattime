@@ -17,6 +17,8 @@ import ConversationPage from "./src/app/app/messages/[id]/page";
 import SchedulePage from "./src/app/app/schedule/page";
 import TypeSelectorPage from "./src/app/new/page";
 import BasicsPage from "./src/app/new/basics/page";
+import LocationsPage from "./src/app/new/locations/page";
+import StaffPage from "./src/app/new/staff/page";
 import PricePage from "./src/app/new/price/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
@@ -103,6 +105,12 @@ renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
 ]);
 renderContains("Wizard/basics", React.createElement(BasicsPage), [
   "The basics", "Name", "Category", "Continue", "Hair",
+]);
+renderContains("Wizard/locations", React.createElement(LocationsPage), [
+  "Where is it offered", "Salon Soho", "Continue",
+]);
+renderContains("Wizard/staff", React.createElement(StaffPage), [
+  "Who can deliver", "Alex Morgan", "Continue",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",

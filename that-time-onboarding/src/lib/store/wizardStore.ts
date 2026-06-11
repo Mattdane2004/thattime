@@ -15,6 +15,8 @@ export interface ServiceDraft {
   durationMin: number;
   depositEnabled: boolean;
   depositAmount: string;
+  locationIds: string[];
+  staffIds: string[];
 }
 
 export const emptyDraft: ServiceDraft = {
@@ -26,6 +28,8 @@ export const emptyDraft: ServiceDraft = {
   durationMin: 60,
   depositEnabled: false,
   depositAmount: "",
+  locationIds: [],
+  staffIds: [],
 };
 
 interface WizardState {

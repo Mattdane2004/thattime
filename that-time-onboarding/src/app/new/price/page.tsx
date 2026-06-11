@@ -31,7 +31,7 @@ export default function PricePage() {
 
   return (
     <>
-      <ScreenHeader onBack={() => router.push("/new/basics")} />
+      <ScreenHeader onBack={() => router.push("/new/staff")} />
       <div className="flex-1 overflow-y-auto px-5">
         <div className="pb-10 pt-2">
           <div className="text-[28px] font-semibold leading-tight tracking-tight text-navy">Price &amp; duration</div>
