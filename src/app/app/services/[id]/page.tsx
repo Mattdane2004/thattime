@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Scissors, Users, Package, Repeat, Clock, Tag } from "lucide-react";
 import type { OfferType } from "@/lib/types";
-import { getOffer, offerMeta, statusLabel, OFFER_MODULES } from "@/lib/data/offers";
+import { getOffer, statusLabel, OFFER_MODULES } from "@/lib/data/offers";
 
 // Offer dashboard — ported from the legacy that-time-app offer dashboards
 // (/service, /class, /bundle, /subscription). Shows the offer summary and its

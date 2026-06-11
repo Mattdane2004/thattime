@@ -12,7 +12,6 @@ import {
   Lock,
   MessageCircle,
   Plus,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -201,11 +200,6 @@ export function FigmaStaffFlow() {
   const managerName = state.joinedManagerName || "Emma";
   const role = state.joinedStaffRole || "Senior Stylist";
   const startDateLabel = formatStartDate(state.joinedStaffStartDate);
-  const workingDays = state.joinedStaffWorkingDays.length > 0
-    ? state.joinedStaffWorkingDays
-    : ["Tue", "Wed", "Thu", "Fri", "Sat"];
-  const workingStart = state.joinedStaffWorkingStart || "09:00";
-  const workingEnd = state.joinedStaffWorkingEnd || "18:00";
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
