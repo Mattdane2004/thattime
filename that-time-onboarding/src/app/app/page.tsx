@@ -125,6 +125,7 @@ export default function HomePage() {
               <SectionLabel>Team Today</SectionLabel>
               <span className="text-[15px] font-semibold text-border">{teamToday.count}</span>
             </div>
+            <Link href="/app/team" className="text-[12px] text-muted hover:text-navy">View all</Link>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-surface">
             {teamToday.members.map((member, i) => (
