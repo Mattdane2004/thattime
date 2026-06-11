@@ -26,6 +26,8 @@ import SubscriptionBenefitsPage from "./src/app/new/subscription-benefits/page";
 import SubscriptionBillingPage from "./src/app/new/subscription-billing/page";
 import BundleServicesPage from "./src/app/new/bundle-services/page";
 import BundlePricingPage from "./src/app/new/bundle-pricing/page";
+import ClassParticipantsPage from "./src/app/new/class-participants/page";
+import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -137,6 +139,12 @@ renderContains("Wizard/bundle-services", React.createElement(BundleServicesPage)
 ]);
 renderContains("Wizard/bundle-pricing", React.createElement(BundlePricingPage), [
   "Bundle price", "Fixed price", "Package discount", "Create bundle",
+]);
+renderContains("Wizard/class-participants", React.createElement(ClassParticipantsPage), [
+  "Who can attend", "Seat-based", "Private group", "Continue",
+]);
+renderContains("Wizard/class-schedule", React.createElement(ClassSchedulePage), [
+  "When is it", "Date", "Starts", "Ends",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",

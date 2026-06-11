@@ -19,7 +19,27 @@ export interface ServiceDraft {
   staffIds: string[];
   subscription: SubscriptionDraft;
   bundle: BundleDraft;
+  classDetails: ClassDraft;
 }
+
+// Class-branch fields (wizard: participants → schedule).
+export interface ClassDraft {
+  bookingStructure: "seat_based" | "private_group";
+  capacity: number;
+  minParticipants: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
+export const emptyClassDraft: ClassDraft = {
+  bookingStructure: "seat_based",
+  capacity: 12,
+  minParticipants: 1,
+  date: "",
+  startTime: "09:00",
+  endTime: "10:00",
+};
 
 // Bundle-branch fields (wizard: services → pricing).
 export interface BundleDraft {
@@ -75,6 +95,7 @@ export const emptyDraft: ServiceDraft = {
   staffIds: [],
   subscription: emptySubscription,
   bundle: emptyBundle,
+  classDetails: emptyClassDraft,
 };
 
 interface WizardState {
@@ -82,6 +103,7 @@ interface WizardState {
   updateDraft: (patch: Partial<ServiceDraft>) => void;
   updateSubscription: (patch: Partial<SubscriptionDraft>) => void;
   updateBundle: (patch: Partial<BundleDraft>) => void;
+  updateClass: (patch: Partial<ClassDraft>) => void;
   resetDraft: () => void;
 }
 
@@ -92,5 +114,7 @@ export const useWizardStore = create<WizardState>((set) => ({
     set((state) => ({ draft: { ...state.draft, subscription: { ...state.draft.subscription, ...patch } } })),
   updateBundle: (patch) =>
     set((state) => ({ draft: { ...state.draft, bundle: { ...state.draft.bundle, ...patch } } })),
+  updateClass: (patch) =>
+    set((state) => ({ draft: { ...state.draft, classDetails: { ...state.draft.classDetails, ...patch } } })),
   resetDraft: () => set({ draft: emptyDraft }),
 }));

@@ -32,6 +32,7 @@ export default function BasicsPage() {
     // — see PORTING.md.)
     if (draft.type === "subscription") router.push("/new/subscription-type");
     else if (draft.type === "bundle") router.push("/new/bundle-services");
+    else if (draft.type === "class") router.push("/new/class-participants");
     else router.push("/new/locations");
   };
 

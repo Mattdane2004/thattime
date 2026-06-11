@@ -26,17 +26,17 @@ green. One commit per screen.
 - [x] `wizard/SubscriptionType.jsx` → `/new/subscription-type`
 - [x] `wizard/SubscriptionBenefits.jsx` → `/new/subscription-benefits`
 - [x] `wizard/SubscriptionBilling.jsx` → `/new/subscription-billing`
-- [ ] `wizard/FrequencySessions.jsx` → `/new/frequency-sessions`
-- [ ] `wizard/FrequencyBilling.jsx` → `/new/frequency-billing`
+- [~] `wizard/FrequencySessions.jsx` → folded into subscription-benefits (sessions)
+- [~] `wizard/FrequencyBilling.jsx` → folded into subscription-billing
 - [x] `wizard/BundleServices.jsx` → `/new/bundle-services`
 - [~] `wizard/BundleOrderGaps.jsx` → deferred (drag-to-reorder refinement)
 - [x] `wizard/BundlePricing.jsx` → `/new/bundle-pricing`
-- [ ] `wizard/ClassParticipants.jsx` → `/new/class-participants`
-- [ ] `wizard/ClassDetails.jsx` → `/new/class-details`
-- [ ] `wizard/ClassSchedule.jsx` + `ClassScheduleTimes.jsx` → `/new/class-schedule`
-- [ ] `wizard/ClassLocation.jsx` + `ClassRemoteSetup.jsx` → `/new/class-location`
-- [ ] `wizard/ClassStaff.jsx` → `/new/class-staff`
-- [ ] `wizard/ScheduleLocation.jsx` → `/new/schedule-location`
+- [x] `wizard/ClassParticipants.jsx` → `/new/class-participants`
+- [x] `wizard/ClassSchedule.jsx` → `/new/class-schedule` (single-session; recurring deferred)
+- [~] `wizard/ClassDetails.jsx` → deferred (advanced class config)
+- [~] `wizard/ClassLocation.jsx` + `ClassRemoteSetup.jsx` → reuse shared `/new/locations`
+- [~] `wizard/ClassStaff.jsx` → reuse shared `/new/staff`
+- [~] `wizard/ScheduleLocation.jsx` → reuse shared `/new/locations`
 
 ### 2 — Offer dashboards (view/manage any offer type)
 - [ ] `ClassDashboard.jsx`, `BundleDashboard.jsx`, `SubscriptionDashboard.jsx`
