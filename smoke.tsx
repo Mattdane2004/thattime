@@ -15,6 +15,8 @@ import FormsModulePage from "./src/app/app/services/[id]/forms/page";
 import ResourcesModulePage from "./src/app/app/services/[id]/resources/page";
 import VariantsModulePage from "./src/app/app/services/[id]/variants/page";
 import SetupGuidePage from "./src/app/app/setup/page";
+import AlertsPage from "./src/app/app/alerts/page";
+import ImportDataPage from "./src/app/app/setup/import/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
@@ -120,6 +122,14 @@ renderContains("Variants", React.createElement(VariantsModulePage, { params: { i
 // 3k) Team invite.
 renderContains("TeamInvite", React.createElement(TeamInvitePage), [
   "Add team member", "Who are you adding", "Employee", "Freelancer", "Send invite",
+]);
+
+// 3l) Alerts feed + Import data.
+renderContains("Alerts", React.createElement(AlertsPage), [
+  "Alerts", "Today", "Message request", "New booking",
+]);
+renderContains("ImportData", React.createElement(ImportDataPage), [
+  "Import data", "Upload CSV", "another platform", "Clients", "Bookings",
 ]);
 
 // 4) Ported Team roster.

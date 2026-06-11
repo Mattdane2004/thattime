@@ -29,7 +29,7 @@ const operations: MenuItem[] = [
   { key: "locations", label: "Locations", desc: "Multi-site management", icon: MapPin },
   { key: "payments", label: "Payments", desc: "Transactions, refunds, tax", icon: Wallet },
   { key: "analytics", label: "Analytics", desc: "Performance & opportunities", icon: BarChart3 },
-  { key: "notifications", label: "Notifications", desc: "Client messages & reminders", icon: Bell },
+  { key: "notifications", label: "Notifications", desc: "Client messages & reminders", icon: Bell, href: "/app/alerts" },
   { key: "resources", label: "Resources", desc: "Rooms & equipment library", icon: Box },
   { key: "forms", label: "Forms", desc: "Templates & builder", icon: FileText },
 ];
@@ -38,7 +38,7 @@ const setupItems: MenuItem[] = [
   { key: "setup-guide", label: "Setup guide", desc: "Guided setup & learning", icon: ClipboardCheck, href: "/app/setup" },
   { key: "business-profile", label: "Business profile", desc: "Public identity clients see", icon: Building2 },
   { key: "business-settings", label: "Business settings", desc: "Booking rules & policies", icon: Settings2 },
-  { key: "import-data", label: "Import data", desc: "Clients & bookings from CSV", icon: Database },
+  { key: "import-data", label: "Import data", desc: "Clients & bookings from CSV", icon: Database, href: "/app/setup/import" },
   { key: "integrations", label: "Integrations", desc: "Stripe, Calendar, payments", icon: Plug },
 ];
 

@@ -58,7 +58,9 @@ green. One commit per screen.
 - [~] `team/*` (GuidedSetup, StaffView, UpgradePlan, PaySetupFlow) → deferred (niche staff-mgmt flows)
 
 ### 5 — Misc + sheets
-- [ ] `ImportData`, `Alerts`, `RateClient`, `Checkout`, `Notifications/*`
+- [x] `ImportData` → `/app/setup/import`
+- [x] `Alerts` → `/app/alerts`
+- [ ] `RateClient`, `Checkout`, `Notifications/*` (niche transactional/settings)
 - [ ] `components/sheets/*` (12 modals) — port as shared components
 
 ## Notes
