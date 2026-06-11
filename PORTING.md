@@ -53,8 +53,9 @@ green. One commit per screen.
 - [ ] Offers (pricing/rules/visibility/link), settings (+ sheets), Notifications
 
 ### 4 — Client & team sub-screens
-- [ ] `main/client/*` (appointments, record, wallet, reviews, settings, details)
-- [ ] `team/*` (QuickAdd, GuidedSetup, StaffView, UpgradePlan, PaySetupFlow)
+- [~] `main/client/*` → covered by the comprehensive `/app/clients/[id]` profile
+- [x] `team/QuickAdd.jsx` → `/app/team/invite`
+- [~] `team/*` (GuidedSetup, StaffView, UpgradePlan, PaySetupFlow) → deferred (niche staff-mgmt flows)
 
 ### 5 — Misc + sheets
 - [ ] `ImportData`, `Alerts`, `RateClient`, `Checkout`, `Notifications/*`

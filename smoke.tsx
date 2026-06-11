@@ -18,6 +18,7 @@ import SetupGuidePage from "./src/app/app/setup/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
+import TeamInvitePage from "./src/app/app/team/invite/page";
 import MessagesPage from "./src/app/app/messages/page";
 import ConversationPage from "./src/app/app/messages/[id]/page";
 import SchedulePage from "./src/app/app/schedule/page";
@@ -114,6 +115,11 @@ renderContains("Resources", React.createElement(ResourcesModulePage, { params: {
 ]);
 renderContains("Variants", React.createElement(VariantsModulePage, { params: { id: "svc_classic_haircut" } }), [
   "Variants", "Duration", "Staff", "Standard",
+]);
+
+// 3k) Team invite.
+renderContains("TeamInvite", React.createElement(TeamInvitePage), [
+  "Add team member", "Who are you adding", "Employee", "Freelancer", "Send invite",
 ]);
 
 // 4) Ported Team roster.

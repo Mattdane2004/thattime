@@ -27,9 +27,9 @@ export default function TeamPage() {
           </Link>
           <span className="ml-1 text-[17px] font-semibold text-navy">Team</span>
         </div>
-        <button className="flex h-9 items-center gap-1.5 rounded-full bg-navy px-3.5 text-[13px] font-semibold text-white hover:bg-navy/90">
+        <Link href="/app/team/invite" className="flex h-9 items-center gap-1.5 rounded-full bg-navy px-3.5 text-[13px] font-semibold text-white hover:bg-navy/90">
           <UserPlus size={15} strokeWidth={1.75} />Invite
-        </button>
+        </Link>
       </div>
 
       <div className="px-4 pb-2 text-[12px] text-muted">
