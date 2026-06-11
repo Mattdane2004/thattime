@@ -17,10 +17,21 @@ See `memory/thattime-consolidation.md` for the why.
   `client`, `offer`). `store.ts` sources its enums from here (single source of
   truth).
 - **Phase 3** — `/app` route group: `AppFrame` + `AppTabBar` shell.
-- **Phase 4 (in progress)** — ported screens (JS→TS, react-router→App Router):
-  - Hub → `/app/hub` (with back-nav)
-  - Home dashboard → `/app` (typed data in `lib/data/home.ts`)
-  - IA: `/app` = Home, `/app/hub` = Hub; onboarding "setup hub" routes to `/app/hub`.
+- **Phase 4 (in progress)** — ported screens (JS→TS, react-router→App Router),
+  each rendered green by `npm run smoke`:
+  - Hub → `/app/hub` (back-nav)
+  - Home dashboard → `/app` (`lib/data/home.ts`)
+  - Clients directory → `/app/clients` (`lib/data/clients.ts`; validates `ClientListItem`)
+  - Team roster → `/app/team` (`lib/data/team.ts`; validates `Staff` enums)
+  - IA: `/app` = Home, `/app/hub` = Hub; onboarding "setup hub" → `/app/hub`;
+    tabs wired: Home, Clients. Team reachable from Home/Hub.
+  - **Pattern established:** port the screen self-contained (typed `lib/data/*`,
+    shared tokens), defer cross-screen *mutations* (block/import/merge, edits)
+    to a future shared app-state slice, add a smoke render. Replicate per screen.
+  - **Still to port (the bulk):** Clients detail, Schedule (841 lines), Team
+    schedule/pay tabs (5.7k-line original), Messages, Marketing, B2C client view,
+    and the 20-screen **service wizard** + 40+ module screens — the wizard needs
+    the shared draft/app-state slice decided first (defaulting to a Zustand slice).
 - **Local testing** — `npm run smoke` renders the ported pages with
   `react-dom/server` (bypasses Next's compiler) and checks shared tokens.
   Currently 22 checks, all passing. **Note:** `next dev`/`next build` hang in
