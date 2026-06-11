@@ -62,15 +62,24 @@ export default function OfferDashboardPage({ params }: { params: { id: string } 
         {/* Module sections */}
         <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Manage</div>
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          {OFFER_MODULES.map((m, i) => (
-            <button key={m.key} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas ${i > 0 ? "border-t border-border" : ""}`}>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-medium text-navy">{m.label}</span>
-                <span className="block truncate text-[12px] text-secondary">{m.desc}</span>
-              </span>
-              <ChevronRight size={16} className="shrink-0 text-muted" />
-            </button>
-          ))}
+          {OFFER_MODULES.map((m, i) => {
+            const cls = `flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas ${i > 0 ? "border-t border-border" : ""}`;
+            const inner = (
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-medium text-navy">{m.label}</span>
+                  <span className="block truncate text-[12px] text-secondary">{m.desc}</span>
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-muted" />
+              </>
+            );
+            // Products is ported; other module editors are backlog (inert).
+            return m.key === "products" ? (
+              <Link key={m.key} href={`/app/services/${offer.id}/products`} className={cls}>{inner}</Link>
+            ) : (
+              <button key={m.key} className={cls}>{inner}</button>
+            );
+          })}
         </div>
       </div>
     </div>
