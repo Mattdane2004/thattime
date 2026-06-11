@@ -5,6 +5,7 @@ import React from "react";
 import HomePage from "./src/app/app/page";
 import HubPage from "./src/app/app/hub/page";
 import ClientsPage from "./src/app/app/clients/page";
+import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
 import MessagesPage from "./src/app/app/messages/page";
 import SchedulePage from "./src/app/app/schedule/page";
@@ -38,6 +39,11 @@ renderContains("Hub", React.createElement(HubPage), [
 // 3) Ported Clients directory.
 renderContains("Clients", React.createElement(ClientsPage), [
   "Clients", "Search by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
+]);
+
+// 3b) Client profile detail.
+renderContains("ClientDetail", React.createElement(ClientDetailPage, { params: { id: "sarah-johnson" } }), [
+  "Sarah Johnson", "Allergies", "PPD", "Contact", "Reviews", "past appointments", "Cancelled",
 ]);
 
 // 4) Ported Team roster.

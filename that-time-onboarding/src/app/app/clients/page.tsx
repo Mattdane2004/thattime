@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Search, UserPlus, ArrowUpDown, SlidersHorizontal, ChevronDown, Star, Flag } from "lucide-react";
 import type { TagTone } from "@/lib/types";
 import { clientList, clientSortOptions, sortClients, type SortOption } from "@/lib/data/clients";
@@ -90,7 +91,7 @@ export default function ClientsPage() {
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-6">
         {visible.map((client) => (
-          <div key={client.id} className="flex items-start gap-3.5 rounded-2xl bg-canvas px-4 py-4">
+          <Link key={client.id} href={`/app/clients/${client.id}`} className="flex items-start gap-3.5 rounded-2xl bg-canvas px-4 py-4 transition-colors hover:bg-border/40">
             <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-border text-[12px] font-semibold ${client.muted ? "text-muted" : "text-secondary"}`}>
               {client.initials}
             </div>
@@ -113,7 +114,7 @@ export default function ClientsPage() {
               )}
             </div>
             {client.tags.some((t) => t.label === "Allergy") && <Flag size={11} className="shrink-0 fill-navy text-navy" />}
-          </div>
+          </Link>
         ))}
         {visible.length === 0 && <div className="pt-12 text-center text-[13px] text-muted">No clients match</div>}
       </div>
