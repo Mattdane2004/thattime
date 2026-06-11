@@ -3,8 +3,21 @@
 @tailwind utilities;
 
 :root {
+  /* ── Brand / surface tokens (mirror tailwind.config.ts) ── */
   --background: #f5f5f7;
   --foreground: #0f1a2e;
+  --navy: #0f1a2e;
+  --canvas: #f5f5f7;
+  --surface: #ffffff;
+  --border: #e5e5e8;
+  --muted: #9ca3af;
+  --secondary: #6b7280;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Mobile-frame geometry (canonical onboarding shell) */
+  --phone-radius: 28px;
 }
 
 html,
