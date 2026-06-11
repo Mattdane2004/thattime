@@ -2,7 +2,8 @@
 // render the ported components with react-dom/server and assert output.
 import { renderToString } from "react-dom/server";
 import React from "react";
-import HubPage from "./src/app/app/page";
+import HomePage from "./src/app/app/page";
+import HubPage from "./src/app/app/hub/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -10,15 +11,24 @@ const check = (name: string, cond: boolean) => {
   console.log(`${cond ? "PASS" : "FAIL"}  ${name}`);
   if (!cond) failures++;
 };
+const renderContains = (label: string, el: React.ReactElement, needles: string[]) => {
+  const html = renderToString(el);
+  check(`${label} renders non-empty`, html.length > 500);
+  for (const txt of needles) check(`${label} shows "${txt}"`, html.includes(txt));
+};
 
-// 1) The ported Hub landing renders and contains its key content.
-const html = renderToString(React.createElement(HubPage));
-check("Hub renders non-empty", html.length > 500);
-for (const txt of ["Hub", "Operations", "Switch to client view", "Business setup", "Services", "Team", "Marketing"]) {
-  check(`Hub shows "${txt}"`, html.includes(txt));
-}
+// 1) Ported Home dashboard.
+renderContains("Home", React.createElement(HomePage), [
+  "Home", "Good afternoon, Emma", "Up Next", "Sarah Johnson",
+  "Needs Attention", "Team Today", "Upcoming Shifts", "Time Off",
+]);
 
-// 2) Shared category tokens behave.
+// 2) Ported Hub.
+renderContains("Hub", React.createElement(HubPage), [
+  "Hub", "Operations", "Switch to client view", "Business setup", "Services", "Team", "Marketing",
+]);
+
+// 3) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");
