@@ -43,3 +43,17 @@ export const offerMeta = (o: DemoOffer): string => {
   const price = o.price === "0" ? "Free" : `£${o.price}`;
   return o.durationMin ? `${price} · ${o.durationMin}min` : price;
 };
+
+export const getOffer = (id: string): DemoOffer | undefined =>
+  demoOffers.find((o) => o.id === id);
+
+// Module sections shown on an offer dashboard (the legacy /service /class etc.
+// dashboards). Each is a sub-screen still on the backlog.
+export const OFFER_MODULES: { key: string; label: string; desc: string }[] = [
+  { key: "variants", label: "Variants", desc: "Duration, staff & location pricing" },
+  { key: "products", label: "Products", desc: "Retail add-ons for this offer" },
+  { key: "resources", label: "Resources", desc: "Rooms & equipment needed" },
+  { key: "forms", label: "Forms", desc: "Intake & consent forms" },
+  { key: "settings", label: "Settings", desc: "Booking rules & policies" },
+  { key: "notifications", label: "Notifications", desc: "Client reminders & messages" },
+];

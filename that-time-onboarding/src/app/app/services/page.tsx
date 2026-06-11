@@ -77,7 +77,7 @@ export default function ServicesPage() {
         {visible.map((o) => {
           const Icon = ICON[o.type];
           return (
-            <div key={o.id} className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+            <Link key={o.id} href={`/app/services/${o.id}`} className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 hover:border-navy/20">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas">
                 <Icon size={18} className="text-navy" />
               </span>
@@ -88,7 +88,7 @@ export default function ServicesPage() {
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                 o.status === "published" ? "bg-canvas text-secondary" : "border border-border text-muted"
               }`}>{statusLabel(o.status)}</span>
-            </div>
+            </Link>
           );
         })}
         {visible.length === 0 && <div className="pt-12 text-center text-[13px] text-muted">Nothing here yet</div>}
