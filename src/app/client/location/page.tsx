@@ -13,7 +13,6 @@ export default function ClientLocationPage() {
 
   return (
     <Screen
-      tone="cream"
       footer={
         <>
           <PrimaryButton onClick={() => setAsking(true)}>Continue</PrimaryButton>

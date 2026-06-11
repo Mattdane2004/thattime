@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Check, ChevronDown, Eye, EyeOff, X } from "lucide-react";
 
 /** Full-width black pill CTA. */
 export function PrimaryButton({
@@ -44,7 +45,7 @@ export function PrimaryButton({
   );
 }
 
-/** Apple / Google / Facebook buttons. */
+/** Apple / Google / Facebook buttons (brand marks stay bespoke SVGs). */
 export function SocialButtons({ onPick }: { onPick: (p: "apple" | "google" | "facebook") => void }) {
   return (
     <div className="flex flex-col gap-3">
@@ -120,9 +121,7 @@ export function PhoneInput({
     <div className="flex gap-2.5">
       <div className="flex h-[52px] shrink-0 items-center gap-1.5 rounded-xl border border-border bg-white px-4 text-[15px] text-navy">
         + 44
-        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden>
-          <path d="m1 1 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+        <ChevronDown size={14} strokeWidth={1.75} className="text-secondary" />
       </div>
       <input
         type="tel"
@@ -230,18 +229,15 @@ export function CheckCircle({ on }: { on: boolean }) {
     >
       <AnimatePresence>
         {on && (
-          <motion.svg
+          <motion.span
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 25 }}
-            width="11"
-            height="9"
-            viewBox="0 0 11 9"
-            fill="none"
+            className="flex"
           >
-            <path d="m1 4.5 3 3L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </motion.svg>
+            <Check size={12} strokeWidth={3} className="text-white" />
+          </motion.span>
         )}
       </AnimatePresence>
     </span>
@@ -267,11 +263,7 @@ export function CheckRow({
           checked ? "border-navy bg-fog" : "border-border bg-white"
         }`}
       >
-        {checked && (
-          <svg width="10" height="8" viewBox="0 0 11 9" fill="none" aria-hidden>
-            <path d="m1 4.5 3 3L10 1" stroke="#0F1A2E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
+        {checked && <Check size={12} strokeWidth={3} className="text-navy" />}
       </span>
       <span className="min-w-0">
         <span className="block text-[13px] font-medium leading-snug text-navy">{title}</span>
@@ -311,14 +303,7 @@ export function PasswordField({
           onClick={() => setShow((s) => !s)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary"
         >
-          <svg width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden>
-            <path
-              d="M10 1C5.5 1 2.1 4.1 1 7c1.1 2.9 4.5 6 9 6s7.9-3.1 9-6c-1.1-2.9-4.5-6-9-6Z"
-              stroke="currentColor"
-              strokeWidth="1.4"
-            />
-            <circle cx="10" cy="7" r="2.6" stroke="currentColor" strokeWidth="1.4" />
-          </svg>
+          {show ? <EyeOff size={19} strokeWidth={1.6} /> : <Eye size={19} strokeWidth={1.6} />}
         </button>
       </div>
       {withMeter && (
@@ -338,15 +323,19 @@ export function PasswordField({
   );
 }
 
-/** Bottom sheet with spring entrance, backdrop and grabber. */
+/** Bottom sheet with spring entrance, backdrop, grabber and optional header. */
 export function BottomSheet({
   open,
   onClose,
   children,
+  title,
+  sub,
 }: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  title?: string;
+  sub?: string;
 }) {
   return (
     <AnimatePresence>
@@ -360,11 +349,11 @@ export function BottomSheet({
             onClick={onClose}
           />
           <motion.div
-            className="absolute inset-x-0 bottom-0 z-50 rounded-t-[24px] bg-white px-6 pb-8 pt-3"
+            className="absolute inset-x-0 bottom-0 z-50 max-h-[88%] overflow-y-auto rounded-t-[24px] bg-white px-6 pb-8 pt-3"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            transition={{ type: "spring", stiffness: 380, damping: 38 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
@@ -373,6 +362,17 @@ export function BottomSheet({
             }}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border" />
+            {(title || sub) && (
+              <div className="flex items-start justify-between pb-4">
+                <div>
+                  {title && <h2 className="text-[17px] font-bold text-navy">{title}</h2>}
+                  {sub && <p className="mt-1 text-[14px] text-secondary">{sub}</p>}
+                </div>
+                <button type="button" aria-label="Close" onClick={onClose} className="p-1 text-navy">
+                  <X size={17} strokeWidth={2} />
+                </button>
+              </div>
+            )}
             {children}
           </motion.div>
         </>
@@ -403,10 +403,10 @@ export function PermissionDialog({
           />
           <motion.div
             className="absolute inset-x-6 top-[38%] z-50 rounded-[28px] bg-white p-7"
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            initial={{ opacity: 0, scale: 0.92, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 32 }}
           >
             <p className="text-center text-[16px] font-semibold text-navy">{text}</p>
             <motion.button

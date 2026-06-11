@@ -42,10 +42,13 @@ export default function ClientVerifyPage() {
         </button>
       </div>
 
-      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
-        <h2 className="text-[17px] font-bold text-navy">Send code another way</h2>
-        <p className="mt-1 text-[14px] text-secondary">Choose how you&rsquo;d like to receive your code.</p>
-        <div className="mt-6 flex flex-col gap-3">
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="Send code another way"
+        sub="Choose how you'd like to receive your code."
+      >
+        <div className="mt-2 flex flex-col gap-3">
           <PrimaryButton onClick={() => setSheetOpen(false)}>SMS</PrimaryButton>
           <PrimaryButton onClick={() => setSheetOpen(false)}>Whatsapp</PrimaryButton>
         </div>

@@ -17,7 +17,7 @@ export default function ClientAudiencePage() {
   const set = useOnboarding2((s) => s.set);
 
   return (
-    <Screen tone="cream">
+    <Screen>
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 items-center">
           <PhotoCarousel

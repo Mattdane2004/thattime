@@ -3,92 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Scissors, Hand, Sparkles, Flower2, Leaf, Eye, Dumbbell, Syringe, House,
+  Search, SlidersHorizontal,
+} from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
 import { PrimaryButton, inputClass } from "@/components/onboarding2/controls";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const types: { id: string; label: string; icon: JSX.Element }[] = [
-  {
-    id: "hair-salon",
-    label: "Hair Salon",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="6" cy="6" r="2.6" /><circle cx="6" cy="18" r="2.6" /><path d="M8.2 7.8 20 19M8.2 16.2 20 5" />
-      </svg>
-    ),
-  },
-  {
-    id: "nails",
-    label: "Nails",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M8 3h8v5a4 4 0 0 1-8 0V3ZM6 14h12l-1 7H7l-1-7Z" />
-      </svg>
-    ),
-  },
-  {
-    id: "beauty",
-    label: "Beauty",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 3c.6 3.8 2.2 5.4 6 6-3.8.6-5.4 2.2-6 6-.6-3.8-2.2-5.4-6-6 3.8-.6 5.4-2.2 6-6ZM18.5 14.5c.3 1.9 1.1 2.7 3 3-1.9.3-2.7 1.1-3 3-.3-1.9-1.1-2.7-3-3 1.9-.3 2.7-1.1 3-3Z" />
-      </svg>
-    ),
-  },
-  {
-    id: "spa",
-    label: "Spa",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 4c1.8 2 2.8 4.2 2.8 6.4A2.8 2.8 0 0 1 12 13a2.8 2.8 0 0 1-2.8-2.6C9.2 8.2 10.2 6 12 4Z" /><path d="M4 14c2.5 4 5.2 6 8 6s5.5-2 8-6c-2.7-.8-5.3-.4-8 1.4C9.3 13.6 6.7 13.2 4 14Z" />
-      </svg>
-    ),
-  },
-  {
-    id: "wellness",
-    label: "Wellness",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="12" cy="5" r="2" /><path d="M7 11c2-1.8 8-1.8 10 0M12 9v6m0 0-3.5 5M12 15l3.5 5" />
-      </svg>
-    ),
-  },
-  {
-    id: "brows-lashes",
-    label: "Brows and lashes",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M4 12c2.7-3.4 13.3-3.4 16 0M7 14l-1 2.4M11 15v2.6M15 14l1 2.4" />
-      </svg>
-    ),
-  },
-  {
-    id: "fitness",
-    label: "Fitness",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M2 12h3m14 0h3M7 8v8m10-8v8M7 12h10" />
-      </svg>
-    ),
-  },
-  {
-    id: "aesthetics",
-    label: "Aesthetics",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="m14 4 6 6-9.5 9.5a2.1 2.1 0 0 1-3-3L14 4ZM12 6l6 6M5 19l-1 1" />
-      </svg>
-    ),
-  },
-  {
-    id: "home-diy",
-    label: "Home DIY",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="m3 11 9-7 9 7M5 9.5V20h14V9.5" />
-      </svg>
-    ),
-  },
+  { id: "hair-salon", label: "Hair Salon", icon: <Scissors size={24} strokeWidth={1.5} /> },
+  { id: "nails", label: "Nails", icon: <Hand size={24} strokeWidth={1.5} /> },
+  { id: "beauty", label: "Beauty", icon: <Sparkles size={24} strokeWidth={1.5} /> },
+  { id: "spa", label: "Spa", icon: <Flower2 size={24} strokeWidth={1.5} /> },
+  { id: "wellness", label: "Wellness", icon: <Leaf size={24} strokeWidth={1.5} /> },
+  { id: "brows-lashes", label: "Brows and lashes", icon: <Eye size={24} strokeWidth={1.5} /> },
+  { id: "fitness", label: "Fitness", icon: <Dumbbell size={24} strokeWidth={1.5} /> },
+  { id: "aesthetics", label: "Aesthetics", icon: <Syringe size={24} strokeWidth={1.5} /> },
+  { id: "home-diy", label: "Home DIY", icon: <House size={24} strokeWidth={1.5} /> },
 ];
 
 export default function BusinessTypePage() {
@@ -112,17 +44,11 @@ export default function BusinessTypePage() {
       <div className="px-6 pt-4">
         <div className="flex gap-2.5 pb-4">
           <div className="relative flex-1">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 15 15"
-              fill="none"
+            <Search
+              size={15}
+              strokeWidth={1.75}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-              aria-hidden
-            >
-              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
-              <path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
+            />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -135,11 +61,7 @@ export default function BusinessTypePage() {
             aria-label="Filters"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-navy"
           >
-            <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-              <path d="M1 3.5h14M1 10.5h14" />
-              <circle cx="10.5" cy="3.5" r="1.8" fill="white" />
-              <circle cx="5.5" cy="10.5" r="1.8" fill="white" />
-            </svg>
+            <SlidersHorizontal size={16} strokeWidth={1.75} />
           </button>
         </div>
 

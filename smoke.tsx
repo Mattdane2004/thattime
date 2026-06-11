@@ -34,11 +34,11 @@ const renderContains = (label: string, el: React.ReactElement, needles: string[]
   for (const txt of needles) check(`${label} shows "${txt}"`, html.includes(txt));
 };
 
-// 1) Home dashboard (new onboarding identity — Figma 🔴 Onbaording → Home).
+// 1) Home dashboard (mid-fi — Figma "Section 1" → Home).
 renderContains("Home", React.createElement(HomePage), [
   "Salon Soho", "Good afternoon, Emma", "Up Next", "Sarah Johnson",
-  "Needs attention", "Team today", "Upcoming Shifts", "Time Off",
-  "Account set up", "Continue set up", "Move Your data from Fresha",
+  "Needs Attention", "Team Today", "Upcoming Shifts", "Time Off",
+  "Check In", "Lunch Break",
 ]);
 
 // 2) Ported Hub.
@@ -51,9 +51,10 @@ renderContains("Clients", React.createElement(ClientsPage), [
   "Clients", "Search by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
 ]);
 
-// 3b) Client profile detail.
-renderContains("ClientDetail", React.createElement(ClientDetailPage, { params: { id: "sarah-johnson" } }), [
-  "Sarah Johnson", "Allergies", "PPD", "Contact", "Reviews", "past appointments", "Cancelled",
+// 3b) Client profile detail (Overview tab renders by default).
+renderContains("ClientDetail", React.createElement(ClientDetailPage), [
+  "Sarah Johnson", "Active", "Book", "Message", "Last Visit", "Total Bookings",
+  "Allergies", "PPD", "Contact", "Reschedule",
 ]);
 
 // 3c) Services list.
@@ -97,8 +98,8 @@ renderContains("Messages", React.createElement(MessagesPage), [
 ]);
 
 // 5b) Conversation thread.
-renderContains("Conversation", React.createElement(ConversationPage, { params: { id: "emily-davis" } }), [
-  "Emily Davis", "Upcoming Appointment", "Rescheduled", "Message",
+renderContains("Conversation", React.createElement(ConversationPage), [
+  "Emily Davis", "Upcoming Appointment", "Blow Dry &amp; Style", "Select a date", "Type a message",
 ]);
 
 // 6) Ported Schedule agenda.

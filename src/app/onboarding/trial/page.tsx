@@ -3,44 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { BadgePercent, CalendarDays, Users, BarChart3, ChevronDown, Receipt, UsersRound } from "lucide-react";
 import { Screen } from "@/components/onboarding2/Shell";
 import { PrimaryButton } from "@/components/onboarding2/controls";
 import { useOnboarding2, type Plan } from "@/lib/store/onboarding2";
 
 const benefits = [
-  {
-    text: "0% commission on all bookings",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 2v20M17 6.5C16.2 5 14.3 4.2 12 4.2c-2.8 0-4.8 1.3-4.8 3.4 0 4.6 9.6 2.3 9.6 7 0 2.1-2 3.4-4.8 3.4-2.3 0-4.2-.8-5-2.3" />
-        <path d="m4 4 16 16" />
-      </svg>
-    ),
-  },
-  {
-    text: "Manage services, staff, and locations in one place",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" />
-      </svg>
-    ),
-  },
-  {
-    text: "Invite your team and stay organised",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="9" cy="8" r="3" /><circle cx="16.5" cy="9.5" r="2.2" /><path d="M3.5 19c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5M14.6 14.4c2.2.3 3.9 1.7 4.4 4.1" />
-      </svg>
-    ),
-  },
-  {
-    text: "Access powerful business insights",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />
-      </svg>
-    ),
-  },
+  { text: "0% commission on all bookings", icon: <BadgePercent size={20} strokeWidth={1.5} /> },
+  { text: "Manage services, staff, and locations in one place", icon: <CalendarDays size={20} strokeWidth={1.5} /> },
+  { text: "Invite your team and stay organised", icon: <Users size={20} strokeWidth={1.5} /> },
+  { text: "Access powerful business insights", icon: <BarChart3 size={20} strokeWidth={1.5} /> },
 ];
 
 const bands = ["Just me", "2 – 5", "6 – 9", "10 or more"];
@@ -52,7 +24,7 @@ export default function TrialPage() {
   const saved = Math.max(35, Math.round((weeklyBookings * 4.3 * (avgPrice || 13)) * 0.072 / 10) * 10);
 
   return (
-    <Screen tone="cream">
+    <Screen>
       <div className="px-6 pb-4">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
@@ -94,21 +66,11 @@ export default function TrialPage() {
             onClick={() => setBandOpen((o) => !o)}
             className="flex h-[52px] w-full items-center gap-3 rounded-xl border border-border bg-white px-4 text-left"
           >
-            <svg width="20" height="16" viewBox="0 0 24 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="text-navy" aria-hidden>
-              <circle cx="8" cy="6" r="2.6" /><circle cx="15.5" cy="7.5" r="2" /><path d="M2.5 17c.6-3 2.8-4.7 5.5-4.7s4.9 1.7 5.5 4.7M13.8 12.6c2 .3 3.6 1.6 4.1 3.9" />
-            </svg>
+            <UsersRound size={20} strokeWidth={1.5} className="text-navy" />
             <span className="flex-1 text-[15px] font-semibold text-navy">{trialTeamBand}</span>
-            <motion.svg
-              animate={{ rotate: bandOpen ? 180 : 0 }}
-              width="12"
-              height="8"
-              viewBox="0 0 12 8"
-              fill="none"
-              className="text-navy"
-              aria-hidden
-            >
-              <path d="m1 1.5 5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </motion.svg>
+            <motion.span animate={{ rotate: bandOpen ? 180 : 0 }} className="flex text-navy">
+              <ChevronDown size={16} strokeWidth={1.75} />
+            </motion.span>
           </button>
           <AnimatePresence>
             {bandOpen && (
@@ -169,9 +131,7 @@ export default function TrialPage() {
         </div>
 
         <div className="mt-5 flex items-start gap-3 px-1">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-navy" aria-hidden>
-            <rect x="3" y="5" width="14" height="16" rx="2" /><path d="M7 9h6M7 13h4M17 8l4-2v12l-4-2" />
-          </svg>
+          <Receipt size={20} strokeWidth={1.5} className="mt-0.5 shrink-0 text-navy" />
           <p className="text-[12px] leading-snug text-secondary">
             <span className="font-bold text-navy">No card needed today.</span>
             <br />

@@ -12,6 +12,7 @@ import {
 } from "framer-motion";
 import { Screen } from "@/components/onboarding2/Shell";
 import { PrimaryButton, ProgressDashes } from "@/components/onboarding2/controls";
+import { useFlowChrome } from "@/components/onboarding2/chrome";
 import { useOnboarding2, businessLabel } from "@/lib/store/onboarding2";
 
 /** Animated number that counts up when the slide mounts. */
@@ -65,12 +66,20 @@ export default function ValuePage() {
   }, [step]);
 
   const next = () => (step >= 5 ? router.push("/onboarding/trial") : setStep((s) => s + 1));
+
+  // Header back steps back through slides before leaving the route.
+  const setBackHandler = useFlowChrome((s) => s.setBackHandler);
+  useEffect(() => {
+    setBackHandler(step > 1 ? () => setStep((s) => Math.max(1, s - 1)) : null);
+    return () => setBackHandler(null);
+  }, [step, setBackHandler]);
+
   const back = () => (step <= 1 ? router.back() : setStep((s) => s - 1));
 
   const slideShell = "flex h-full flex-col px-6";
 
   return (
-    <Screen tone="cream" onBack={back}>
+    <Screen>
       <AnimatePresence mode="wait">
         {step === 0 && (
           <motion.div

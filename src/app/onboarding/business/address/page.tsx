@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { MapPin, Eye, EyeOff } from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, Field, inputClass, CheckRow } from "@/components/onboarding2/controls";
+import { PrimaryButton, Field, inputClass } from "@/components/onboarding2/controls";
 import { useOnboarding2, businessLabel } from "@/lib/store/onboarding2";
 
 export default function AddressPage() {
   const router = useRouter();
-  const { businessName, baseAddress, hideAddressUntilBooking, set } = useOnboarding2();
+  const { businessName, baseAddress, hideAddressUntilBooking, workModes, set } = useOnboarding2();
   const [locating, setLocating] = useState(false);
+  const travels = workModes.includes("travel");
 
   const useLocation = () => {
     setLocating(true);
@@ -32,7 +34,13 @@ export default function AddressPage() {
         </PrimaryButton>
       }
     >
-      <Title sub="Add the address customers will see when they book.">
+      <Title
+        sub={
+          travels
+            ? "One address covers everything — it's where clients come, and the centre of your travel area."
+            : "Add the address customers will see when they book."
+        }
+      >
         Where&rsquo;s {businessLabel(businessName)} based?
       </Title>
       <div className="px-6 pt-6">
@@ -49,10 +57,7 @@ export default function AddressPage() {
             />
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z" />
-                <circle cx="12" cy="10" r="2.6" />
-              </svg>
+              <MapPin size={16} strokeWidth={1.8} />
               Use my location
             </>
           )}
@@ -73,13 +78,36 @@ export default function AddressPage() {
           />
         </Field>
 
-        <div className="mt-4 rounded-2xl border border-border bg-white p-4">
-          <CheckRow
-            checked={hideAddressUntilBooking}
-            onToggle={() => set("hideAddressUntilBooking", !hideAddressUntilBooking)}
-            title="Hide my address until booking is confirmed"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => set("hideAddressUntilBooking", !hideAddressUntilBooking)}
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-4 text-left"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-fog text-navy">
+            {hideAddressUntilBooking ? (
+              <EyeOff size={16} strokeWidth={1.7} />
+            ) : (
+              <Eye size={16} strokeWidth={1.7} />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold text-navy">
+              {hideAddressUntilBooking ? "Hidden until booking is confirmed" : "Visible to clients before booking"}
+            </span>
+            <span className="block text-[12px] text-muted">Tap to change — you can update this anytime.</span>
+          </span>
+          <span
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+              hideAddressUntilBooking ? "bg-[#111]" : "bg-border"
+            }`}
+          >
+            <motion.span
+              className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow"
+              animate={{ left: hideAddressUntilBooking ? 22 : 2 }}
+              transition={{ type: "spring", stiffness: 500, damping: 32 }}
+            />
+          </span>
+        </button>
       </div>
     </Screen>
   );

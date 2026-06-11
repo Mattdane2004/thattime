@@ -51,21 +51,13 @@ export default function VerifyPage() {
         </button>
       </div>
 
-      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-[17px] font-bold text-navy">Send code another way</h2>
-            <p className="mt-1 text-[14px] text-secondary">
-              Choose how you&rsquo;d like to receive your code.
-            </p>
-          </div>
-          <button type="button" aria-label="Close" onClick={() => setSheetOpen(false)} className="p-1 text-navy">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M1 1l12 12M13 1 1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-        <div className="mt-6 flex flex-col gap-3">
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="Send code another way"
+        sub="Choose how you'd like to receive your code."
+      >
+        <div className="mt-2 flex flex-col gap-3">
           <PrimaryButton onClick={() => setSheetOpen(false)}>SMS</PrimaryButton>
           <PrimaryButton onClick={() => setSheetOpen(false)}>Whatsapp</PrimaryButton>
         </div>

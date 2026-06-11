@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Clock } from "lucide-react";
 import { Screen } from "@/components/onboarding2/Shell";
 import { PrimaryButton } from "@/components/onboarding2/controls";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
@@ -67,10 +68,7 @@ export default function StaffDonePage() {
           transition={{ delay: 0.55 }}
           className="mt-8 flex w-full items-start gap-3 rounded-2xl border border-border bg-white p-4 text-left"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6641" strokeWidth="1.7" strokeLinecap="round" className="mt-0.5" aria-hidden>
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 2" />
-          </svg>
+          <Clock size={18} strokeWidth={1.7} className="mt-0.5 text-coral" />
           <span>
             <span className="block text-[14px] font-bold text-navy">Today</span>
             <span className="mt-0.5 block text-[13px] text-secondary">

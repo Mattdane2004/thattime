@@ -4,28 +4,25 @@ import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
+// Gentle crossfade + short slide between onboarding steps. Old and new pages
+// overlap (no mode="wait"), so there's no collapse-and-expand gap; the chrome
+// (status bar, header, background) lives outside this wrapper and never moves.
 export function RouteTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isSplash =
-    pathname.includes("/value") ||
-    pathname.includes("/trial") ||
-    pathname.includes("/intro") ||
-    pathname.includes("/preparing") ||
-    pathname.includes("/first-step") ||
-    pathname.includes("/welcome");
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={pathname}
-        className="absolute inset-0 flex flex-col bg-canvas"
-        initial={isSplash ? { opacity: 0, scale: 0.98 } : { opacity: 0, x: 28 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        exit={isSplash ? { opacity: 0, scale: 0.98 } : { opacity: 0, x: -28 }}
-        transition={{ duration: isSplash ? 0.45 : 0.3, ease: "easeOut" }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div className="relative min-h-0 flex-1">
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={pathname}
+          className="absolute inset-0 flex flex-col"
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.22, 0.61, 0.36, 1] } }}
+          exit={{ opacity: 0, x: -12, transition: { duration: 0.2, ease: "easeIn" } }}
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

@@ -14,5 +14,6 @@ export const useRouter = () => ({
 
 export const usePathname = () => "/app";
 export const useSearchParams = () => new URLSearchParams();
+export const useParams = () => ({});
 export const redirect = noop;
 export const notFound = noop;

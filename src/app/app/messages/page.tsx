@@ -2,121 +2,108 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Search, Building2 } from "lucide-react";
-import { conversationList, type Conversation } from "@/lib/data/messages";
+import { AppHeader } from "@/components/app/ui";
+import { conversations } from "@/lib/data/product";
 
-// Messages — ported from the legacy that-time-app /routes/main/Messages.jsx.
-// Self-contained (client/internal tabs, search, unread filter). Opening a
-// thread (the Conversation screen) is part of the backlog — see PORTING.md.
+// Messages — conversation list with unread/group/business filters.
 
-function Avatar({ convo }: { convo: Conversation }) {
-  if (convo.group && Array.isArray(convo.initials)) {
-    const [a, b, c] = convo.initials;
-    return (
-      <div className="relative h-12 w-12 shrink-0">
-        <span className="absolute right-0 top-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-canvas text-[8px] font-semibold text-muted">{a}</span>
-        <span className="absolute left-0 top-3 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-border text-[8px] font-semibold text-muted">{b}</span>
-        {c && <span className="absolute bottom-0 right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-canvas text-[8px] font-semibold text-muted">{c}</span>}
-      </div>
-    );
-  }
-  if (convo.business) {
-    return (
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-canvas">
-        <Building2 size={20} className="text-muted" strokeWidth={1.5} />
-      </div>
-    );
-  }
-  return (
-    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-canvas text-[13px] font-semibold text-muted">
-      {convo.initials as string}
-      {convo.unread && <span className="absolute left-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-navy" />}
-    </div>
-  );
-}
-
-const TABS = [
-  { key: "clients", label: "Clients" },
-  { key: "internal", label: "Team & Business" },
-] as const;
+const FILTERS = ["All", "Unread 3", "Group 2", "Business 0"];
 
 export default function MessagesPage() {
-  const [tab, setTab] = useState<"clients" | "internal">("clients");
-  const [filter, setFilter] = useState<"All" | "Unread">("All");
+  const [filter, setFilter] = useState("All");
   const [query, setQuery] = useState("");
 
-  const inTab = conversationList.filter((c) =>
-    tab === "internal" ? c.group || c.business : !c.group && !c.business,
-  );
-  const visible = inTab.filter((c) => {
-    if (query && !c.name.toLowerCase().includes(query.trim().toLowerCase())) return false;
-    if (filter === "Unread") return Boolean(c.unread);
+  const visible = conversations.filter((c) => {
+    if (!c.name.toLowerCase().includes(query.toLowerCase())) return false;
+    if (filter.startsWith("Unread")) return c.unread > 0;
+    if (filter.startsWith("Group")) return c.kind === "group";
+    if (filter.startsWith("Business")) return c.kind === "business";
     return true;
   });
 
   return (
-    <div className="flex h-full flex-col bg-surface">
-      <div className="flex h-16 items-center px-5">
-        <div className="text-[17px] font-semibold text-navy">Messages</div>
-      </div>
-
+    <div className="min-h-full bg-white pb-6">
+      <AppHeader title="Messages" />
       <div className="px-4 pb-3">
-        <div className="mb-3 flex rounded-full bg-canvas p-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => { setTab(t.key); setFilter("All"); }}
-              className={`flex-1 rounded-full py-2 text-[13px] font-medium transition-colors ${
-                tab === t.key ? "bg-surface font-semibold text-navy shadow-sm" : "text-muted"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex h-12 items-center gap-2 rounded-full bg-canvas px-4">
-          <Search size={16} className="shrink-0 text-muted" strokeWidth={1.75} />
+        <div className="relative">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations…"
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-navy outline-none placeholder:text-muted"
+            placeholder="Search conversations..."
+            className="h-11 w-full rounded-full bg-canvas pl-10 pr-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
           />
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          {(["All", "Unread"] as const).map((f) => (
+        <div className="flex gap-2 pt-3">
+          {FILTERS.map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3.5 py-2 text-[12px] font-medium transition-colors ${
-                filter === f ? "bg-navy text-white" : "bg-canvas text-muted"
+              className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium ${
+                filter === f ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
               }`}
             >
-              {f === "Unread" ? `Unread ${inTab.filter((c) => c.unread).length}` : f}
+              {f}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
-        {visible.map((convo, i) => (
-          <Link key={convo.id} href={`/app/messages/${convo.id}`} className={`flex w-full items-center gap-3.5 py-4 text-left ${i > 0 ? "border-t border-border" : ""}`}>
-            <Avatar convo={convo} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[14px] font-semibold text-navy">{convo.name}</span>
-                <span className="shrink-0 text-[11px] text-muted">{convo.time}</span>
-              </div>
-              <div className="mt-0.5 flex items-center justify-between gap-2">
-                <span className={`truncate text-[13px] ${convo.unread ? "font-medium text-navy" : "text-muted"}`}>{convo.preview}</span>
-                {convo.unread && (
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[10px] font-semibold text-white">{convo.unread}</span>
+      <div className="flex flex-col">
+        {visible.map((c, i) => (
+          <motion.div
+            key={c.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03 * i, duration: 0.2 }}
+          >
+            <Link href={`/app/messages/${c.id}`} className="flex items-center gap-3.5 px-4 py-4">
+              <span className="relative shrink-0">
+                {c.kind === "group" ? (
+                  <span className="relative block h-12 w-12">
+                    <span className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-canvas text-[8px] font-bold text-secondary">
+                      SJ
+                    </span>
+                    <span className="absolute bottom-0 left-3.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-canvas text-[8px] font-bold text-secondary">
+                      AB
+                    </span>
+                    <span className="absolute right-0 top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-canvas text-[7px] font-bold text-secondary">
+                      MD
+                    </span>
+                  </span>
+                ) : c.kind === "business" ? (
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-canvas text-secondary">
+                    <Building2 size={20} strokeWidth={1.5} />
+                  </span>
+                ) : (
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas text-[13px] font-semibold text-muted">
+                    {c.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  </span>
                 )}
-              </div>
-            </div>
-          </Link>
+                {c.unread > 0 && <span className="absolute left-0 top-0 h-2.5 w-2.5 rounded-full bg-[#14181F] ring-2 ring-white" />}
+              </span>
+              <span className="min-w-0 flex-1 border-b border-border pb-4">
+                <span className="flex items-baseline justify-between">
+                  <span className={`text-[15px] ${c.unread ? "font-bold" : "font-semibold"} text-navy`}>{c.name}</span>
+                  <span className="shrink-0 text-[11px] text-muted">{c.time}</span>
+                </span>
+                <span className="flex items-center justify-between pt-0.5">
+                  <span className={`truncate text-[13px] ${c.unread ? "font-medium text-navy" : "text-muted"}`}>
+                    {c.preview}
+                  </span>
+                  {c.unread > 0 && (
+                    <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#14181F] text-[10px] font-bold text-white">
+                      {c.unread}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </Link>
+          </motion.div>
         ))}
-        {visible.length === 0 && <div className="pt-12 text-center text-[13px] text-muted">No conversations</div>}
       </div>
     </div>
   );

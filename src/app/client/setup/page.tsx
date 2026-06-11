@@ -10,7 +10,6 @@ export default function ClientSetupPage() {
   const router = useRouter();
   return (
     <Screen
-      tone="cream"
       footer={
         <>
           <PrimaryButton onClick={() => router.push("/client/location")}>Get started</PrimaryButton>

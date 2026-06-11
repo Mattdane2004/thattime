@@ -2,43 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { CalendarDays, UserRound, MessageCircle, Bell, Lock } from "lucide-react";
 import { Screen } from "@/components/onboarding2/Shell";
 import { PrimaryButton } from "@/components/onboarding2/controls";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const perks = [
-  {
-    text: "Manage your bookings on the go",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" />
-      </svg>
-    ),
-  },
-  {
-    text: "Client notes and history at a glance",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <circle cx="12" cy="8" r="3.4" /><path d="M5 20c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8" />
-      </svg>
-    ),
-  },
-  {
-    text: "Message Emma, the team and clients in one place",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M21 12a8 8 0 0 1-8 8c-1.5 0-3-.4-4.2-1L3 20l1.2-4.6A8 8 0 1 1 21 12Z" />
-      </svg>
-    ),
-  },
-  {
-    text: "Reminders that keep your day on track",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6M10 19a2.2 2.2 0 0 0 4 0" />
-      </svg>
-    ),
-  },
+  { text: "Manage your bookings on the go", icon: <CalendarDays size={20} strokeWidth={1.5} /> },
+  { text: "Client notes and history at a glance", icon: <UserRound size={20} strokeWidth={1.5} /> },
+  { text: "Message Emma, the team and clients in one place", icon: <MessageCircle size={20} strokeWidth={1.5} /> },
+  { text: "Reminders that keep your day on track", icon: <Bell size={20} strokeWidth={1.5} /> },
 ];
 
 export default function StaffInvitePage() {
@@ -114,9 +87,7 @@ export default function StaffInvitePage() {
         className="mx-6 mt-7 flex items-start gap-3 rounded-2xl border border-coral/50 bg-white p-4"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FFF1EC] text-coral">
-          <svg width="15" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" />
-          </svg>
+          <Lock size={15} strokeWidth={1.7} />
         </span>
         <p className="text-[12px] leading-snug text-secondary">
           <span className="block text-[13px] font-bold text-navy">Invited by {staffManager}</span>

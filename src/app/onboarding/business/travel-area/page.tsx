@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { MapPin } from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
 import { PrimaryButton } from "@/components/onboarding2/controls";
 import { useOnboarding2, type TravelFeeType } from "@/lib/store/onboarding2";
@@ -22,17 +23,14 @@ export default function TravelAreaPage() {
   const circle = 24 + ((travelRadius - 1) / 49) * 148;
 
   return (
-    <Screen footer={<PrimaryButton onClick={() => router.push("/onboarding/business/tools")}>Confirm</PrimaryButton>} tone="white">
+    <Screen footer={<PrimaryButton onClick={() => router.push("/onboarding/business/tools")}>Confirm</PrimaryButton>}>
       <Title sub="Drag to set how far you'll travel, and choose how you'd like to charge.">
         What&rsquo;s your travel area?
       </Title>
       <div className="px-6 pt-4">
         <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Base address</p>
         <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="text-secondary" aria-hidden>
-            <path d="M12 21s-7-5.4-7-11a7 7 0 0 1 14 0c0 5.6-7 11-7 11Z" />
-            <circle cx="12" cy="10" r="2.6" />
-          </svg>
+          <MapPin size={15} strokeWidth={1.7} className="text-secondary" />
           <span className="flex-1 text-[14px] text-navy">{travelFrom || "14 Greek Street, Soho"}</span>
           <button type="button" onClick={() => router.back()} className="text-[13px] font-medium text-navy underline">
             Edit

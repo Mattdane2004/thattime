@@ -28,7 +28,6 @@ export default function ClientCategoriesPage() {
 
   return (
     <Screen
-      tone="white"
       footer={
         <>
           <PrimaryButton onClick={() => router.push("/client/finding")}>Continue</PrimaryButton>

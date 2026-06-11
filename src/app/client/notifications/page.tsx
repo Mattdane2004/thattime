@@ -13,7 +13,6 @@ export default function ClientNotificationsPage() {
 
   return (
     <Screen
-      tone="cream"
       footer={
         <>
           <PrimaryButton onClick={() => setAsking(true)}>Get started</PrimaryButton>
