@@ -8,6 +8,7 @@ import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
 import TeamPage from "./src/app/app/team/page";
 import MessagesPage from "./src/app/app/messages/page";
+import ConversationPage from "./src/app/app/messages/[id]/page";
 import SchedulePage from "./src/app/app/schedule/page";
 import TypeSelectorPage from "./src/app/new/page";
 import BasicsPage from "./src/app/new/basics/page";
@@ -54,6 +55,11 @@ renderContains("Team", React.createElement(TeamPage), [
 // 5) Ported Messages.
 renderContains("Messages", React.createElement(MessagesPage), [
   "Messages", "Search conversations", "Emily Davis", "Sarah Johnson", "Robert Lee",
+]);
+
+// 5b) Conversation thread.
+renderContains("Conversation", React.createElement(ConversationPage, { params: { id: "emily-davis" } }), [
+  "Emily Davis", "Upcoming Appointment", "Rescheduled", "Message",
 ]);
 
 // 6) Ported Schedule agenda.

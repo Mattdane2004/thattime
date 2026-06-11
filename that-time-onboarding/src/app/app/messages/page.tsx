@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Search, Building2 } from "lucide-react";
 import { conversationList, type Conversation } from "@/lib/data/messages";
 
@@ -99,7 +100,7 @@ export default function MessagesPage() {
 
       <div className="flex-1 overflow-y-auto px-4 pb-6">
         {visible.map((convo, i) => (
-          <div key={convo.id} className={`flex w-full items-center gap-3.5 py-4 text-left ${i > 0 ? "border-t border-border" : ""}`}>
+          <Link key={convo.id} href={`/app/messages/${convo.id}`} className={`flex w-full items-center gap-3.5 py-4 text-left ${i > 0 ? "border-t border-border" : ""}`}>
             <Avatar convo={convo} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
@@ -113,7 +114,7 @@ export default function MessagesPage() {
                 )}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
         {visible.length === 0 && <div className="pt-12 text-center text-[13px] text-muted">No conversations</div>}
       </div>
