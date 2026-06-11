@@ -31,6 +31,7 @@ export default function BasicsPage() {
     // Branch by offer type. (class/bundle still route the service path for now
     // — see PORTING.md.)
     if (draft.type === "subscription") router.push("/new/subscription-type");
+    else if (draft.type === "bundle") router.push("/new/bundle-services");
     else router.push("/new/locations");
   };
 

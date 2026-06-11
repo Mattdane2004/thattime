@@ -28,9 +28,9 @@ green. One commit per screen.
 - [x] `wizard/SubscriptionBilling.jsx` → `/new/subscription-billing`
 - [ ] `wizard/FrequencySessions.jsx` → `/new/frequency-sessions`
 - [ ] `wizard/FrequencyBilling.jsx` → `/new/frequency-billing`
-- [ ] `wizard/BundleServices.jsx` → `/new/bundle-services`
-- [ ] `wizard/BundleOrderGaps.jsx` → `/new/bundle-order`
-- [ ] `wizard/BundlePricing.jsx` → `/new/bundle-pricing`
+- [x] `wizard/BundleServices.jsx` → `/new/bundle-services`
+- [~] `wizard/BundleOrderGaps.jsx` → deferred (drag-to-reorder refinement)
+- [x] `wizard/BundlePricing.jsx` → `/new/bundle-pricing`
 - [ ] `wizard/ClassParticipants.jsx` → `/new/class-participants`
 - [ ] `wizard/ClassDetails.jsx` → `/new/class-details`
 - [ ] `wizard/ClassSchedule.jsx` + `ClassScheduleTimes.jsx` → `/new/class-schedule`

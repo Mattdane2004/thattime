@@ -18,7 +18,24 @@ export interface ServiceDraft {
   locationIds: string[];
   staffIds: string[];
   subscription: SubscriptionDraft;
+  bundle: BundleDraft;
 }
+
+// Bundle-branch fields (wizard: services → pricing).
+export interface BundleDraft {
+  kind: "fixed" | "flexible";
+  serviceIds: string[];
+  /** "fixed" total price, or "" when using a package discount instead. */
+  priceMode: "fixed" | "discount";
+  discountPercent: string;
+}
+
+export const emptyBundle: BundleDraft = {
+  kind: "fixed",
+  serviceIds: [],
+  priceMode: "fixed",
+  discountPercent: "",
+};
 
 // Subscription-branch fields (wizard: type → benefits → billing).
 export interface SubscriptionDraft {
@@ -57,12 +74,14 @@ export const emptyDraft: ServiceDraft = {
   locationIds: [],
   staffIds: [],
   subscription: emptySubscription,
+  bundle: emptyBundle,
 };
 
 interface WizardState {
   draft: ServiceDraft;
   updateDraft: (patch: Partial<ServiceDraft>) => void;
   updateSubscription: (patch: Partial<SubscriptionDraft>) => void;
+  updateBundle: (patch: Partial<BundleDraft>) => void;
   resetDraft: () => void;
 }
 
@@ -71,5 +90,7 @@ export const useWizardStore = create<WizardState>((set) => ({
   updateDraft: (patch) => set((state) => ({ draft: { ...state.draft, ...patch } })),
   updateSubscription: (patch) =>
     set((state) => ({ draft: { ...state.draft, subscription: { ...state.draft.subscription, ...patch } } })),
+  updateBundle: (patch) =>
+    set((state) => ({ draft: { ...state.draft, bundle: { ...state.draft.bundle, ...patch } } })),
   resetDraft: () => set({ draft: emptyDraft }),
 }));

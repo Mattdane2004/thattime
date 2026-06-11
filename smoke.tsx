@@ -24,6 +24,8 @@ import PricePage from "./src/app/new/price/page";
 import SubscriptionTypePage from "./src/app/new/subscription-type/page";
 import SubscriptionBenefitsPage from "./src/app/new/subscription-benefits/page";
 import SubscriptionBillingPage from "./src/app/new/subscription-billing/page";
+import BundleServicesPage from "./src/app/new/bundle-services/page";
+import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -129,6 +131,12 @@ renderContains("Wizard/sub-benefits", React.createElement(SubscriptionBenefitsPa
 ]);
 renderContains("Wizard/sub-billing", React.createElement(SubscriptionBillingPage), [
   "Billing", "Billing period", "Joining fee", "Create subscription",
+]);
+renderContains("Wizard/bundle-services", React.createElement(BundleServicesPage), [
+  "Build the bundle", "Fixed bundle", "Flexible package", "Services",
+]);
+renderContains("Wizard/bundle-pricing", React.createElement(BundlePricingPage), [
+  "Bundle price", "Fixed price", "Package discount", "Create bundle",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",
