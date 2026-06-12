@@ -1,7 +1,23 @@
 # Atomic design — progress log
 
-Living log for the component library / design-system effort. **Status: ON HOLD**
-(paused while the foundation is set up from the Figma side).
+Living log for the component library / design-system effort. **Status: BUILDING**
+— components are being built *ahead of* the tokens (waiting on Austin's Figma
+shadcn-variables JSON). Components use current token classes via cva; when the
+JSON lands the token classes remap centrally (one pass) and variant APIs stay stable.
+
+## Approach (production-grade, shadcn-aligned)
+- **cva + `cn`** (`class-variance-authority` + `clsx` + `tailwind-merge`,
+  `src/lib/utils.ts`) — the shadcn pattern; stable variant APIs.
+- **Radix** for interactive primitives (Switch, Checkbox, Dialog/Sheet, Tabs,
+  Select) — real a11y; added per component as built.
+- forwardRef + focus-visible rings + aria on every component.
+
+## Progress
+- **Wave 1 — atoms ✅** `Button, Input, Textarea, Label, Badge, Avatar, Chip,
+  Spinner, Separator` (`src/components/ui/atoms/`, barrel `@/components/ui`).
+- **Wave 2 — molecules (next):** Field, Card, ListRow, SegmentedControl, EmptyState, StatTile.
+- **Wave 3 — interactive + organisms:** Switch/Checkbox/RadioGroup, BottomSheet/
+  Dialog, Tabs, Toast (Radix) · ScreenHeader, AppTabBar, AppFrame, OnboardingChrome.
 
 ## Direction (decided)
 
