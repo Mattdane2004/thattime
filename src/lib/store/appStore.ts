@@ -14,7 +14,9 @@ export type ApptStatus = "upcoming" | "arrived" | "in-progress" | "done" | "canc
 
 export type QuickAction =
   | "menu"
+  | "choose" // "what are you adding?" — from tapping empty calendar space
   | "appointment"
+  | "class"
   | "client"
   | "block"
   | null;

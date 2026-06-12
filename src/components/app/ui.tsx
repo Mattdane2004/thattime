@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
@@ -198,7 +198,18 @@ export function StatusPill({ children, tone = "light" }: { children: ReactNode; 
   return <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}`}>{children}</span>;
 }
 
-/** Month calendar used by reschedule / new appointment / block time. */
+// 2026 months for the mini calendar (Mon-first offset of the 1st + day count).
+const calendarMonths = [
+  { name: "January 2026", offset: 3, days: 31 },
+  { name: "February 2026", offset: 6, days: 28 },
+  { name: "March 2026", offset: 6, days: 31 },
+  { name: "April 2026", offset: 2, days: 30 },
+  { name: "May 2026", offset: 4, days: 31 },
+  { name: "June 2026", offset: 0, days: 30 },
+] as const;
+const TODAY_MONTH = 2; // March
+
+/** Month calendar used by reschedule / new appointment / block time — pageable. */
 export function MiniCalendar({
   selected,
   onSelect,
@@ -208,18 +219,43 @@ export function MiniCalendar({
   onSelect: (d: number) => void;
   dots?: Record<number, "g" | "a" | "r">;
 }) {
+  const [mIdx, setMIdx] = useState(TODAY_MONTH);
+  const month = calendarMonths[mIdx];
   const cells: (number | null)[] = [
-    ...Array(6).fill(null), // March 2026 starts on Sunday
-    ...Array.from({ length: 31 }, (_, i) => i + 1),
+    ...Array(month.offset).fill(null),
+    ...Array.from({ length: month.days }, (_, i) => i + 1),
   ];
   return (
     <div className="rounded-2xl border border-border bg-white p-4">
       <div className="flex items-center justify-between px-1 pb-3">
-        <button type="button" aria-label="Previous month" className="p-1 text-secondary">
+        <button
+          type="button"
+          aria-label="Previous month"
+          onClick={() => setMIdx((i) => Math.max(0, i - 1))}
+          disabled={mIdx === 0}
+          className="px-2 py-1 text-[16px] text-secondary disabled:opacity-30"
+        >
           ‹
         </button>
-        <span className="text-[15px] font-bold text-navy">March 2026</span>
-        <button type="button" aria-label="Next month" className="p-1 text-secondary">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={month.name}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="text-[15px] font-bold text-navy"
+          >
+            {month.name}
+          </motion.span>
+        </AnimatePresence>
+        <button
+          type="button"
+          aria-label="Next month"
+          onClick={() => setMIdx((i) => Math.min(calendarMonths.length - 1, i + 1))}
+          disabled={mIdx === calendarMonths.length - 1}
+          className="px-2 py-1 text-[16px] text-secondary disabled:opacity-30"
+        >
           ›
         </button>
       </div>
@@ -243,14 +279,14 @@ export function MiniCalendar({
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] transition-colors ${
                   selected === d
                     ? "bg-[#14181F] font-semibold text-white"
-                    : d === 4
+                    : d === 4 && mIdx === TODAY_MONTH
                       ? "border border-border text-navy"
                       : "text-navy"
                 }`}
               >
                 {d}
               </span>
-              {dots?.[d] && (
+              {dots?.[d] && mIdx === TODAY_MONTH && (
                 <span
                   className={`absolute bottom-0 h-1.5 w-1.5 rounded-full ${
                     dots[d] === "g" ? "bg-success" : dots[d] === "a" ? "bg-warning" : "bg-danger"

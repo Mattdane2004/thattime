@@ -350,7 +350,7 @@ export function GapSlot({ time = "14:00 – 14:30", label = "30min available" }:
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
-      onClick={() => setQuickAction("appointment")}
+      onClick={() => setQuickAction("choose")}
       className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-border bg-white px-4 py-3 text-left"
     >
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-secondary">

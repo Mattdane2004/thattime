@@ -5,18 +5,19 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   CalendarPlus, UserPlus, Clock, PoundSterling, ChevronLeft, ChevronRight,
-  Search, UserRound, CheckCircle2, Plus, ChevronDown, Check,
+  Search, UserRound, CheckCircle2, Plus, ChevronDown, Check, Users,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/app/ui";
 import {
-  services, serviceCategories, staffMembers, clientRows, blockTypes,
+  services, serviceCategories, staffMembers, clientRows, blockTypes, classTemplates,
 } from "@/lib/data/product";
 
 /**
  * Quick Actions: the "+" tab opens a menu sheet; each row launches a flow.
- * New Appointment is a 4-step sheet (client → service → time → review → done).
- * Also reused inside message threads via store.setQuickAction.
+ * New Appointment is a 4-step sheet (service → client → time → review → done).
+ * Tapping empty calendar space opens the "choose" sheet first — the slot
+ * could be an appointment, a class, or a break.
  */
 export function QuickActionsHost() {
   const { quickAction, setQuickAction } = useAppStore();
@@ -49,7 +50,38 @@ export function QuickActionsHost() {
         <div className="h-2" />
       </Sheet>
 
+      {/* "What are you adding?" — entry point from empty calendar space / gap slots */}
+      <Sheet
+        open={quickAction === "choose"}
+        onClose={() => setQuickAction(null)}
+        title="Fill this slot"
+        sub="What are you adding to the calendar?"
+      >
+        <div className="flex flex-col gap-3 pt-1">
+          <ActionRow
+            icon={<CalendarPlus size={19} strokeWidth={1.7} />}
+            title="Appointment"
+            sub="A booking for one client"
+            onClick={() => setQuickAction("appointment")}
+          />
+          <ActionRow
+            icon={<Users size={19} strokeWidth={1.7} />}
+            title="Class"
+            sub="A seat-based session for a group"
+            onClick={() => setQuickAction("class")}
+          />
+          <ActionRow
+            icon={<Clock size={19} strokeWidth={1.7} />}
+            title="Break or blocked time"
+            sub="Keep this time free"
+            onClick={() => setQuickAction("block")}
+          />
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
       <NewAppointmentFlow open={quickAction === "appointment"} onClose={() => setQuickAction(null)} />
+      <NewClassSheet open={quickAction === "class"} onClose={() => setQuickAction(null)} />
       <NewClientSheet open={quickAction === "client"} onClose={() => setQuickAction(null)} />
       <BlockTimeSheet open={quickAction === "block"} onClose={() => setQuickAction(null)} />
     </>
@@ -126,7 +158,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
     setTimeout(reset, 350);
   };
 
-  const subFor = ["Who is it for?", client ?? "", `${client} · ${service?.name ?? ""}`, "Check the details", ""][step];
+  const subFor = ["What's being booked?", service?.name ?? "", `${service?.name ?? ""} · ${client}`, "Check the details", ""][step];
   const visibleServices = services.filter((s) => cat === "All" || s.category === cat);
   const visibleClients = clientRows.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
 
@@ -150,58 +182,6 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
       sub={subFor || undefined}
     >
       {step === 0 && (
-        <div className="flex flex-col gap-1.5">
-          <div className="relative pb-2">
-            <Search size={15} strokeWidth={1.75} className="absolute left-4 top-[18px] -translate-y-1/2 text-muted" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search clients..."
-              className="h-11 w-full rounded-xl bg-canvas pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => { setClient("New client"); setStep(1); }}
-            className="flex items-center gap-3 rounded-xl py-2.5 text-left"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white">
-              <Plus size={18} strokeWidth={2} />
-            </span>
-            <span className="text-[15px] font-semibold text-navy">New client</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => { setClient("Walk-in"); setStep(1); }}
-            className="flex items-center gap-3 rounded-xl py-2.5 text-left"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-border text-secondary">
-              <UserRound size={17} strokeWidth={1.6} />
-            </span>
-            <span className="text-[15px] font-semibold text-navy">Walk-in</span>
-          </button>
-          <div className="my-1 h-px bg-border" />
-          {visibleClients.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => { setClient(c.name); setStep(1); }}
-              className="flex items-center gap-3 rounded-xl py-2.5 text-left"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary">
-                {c.name.split(" ").map((n) => n[0]).join("")}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-medium text-navy">{c.name}</span>
-                <span className="block text-[12px] text-muted">{c.meta}</span>
-              </span>
-              <ChevronRight size={15} className="text-muted" />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {step === 1 && (
         <>
           <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-4 [scrollbar-width:none]">
             {serviceCategories.map((c) => (
@@ -222,7 +202,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
               <button
                 key={s.id}
                 type="button"
-                onClick={() => { setService(s); setStep(2); }}
+                onClick={() => { setService(s); setStep(1); }}
                 className="flex items-center justify-between border-b border-border py-4 text-left last:border-0"
               >
                 <span>
@@ -239,6 +219,58 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             ))}
           </div>
         </>
+      )}
+
+      {step === 1 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="relative pb-2">
+            <Search size={15} strokeWidth={1.75} className="absolute left-4 top-[18px] -translate-y-1/2 text-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search clients..."
+              className="h-11 w-full rounded-xl bg-canvas pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => { setClient("New client"); setStep(2); }}
+            className="flex items-center gap-3 rounded-xl py-2.5 text-left"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white">
+              <Plus size={18} strokeWidth={2} />
+            </span>
+            <span className="text-[15px] font-semibold text-navy">New client</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setClient("Walk-in"); setStep(2); }}
+            className="flex items-center gap-3 rounded-xl py-2.5 text-left"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-border text-secondary">
+              <UserRound size={17} strokeWidth={1.6} />
+            </span>
+            <span className="text-[15px] font-semibold text-navy">Walk-in</span>
+          </button>
+          <div className="my-1 h-px bg-border" />
+          {visibleClients.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => { setClient(c.name); setStep(2); }}
+              className="flex items-center gap-3 rounded-xl py-2.5 text-left"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary">
+                {c.name.split(" ").map((n) => n[0]).join("")}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-medium text-navy">{c.name}</span>
+                <span className="block text-[12px] text-muted">{c.meta}</span>
+              </span>
+              <ChevronRight size={15} className="text-muted" />
+            </button>
+          ))}
+        </div>
       )}
 
       {step === 2 && (
@@ -324,6 +356,115 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             </div>
           </div>
         </div>
+      )}
+    </Sheet>
+  );
+}
+
+// ── New Class (from the calendar "choose" sheet) ──
+
+function NewClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const [template, setTemplate] = useState(classTemplates[0]);
+  const [staff, setStaff] = useState("Emma S.");
+  const [day, setDay] = useState<number | null>(null);
+  const [time, setTime] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const close = () => {
+    onClose();
+    setTimeout(() => {
+      setTemplate(classTemplates[0]);
+      setStaff("Emma S.");
+      setDay(null);
+      setTime(null);
+      setDone(false);
+    }, 350);
+  };
+
+  return (
+    <Sheet
+      open={open}
+      onClose={close}
+      full={!done}
+      title={done ? "Class scheduled" : "New Class"}
+      sub={done ? undefined : "Seats open for booking once saved"}
+    >
+      {done ? (
+        <div className="flex flex-col items-center pb-2 pt-2 text-center">
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 18 }}
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white"
+          >
+            <CheckCircle2 size={28} strokeWidth={1.6} />
+          </motion.span>
+          <p className="pt-5 text-[16px] font-bold text-navy">{template.name}</p>
+          <p className="pt-1 text-[13px] text-secondary">
+            Fri {day} Mar at {time} with {staff} · {template.sub}
+          </p>
+          <div className="w-full pt-6">
+            <DarkButton
+              onClick={() => {
+                close();
+                router.push("/app/schedule");
+              }}
+            >
+              View in schedule
+            </DarkButton>
+            <div className="pt-3">
+              <GhostButton onClick={close}>Done</GhostButton>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Class type</p>
+          <div className="-mx-6 flex gap-3 overflow-x-auto px-6 pb-4 [scrollbar-width:none]">
+            {classTemplates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTemplate(t)}
+                className={`w-[124px] shrink-0 rounded-2xl border p-3.5 text-center transition-colors ${
+                  template.id === t.id ? "border-navy" : "border-border"
+                }`}
+              >
+                <span className="block text-[20px]">{t.emoji}</span>
+                <span className="mt-1.5 block text-[13px] font-bold leading-tight text-navy">{t.name}</span>
+                <span className="mt-0.5 block text-[10px] leading-tight text-muted">{t.sub}</span>
+              </button>
+            ))}
+          </div>
+
+          <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Run by</p>
+          <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-4 [scrollbar-width:none]">
+            {staffMembers.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setStaff(m)}
+                className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
+                  staff === m ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Day</p>
+          <MiniCalendar selected={day} onSelect={setDay} />
+          <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Start time</p>
+          <TimeChips value={time} onSelect={setTime} />
+
+          <div className="sticky bottom-0 -mx-6 mt-5 bg-white px-6 pb-1 pt-3">
+            <DarkButton disabled={!day || !time} onClick={() => setDone(true)}>
+              Schedule class
+            </DarkButton>
+          </div>
+        </>
       )}
     </Sheet>
   );

@@ -115,13 +115,15 @@ function MyDayView() {
   );
 }
 
-function ThreeDayView() {
+function CalendarGridView({ days }: { days: number }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
+  const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const visibleDays = threeDayGrid.slice(0, days);
   return (
     <div className="px-2 pb-6 pt-2">
-      <div className="grid grid-cols-[34px_1fr_1fr_1fr]">
+      <div className="grid" style={{ gridTemplateColumns: `34px repeat(${days}, 1fr)` }}>
         <span />
-        {threeDayGrid.map((d) => (
+        {visibleDays.map((d) => (
           <div key={d.day} className="border-b border-border pb-2 text-center">
             <p className="text-[11px] text-muted">{d.day}</p>
             <p className="text-[14px] font-bold text-navy">{d.date}</p>
@@ -134,10 +136,19 @@ function ThreeDayView() {
             </span>
           ))}
         </div>
-        {threeDayGrid.map((d) => (
-          <div key={d.day} className="relative border-l border-border" style={{ height: HOURS.length * HOUR_PX }}>
+        {visibleDays.map((d) => (
+          <div
+            key={d.day}
+            role="button"
+            tabIndex={0}
+            aria-label={`Add to ${d.day} ${d.date}`}
+            onClick={() => setQuickAction("choose")}
+            onKeyDown={(e) => e.key === "Enter" && setQuickAction("choose")}
+            className="relative cursor-pointer border-l border-border"
+            style={{ height: HOURS.length * HOUR_PX }}
+          >
             {HOURS.map((_, i) => (
-              <span key={i} className="absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR_PX + 8 }} />
+              <span key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR_PX + 8 }} />
             ))}
             {d.blocks.map((b, i) => (
               <motion.button
@@ -146,20 +157,19 @@ function ThreeDayView() {
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.03 * i }}
-                onClick={
-                  isBreakBlock(b.name)
-                    ? undefined
-                    : () =>
-                        setApptSheet({
-                          client: b.name,
-                          initials: initialsOf(b.name),
-                          service: b.service ?? "Appointment",
-                          staff: "Emma S.",
-                          time: hhmm(b.start),
-                          duration: spanLabel(b.span),
-                          status: "Confirmed",
-                        })
-                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isBreakBlock(b.name)) return;
+                  setApptSheet({
+                    client: b.name,
+                    initials: initialsOf(b.name),
+                    service: b.service ?? "Appointment",
+                    staff: "Emma S.",
+                    time: hhmm(b.start),
+                    duration: spanLabel(b.span),
+                    status: "Confirmed",
+                  });
+                }}
                 className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(b.shade)}`}
                 style={{ top: (b.start - 8) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
               >
@@ -179,6 +189,7 @@ function ThreeDayView() {
 
 function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; classCancelled: boolean }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
+  const setQuickAction = useAppStore((s) => s.setQuickAction);
   return (
     <div className="px-2 pb-6 pt-2">
       <div className="grid grid-cols-[34px_1fr_1fr_1fr]">
@@ -200,8 +211,17 @@ function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; cl
           ))}
         </div>
         {teamColumns.map((c, col) => (
-          <div key={c.id} className="relative border-l border-border" style={{ height: 8 * HOUR_PX }}>
-            <span className="absolute inset-x-0 z-10 border-t-2 border-danger" style={{ top: (15 - 9) * HOUR_PX + 8 }}>
+          <div
+            key={c.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`Add to ${c.name}'s day`}
+            onClick={() => setQuickAction("choose")}
+            onKeyDown={(e) => e.key === "Enter" && setQuickAction("choose")}
+            className="relative cursor-pointer border-l border-border"
+            style={{ height: 8 * HOUR_PX }}
+          >
+            <span className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-danger" style={{ top: (15 - 9) * HOUR_PX + 8 }}>
               {col === 0 && <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-danger" />}
             </span>
             {c.blocks.map((b, i) => {
@@ -215,22 +235,23 @@ function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; cl
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.03 * i }}
-                  onClick={
-                    isClass
-                      ? onOpenClass
-                      : isBreakBlock(b.name)
-                        ? undefined
-                        : () =>
-                            setApptSheet({
-                              client: b.name,
-                              initials: initialsOf(b.name),
-                              service: b.service ?? "Appointment",
-                              staff: c.name,
-                              time: hhmm(b.start),
-                              duration: b.price ?? spanLabel(b.span),
-                              status: b.status ?? "Confirmed",
-                            })
-                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isClass) {
+                      onOpenClass();
+                      return;
+                    }
+                    if (isBreakBlock(b.name)) return;
+                    setApptSheet({
+                      client: b.name,
+                      initials: initialsOf(b.name),
+                      service: b.service ?? "Appointment",
+                      staff: c.name,
+                      time: hhmm(b.start),
+                      duration: b.price ?? spanLabel(b.span),
+                      status: b.status ?? "Confirmed",
+                    });
+                  }}
                   className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(shade)}`}
                   style={{ top: (b.start - 9) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
                 >
@@ -474,7 +495,24 @@ function ClassSheet({
   );
 }
 
-function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+const calendarLayouts = [
+  { label: "Day", days: 1 },
+  { label: "2 days", days: 2 },
+  { label: "3 days", days: 3 },
+  { label: "Week", days: 7 },
+];
+
+function SettingsSheet({
+  open,
+  onClose,
+  calDays,
+  onCalDays,
+}: {
+  open: boolean;
+  onClose: () => void;
+  calDays: number;
+  onCalDays: (n: number) => void;
+}) {
   const [fmt, setFmt] = useState<"12h" | "24h">("12h");
   const dots: Record<number, "g" | "a" | "r"> = {
     1: "r", 2: "g", 3: "a", 5: "g", 6: "g", 7: "r", 8: "a", 9: "g", 10: "g", 11: "g",
@@ -505,6 +543,22 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
           ))}
         </div>
       </div>
+      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Calendar layout</p>
+      <div className="flex gap-2 pb-5">
+        {calendarLayouts.map((l) => (
+          <button
+            key={l.label}
+            type="button"
+            onClick={() => onCalDays(l.days)}
+            className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
+              calDays === l.days ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+
       <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Jump to date</p>
       <MiniCalendar selected={10} onSelect={() => onClose()} dots={dots} />
       <div className="flex items-center justify-center gap-4 pt-3 text-[11px] text-muted">
@@ -530,6 +584,7 @@ export default function SchedulePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [classCancelled, setClassCancelled] = useState(false);
   const [dayIdx, setDayIdx] = useState(1);
+  const [calDays, setCalDays] = useState(3);
 
   return (
     <div className="flex min-h-full flex-col bg-fog">
@@ -587,7 +642,7 @@ export default function SchedulePage() {
           transition={{ duration: 0.18 }}
         >
           {view === "My Day" && <MyDayView />}
-          {view === "Calendar" && <ThreeDayView />}
+          {view === "Calendar" && <CalendarGridView days={calDays} />}
           {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} />}
         </motion.div>
       </AnimatePresence>
@@ -598,7 +653,16 @@ export default function SchedulePage() {
         cancelled={classCancelled}
         onCancelClass={() => setClassCancelled(true)}
       />
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        calDays={calDays}
+        onCalDays={(n) => {
+          setCalDays(n);
+          setView("Calendar");
+          setSettingsOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -156,6 +156,41 @@ export const threeDayGrid: { day: string; date: string; blocks: GridBlock[] }[] 
       { start: 10.5, span: 1, name: "Max Turner", service: "Haircut", shade: "dark" },
     ],
   },
+  { day: "Sun", date: "15", blocks: [] },
+  {
+    day: "Mon",
+    date: "16",
+    blocks: [
+      { start: 10, span: 1.5, name: "Priya Nair", service: "Colour Treatment", shade: "mid" },
+      { start: 13, span: 1, name: "Lunch Break", shade: "light" },
+      { start: 14.5, span: 1, name: "Oscar Reid", service: "Cut & Beard", shade: "dark" },
+    ],
+  },
+  {
+    day: "Tue",
+    date: "17",
+    blocks: [
+      { start: 9.5, span: 1, name: "Nina Foster", service: "Blow Dry & Style", shade: "light" },
+      { start: 12, span: 2, name: "Ava Hughes", service: "Cut & Colour", shade: "mid" },
+      { start: 15.5, span: 1, name: "Leo Walsh", service: "Haircut", shade: "dark" },
+    ],
+  },
+  {
+    day: "Wed",
+    date: "18",
+    blocks: [
+      { start: 9, span: 1, name: "Sarah Johnson", service: "Cut & Style", shade: "dark" },
+      { start: 11, span: 1, name: "Lunch Break", shade: "light" },
+      { start: 13.5, span: 1.5, name: "Grace Lee", service: "Colour Treatment", shade: "mid" },
+    ],
+  },
+];
+
+// Templates for scheduling a class from the calendar.
+export const classTemplates = [
+  { id: "colour-mc", emoji: "🎨", name: "Colour Masterclass", sub: "90m · £65 per seat · 8 seats" },
+  { id: "blowdry", emoji: "💨", name: "Blow Dry Basics", sub: "60m · £40 per seat · 6 seats" },
+  { id: "bridal", emoji: "💍", name: "Bridal Trial Workshop", sub: "120m · £80 per seat · 4 seats" },
 ];
 
 export const teamColumns = [
