@@ -2,35 +2,62 @@
 
 _Latest status from the UX/screens side. Overwritten each session._
 
-## This morning's work
-- **Onboarding rebuilt** to the new Figma flow (B2B owner, staff join, B2C client) — `components/onboarding2` + `lib/store/onboarding2.ts`, route-per-screen under `app/onboarding/*`.
-- **Mid-fi product app screens** (Figma 11990-94642): Home, Schedule, Clients (list + detail), Messages (list + thread), Checkout, Notifications, Quick-add — under `app/app/*`.
-- **Interaction polish rounds:** appointment details sheet everywhere; Up-Next lifecycle queue; schedule filters + 12/24h clock + calendar layouts; clients command-centre (structured allergies, wallet/loyalty, documents/notes+images, settings); notifications accept-linger + working tabs; messages client/business split; lunch-break swipe-away.
-- **Checkout:** services multi-select, products keep qty steppers; customer tip sheet; selectable discount cards; **Bank transfer → "Other"** with editable amount; **gift card now takes code + amount**; **time-off = 2-step flow** (type + date range, then per-day full/half).
-- **Cleanup branch:** retire the old onboarding flow + stale routes, data-dedupe proposal.
+## This session (12 June, afternoon)
 
-## Where it lives (routes/files — fits WAYS_OF_WORKING.md)
-- `src/app/{onboarding,app,client}/**` — all screens (one `page.tsx` each).
-- `src/components/onboarding2/**` — onboarding shell/controls (+ migrated `MobileFrame`/`RouteTransition` on the cleanup branch).
-- `src/components/app/**` — product chrome I reuse: `AppFrame`, `AppTabBar`, `AppointmentSheetHost`, `QuickActions`, `UpNextCard`, `ui.tsx`.
-- `src/lib/data/product.ts` — **one** screen-data module (services, products, clientRows, pastAppointments, forms, agenda/grid, conversations, notifications, clientNotes).
-- `src/lib/store/appStore.ts` (product) + `onboarding2.ts` (signup) — **one store per concern**.
+Two branches, two PRs, both gate-green (tsc + lint + smoke) and verified in dev.
+Nothing merged — both left for you.
 
-## How I build a screen
-`page.tsx` composes existing chrome (`AppFrame`/`AppTabBar`/`AppointmentSheetHost`) + local `useState` for sheet/step flow + Zustand (`useAppStore`) for cross-screen state; demo data imported from `lib/data/product.ts`. Inline Tailwind for now, **tokens only** (`bg-navy`, `text-muted`, `border-border` — no hex). Gate `tsc + next lint + smoke` green before every commit. **No new parallel data/store modules** — I extend `product.ts`/`appStore.ts`.
+### 1. PR #3 — `ux-data-adapter` (the agreed dedupe)
+- **offers.ts is now the canonical catalogue.** It gains the six salon services
+  the mid-fi screens book by name (Cut & Style, Cut & Colour, Blow Dry & Style,
+  Colour Treatment, Haircut, Cut & Beard) — categorised with the
+  `lib/tokens/categories.ts` vocabulary (Hair / Colour / Barbering).
+- **product.ts `services`/`serviceCategories` are derived views** of offers.ts
+  (published, duration-bearing services only). Same shapes — none of the 12
+  importers changed. Appointment lookups by name (price/duration/category) all
+  resolve.
+- Visible effect: booking pickers (checkout add-service, quick-add,
+  appointment-sheet catalogue) now list the full 16-service catalogue; schedule
+  filter chips derive from catalogue categories.
+- **Left for you:** folding the retail lists (`product.ts#products` →
+  `products.ts`), per docs/data-dedupe-proposal.md.
 
-## Status / needs Austin
-- **Not in `main` yet (please merge or tell me to):**
-  - **PR #2 `onboarding-cleanup`** — open, mergeable. Deletes `src/components/onboarding/*`, `src/lib/store.ts`, `src/lib/savings.ts` (all verified 0 importers), removes `/home`, `/setup/[slug]`, `/client-placeholder`. `main` still has all of these.
-  - **4 commits on `onboarding`** beyond the manual merge cut (`0709952`): status dropdown, selectable discount cards, "Other" payment, gift-card + 2-step time-off. PR #1 shows "open" on GitHub but its earlier content is already in `main`.
-- **I did NOT touch your lane:** `src/components/ui/**`, `tailwind.config.ts`, `src/lib/tokens/**`, `src/app/globals.css` — untouched.
-- **Shared `lib/data` dupe (your call):** `product.ts` (mine, 12 importers) vs `offers.ts`/`products.ts` (yours, ~7). Proposal in **`docs/data-dedupe-proposal.md`** — `offers.ts` becomes canonical catalogue, `product.ts` shrinks to screen-data via a thin adapter so my importers don't change. **Nothing migrated — needs your sign-off.**
+### 2. PR #4 — `ux-client-booking` (new flow, my pick)
+The consumer side of the core loop — a client books an appointment:
+- `/client/business` — Salon Soho profile (hero, rating, services from
+  offers.ts, team strip from team.ts, about/hours, reviews, sticky Book CTA;
+  per-service Book preselects it).
+- `/client/book` → `professional` → `time` → `review` → `confirmed` —
+  route-per-screen like the signup flow, composing onboarding2 chrome
+  (Screen/Title/PrimaryButton/SelectCard). Multi-select services with running
+  total; Any professional + bookable roster; fixed demo day strip
+  (Wed 4 – Sat 14 Mar 2026, Sundays closed) with deterministic slot thinning
+  (SSR-safe, no Date()); review card; confirmed screen resets the draft.
+- New files (greped first, no parallels): `lib/data/clientApp.ts`
+  (client-facing presentation data ONLY — catalogue/roster stay in
+  offers.ts/team.ts) and `lib/store/clientBooking.ts` (booking draft store).
+- Client home cards parameterized and now open the profile (was a dead-end
+  push to /client/signup).
+- smoke.tsx covers all six screens.
+
+## Merge notes
+- PRs #3 and #4 are **independent** — either order works. #4 reads offers.ts
+  directly; once #3 lands the salon six appear in the client pickers too.
+- I did **not** touch your lane: `src/components/ui/**`, `tailwind.config.ts`,
+  `src/lib/tokens/**`, `src/app/globals.css` (read categories.ts only).
+- This status file rides on the `ux-client-booking` branch (my account can't
+  push to org main — fork + REST API PRs as before).
 
 ## Open questions
-1. Which flow should I build next, and are there frames? (awaiting before I start `ux-<flow>`.)
-2. Data-dedupe: agree `offers.ts` canonical? Then I'll do the `product.ts` adapter on my side.
-3. Merge order for cleanup vs your `rollout` — confirm nothing still imports the old flow before PR #2 lands.
+1. The chrome `CheckCircle`/`PrimaryButton` still carry `bg-[#111]` hexes from
+   the original onboarding build — flagging for your token rollout rather than
+   touching them mid-flight.
+2. Client home tab bar (Home/Find/Message/Schedule) is still inert — Find
+   (search/browse) feels like my next flow unless you'd rather I take
+   something else.
+3. The `/app/b2c` placeholder could now deep-link into `/client/home` since
+   the client side has a real loop — say the word and I'll wire it.
 
 ## Branches / PRs
-- **PR #1** `onboarding` → content in `main`; **4 later commits still pending.**
-- **PR #2** `onboarding-cleanup` → open, mergeable, **not in `main`.**
+- **PR #3** `ux-data-adapter` → open, independent, small.
+- **PR #4** `ux-client-booking` → open, contains this status file.
