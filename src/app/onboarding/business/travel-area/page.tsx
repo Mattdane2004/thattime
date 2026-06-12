@@ -90,7 +90,7 @@ export default function TravelAreaPage() {
             aria-checked={travelFeeEnabled}
             onClick={() => set("travelFeeEnabled", !travelFeeEnabled)}
             className={`relative h-7 w-12 rounded-full transition-colors ${
-              travelFeeEnabled ? "bg-[#111]" : "bg-border"
+              travelFeeEnabled ? "bg-fg-primary" : "bg-border"
             }`}
           >
             <motion.span

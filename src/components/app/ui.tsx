@@ -101,7 +101,7 @@ export function Sheet({
       {open && (
         <>
           <motion.div
-            className={`absolute inset-0 bg-black/40 ${aboveNav ? "z-40" : "z-[70]"}`}
+            className={`absolute inset-0 bg-fg-primary/40 ${aboveNav ? "z-40" : "z-[70]"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

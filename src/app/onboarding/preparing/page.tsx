@@ -73,7 +73,7 @@ export default function PreparingPage() {
       <div className="w-full px-2 pb-2">
         <div className="h-2 w-full overflow-hidden rounded-full bg-border">
           <motion.div
-            className="h-full rounded-full bg-[#111]"
+            className="h-full rounded-full bg-fg-primary"
             initial={{ width: "8%" }}
             animate={{ width: "82%" }}
             transition={{ duration: 2.2, ease: "easeInOut" }}

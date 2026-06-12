@@ -311,7 +311,7 @@ export default function ValuePage() {
         <div className="shrink-0 px-6 pb-6 pt-2">
           <div className="flex items-end gap-2 px-4 pb-4">
             <p className="flex-1 text-[12px] text-muted">
-              <span className="font-semibold text-[#111]">{step}</span> of 5
+              <span className="font-semibold text-fg-primary">{step}</span> of 5
             </p>
             <ProgressDashes total={5} active={step} />
           </div>

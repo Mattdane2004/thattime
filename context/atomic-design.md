@@ -39,6 +39,11 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
      separates (Light primary `#080706` → secondary `#3A3632` → muted `#807B75` → disable
      `#E5DDD4`; Dark mirrored) and **shadows white→black**. Legacy `muted`/`secondary` now
      point at the corrected semantic tokens. Delete entries when Figma is fixed at source.
+   - **Cool blacks & greys purged** (`scripts/migrate-cool.mjs`, 2nd pass): `#111`/pure
+     `black` → `fg-primary`/`#0F0E0C`; cool `fog` `#F4F4F6`, old border `#E5E5E8`, slider
+     `#D6D6DA`, slate `#4A5468` → warm ramp; Tailwind `slate/gray/zinc/neutral` classes →
+     warm `grey`. Audit proves **0 cool greys remain** (only a green success tint, kept).
+     Product shell (`bg-canvas`) confirmed warm `#FDF6EE`; the cool one was onboarding `fog`.
    - **Arbitrary-hex navy purged** (`scripts/migrate-navy.mjs`, 173 edits / 27 files):
      `#14181F`/`#0F1A2E` cool "ink" → `fg-primary` token (classes) or `#080706` (inline/
      SVG); `rgba(15,26,46,…)` navy shadows → warm `rgba(8,7,6,…)` (incl. tailwind.config

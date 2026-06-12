@@ -62,7 +62,7 @@ button {
   appearance: none;
   height: 4px;
   border-radius: 9999px;
-  background: #d6d6da;
+  background: #E5DDD4;
   outline: none;
 }
 .tt-slider::-webkit-slider-thumb {
@@ -71,7 +71,7 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 9999px;
-  background: #111;
+  background: #0F0E0C;
   border: 3px solid #fff;
   box-shadow: 0 1px 4px rgba(8, 7, 6, 0.3);
   cursor: pointer;
@@ -84,7 +84,7 @@ button {
   width: 22px;
   height: 22px;
   border-radius: 9999px;
-  background: #111;
+  background: #0F0E0C;
   border: 3px solid #fff;
   box-shadow: 0 1px 4px rgba(8, 7, 6, 0.3);
   cursor: pointer;

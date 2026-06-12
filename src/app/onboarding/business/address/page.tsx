@@ -98,7 +98,7 @@ export default function AddressPage() {
           </span>
           <span
             className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-              hideAddressUntilBooking ? "bg-[#111]" : "bg-border"
+              hideAddressUntilBooking ? "bg-fg-primary" : "bg-border"
             }`}
           >
             <motion.span

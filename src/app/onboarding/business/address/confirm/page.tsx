@@ -33,7 +33,7 @@ export default function AddressConfirmPage() {
             <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted">Base address</p>
             <p className="mt-0.5 text-[14px] text-navy">{baseAddress || "35 Luke Street, Shoreditch"}</p>
           </div>
-          <button type="button" onClick={() => router.back()} className="text-[13px] font-medium text-[#111]">
+          <button type="button" onClick={() => router.back()} className="text-[13px] font-medium text-fg-primary">
             Edit
           </button>
         </motion.div>
@@ -58,7 +58,7 @@ export default function AddressConfirmPage() {
               {hideAddressUntilBooking ? "Hidden until booking is confirmed" : "Visible to clients before booking"}
             </p>
           </div>
-          <span className="text-[13px] font-medium text-[#111]">Change</span>
+          <span className="text-[13px] font-medium text-fg-primary">Change</span>
         </motion.button>
 
         <p className="pt-2 text-[15px] font-medium text-navy">Move this pin to your exact location</p>
@@ -119,7 +119,7 @@ export default function AddressConfirmPage() {
                 role="switch"
                 aria-checked={travelFeeEnabled}
                 onClick={() => set("travelFeeEnabled", !travelFeeEnabled)}
-                className={`relative h-7 w-12 rounded-full transition-colors ${travelFeeEnabled ? "bg-[#111]" : "bg-border"}`}
+                className={`relative h-7 w-12 rounded-full transition-colors ${travelFeeEnabled ? "bg-fg-primary" : "bg-border"}`}
               >
                 <motion.span
                   className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow"

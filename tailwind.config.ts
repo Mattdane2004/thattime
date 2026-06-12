@@ -44,7 +44,7 @@ const config: Config = {
         ink: "#1C1814", // warm near-black (headlines, black CTAs)
         coral: "#FF6641", // brand accent — HELD (literal) until brand-accent hex lands
         cream: "#F5F3EF", // value-reveal / marketing surfaces
-        fog: "#F4F4F6", // form-screen canvas
+        fog: "#F7F0E8", // form-screen canvas
         // ── Service-category palette (product data colours) ──
         // Colour-codes services/verticals; not brand chrome. Mirrored
         // in src/lib/tokens/categories.ts for runtime/data consumers.

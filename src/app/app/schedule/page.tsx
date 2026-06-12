@@ -46,7 +46,7 @@ function shadeClass(shade: GridBlock["shade"]) {
     case "dark":
       return "bg-fg-primary text-white";
     case "mid":
-      return "bg-[#4A5468] text-white";
+      return "bg-[#5C5753] text-white";
     case "muted":
       return "bg-canvas text-muted";
     case "outline":

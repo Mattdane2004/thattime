@@ -29,7 +29,7 @@ export function PrimaryButton({
         enabled
           ? tone === "orange"
             ? "bg-coral text-white"
-            : "bg-[#111] text-white"
+            : "bg-fg-primary text-white"
           : "bg-[#807B75] text-white/90"
       }`}
     >
@@ -52,7 +52,7 @@ export function SocialButtons({ onPick }: { onPick: (p: "apple" | "google" | "fa
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={() => onPick("apple")}
-        className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-black text-[15px] font-semibold text-white"
+        className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-fg-primary text-[15px] font-semibold text-white"
       >
         <svg width="16" height="19" viewBox="0 0 16 19" fill="currentColor" aria-hidden>
           <path d="M13.06 10.05c.02 2.42 2.12 3.22 2.14 3.23-.02.06-.33 1.15-1.1 2.27-.67.97-1.36 1.94-2.45 1.96-1.07.02-1.42-.64-2.65-.64-1.22 0-1.6.62-2.62.66-1.05.04-1.86-1.05-2.53-2.02C2.47 13.53 1.4 9.9 2.81 7.42a3.93 3.93 0 0 1 3.32-2.02c1.03-.02 2.01.7 2.65.7.63 0 1.82-.86 3.07-.73.52.02 1.99.21 2.93 1.59-.08.05-1.75 1.02-1.72 3.09M11.05 4.05c.56-.68.94-1.63.84-2.57-.81.03-1.79.54-2.37 1.22-.52.6-.98 1.57-.85 2.49.9.07 1.82-.46 2.38-1.14" />
@@ -224,7 +224,7 @@ export function CheckCircle({ on }: { on: boolean }) {
   return (
     <span
       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors ${
-        on ? "bg-[#111]" : "border border-border bg-white"
+        on ? "bg-fg-primary" : "border border-border bg-white"
       }`}
     >
       <AnimatePresence>
@@ -312,7 +312,7 @@ export function PasswordField({
             <motion.span
               key={i}
               className="h-[5px] flex-1 origin-left rounded-full"
-              animate={{ backgroundColor: score >= i ? "#111111" : "#E5E5E8" }}
+              animate={{ backgroundColor: score >= i ? "#0F0E0C" : "#F0E6DC" }}
               transition={{ duration: 0.25 }}
             />
           ))}
@@ -342,7 +342,7 @@ export function BottomSheet({
       {open && (
         <>
           <motion.div
-            className="absolute inset-0 z-40 bg-black/40"
+            className="absolute inset-0 z-40 bg-fg-primary/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -396,7 +396,7 @@ export function PermissionDialog({
       {open && (
         <>
           <motion.div
-            className="absolute inset-0 z-40 bg-black/40"
+            className="absolute inset-0 z-40 bg-fg-primary/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

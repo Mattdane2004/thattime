@@ -51,7 +51,7 @@ export default function TrialPage() {
               transition={{ delay: 0.15 + i * 0.07 }}
               className="flex items-center gap-4"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EFEDE8] text-navy">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F0E6DC] text-navy">
                 {b.icon}
               </span>
               <span className="text-[14px] font-medium text-navy">{b.text}</span>

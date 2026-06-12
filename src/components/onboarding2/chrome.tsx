@@ -28,11 +28,11 @@ type ChromeConfig = {
   bg: string;
 };
 
-const PEACH = "linear-gradient(180deg, #FBF6F1 0%, #F6E3D3 100%)";
+const PEACH = "linear-gradient(180deg, #FDF6EE 0%, #F6E3D3 100%)";
 
 function configFor(path: string): ChromeConfig {
   const rules: [RegExp, ChromeConfig][] = [
-    [/^\/onboarding\/welcome/, { header: "status", bg: "#F4F4F6" }],
+    [/^\/onboarding\/welcome/, { header: "status", bg: "#F7F0E8" }],
     [/^\/onboarding\/preparing/, { header: "status", bg: "#FFFFFF" }],
     [/^\/onboarding\/(value|trial)/, { header: "full", bg: "#F5F3EF" }],
     [/^\/onboarding\/first-step/, { header: "full", bg: PEACH }],
@@ -45,7 +45,7 @@ function configFor(path: string): ChromeConfig {
     [/^\/client\/book\/confirmed/, { header: "status", bg: "#F5F3EF" }],
   ];
   for (const [re, cfg] of rules) if (re.test(path)) return cfg;
-  return { header: "full", bg: "#F4F4F6" };
+  return { header: "full", bg: "#F7F0E8" };
 }
 
 export function OnboardingChrome() {
