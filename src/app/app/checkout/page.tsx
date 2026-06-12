@@ -4,44 +4,151 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronLeft, X, Plus, Scissors, ShoppingBag, Percent, CreditCard,
-  Banknote, Landmark, Gift, CheckCircle2, Mail, Star,
+  ChevronLeft, X, Plus, Minus, Scissors, ShoppingBag, Percent, CreditCard,
+  Banknote, Landmark, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
-import { useAppStore, checkoutTotals, type PaymentEntry } from "@/lib/store/appStore";
-import { services, products, traitChips } from "@/lib/data/product";
+import { useAppStore, checkoutTotals, type PaymentEntry, type CheckoutItem } from "@/lib/store/appStore";
+import { services, products, traitChips, upNextQueue } from "@/lib/data/product";
 
 // Checkout — build the bill (services/products/discount/tip), take payment in
-// one or many methods, then the paid screen and client rating.
+// one or many methods, then the paid screen and client rating. The tab bar is
+// hidden on this route; the sticky back header is the way out.
 
 const fmt = (n: number) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
 type MethodSheet = PaymentEntry["method"] | null;
 
+/** Catalog row in the add-service/product sheets: + morphs into a − n + stepper. */
+function CatalogRow({
+  name,
+  sub,
+  price,
+  qty,
+  onAdd,
+  onRemove,
+}: {
+  name: string;
+  sub: string;
+  price: number;
+  qty: number;
+  onAdd: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 last:border-0">
+      <button type="button" onClick={onAdd} className="min-w-0 flex-1 text-left">
+        <span className="block text-[15px] font-semibold text-navy">{name}</span>
+        <span className="block text-[12px] text-muted">{sub} · £{price}</span>
+      </button>
+      <div className="flex h-9 shrink-0 items-center justify-end">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {qty === 0 ? (
+            <motion.button
+              key="plus"
+              type="button"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ type: "spring", stiffness: 480, damping: 30 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={onAdd}
+              aria-label={`Add ${name}`}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-navy"
+            >
+              <Plus size={15} strokeWidth={2} />
+            </motion.button>
+          ) : (
+            <motion.div
+              key="stepper"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 480, damping: 30 }}
+              className="flex h-9 items-center rounded-full bg-[#14181F] px-1 text-white"
+            >
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.82 }}
+                onClick={onRemove}
+                aria-label={`Remove one ${name}`}
+                className="flex h-7 w-7 items-center justify-center"
+              >
+                <Minus size={13} strokeWidth={2.25} />
+              </motion.button>
+              <span className="flex w-5 justify-center overflow-hidden">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={qty}
+                    initial={{ y: 12, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -12, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                    className="block text-[13px] font-bold"
+                  >
+                    {qty}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.82 }}
+                onClick={onAdd}
+                aria-label={`Add ${name}`}
+                className="flex h-7 w-7 items-center justify-center"
+              >
+                <Plus size={13} strokeWidth={2.25} />
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const store = useAppStore();
   const totals = checkoutTotals(store);
+  const appt = upNextQueue[store.apptIdx];
+  const clientName = appt?.client ?? "Walk-in";
+  const clientInitials = appt?.initials ?? "WI";
   const [addSheet, setAddSheet] = useState<"service" | "product" | "discount" | null>(null);
   const [method, setMethod] = useState<MethodSheet>(null);
   const [cashAmount, setCashAmount] = useState(10);
   const [paidScreen, setPaidScreen] = useState(false);
+  const [receiptSent, setReceiptSent] = useState(false);
   const [rate, setRate] = useState(false);
   const [stars, setStars] = useState(0);
   const [traits, setTraits] = useState<string[]>([]);
+
+  // Customer-facing tip sheet.
+  const [tipSheet, setTipSheet] = useState(false);
+  const [tipPick, setTipPick] = useState<number | null>(null); // preset pct
+  const [tipCustomDraft, setTipCustomDraft] = useState(0);
+  const tipBase = Math.max(0, totals.subtotal - totals.discount);
+  const draftTip = tipCustomDraft > 0 ? tipCustomDraft : tipPick ? (tipBase * tipPick) / 100 : 0;
 
   const tipOptions = [
     { label: "No tip", pct: 0 },
     { label: "10%", pct: 10 },
     { label: "15%", pct: 15 },
-    { label: "20%", pct: 20 },
   ];
+
+  const qtyOf = (kind: CheckoutItem["kind"], name: string) =>
+    store.items.find((i) => i.kind === kind && i.name === name)?.qty ?? 0;
 
   const finishPayment = (m: PaymentEntry["method"], amount: number) => {
     store.addPayment(m, amount);
     setMethod(null);
     const after = checkoutTotals({ ...store, payments: [...store.payments, { id: "x", method: m, amount }] });
     if (after.remaining <= 0) setPaidScreen(true);
+  };
+
+  const finishVisit = () => {
+    store.advanceAppt();
+    router.push("/app");
   };
 
   if (paidScreen) {
@@ -64,7 +171,7 @@ export default function CheckoutPage() {
           >
             {fmt(totals.total)}
           </motion.p>
-          <p className="pt-1 text-[14px] text-secondary">Sarah Johnson</p>
+          <p className="pt-1 text-[14px] text-secondary">{clientName}</p>
           <div className="mt-6 w-full overflow-hidden rounded-2xl bg-canvas">
             {store.payments.map((p) => (
               <div key={p.id} className="flex items-center justify-between border-b border-border px-4 py-3 text-[13px] last:border-0">
@@ -74,25 +181,25 @@ export default function CheckoutPage() {
             ))}
           </div>
           <p className="pt-3 text-[12px] text-muted">{store.items.length} item{store.items.length === 1 ? "" : "s"}</p>
-          <button className="mt-5 flex h-11 items-center gap-2 rounded-full border border-border px-5 text-[13px] font-semibold text-navy">
-            <Mail size={14} strokeWidth={1.75} />
-            Email receipt
-          </button>
+          <motion.button
+            whileTap={!receiptSent ? { scale: 0.96 } : undefined}
+            onClick={() => setReceiptSent(true)}
+            className={`mt-5 flex h-11 items-center gap-2 rounded-full border border-border px-5 text-[13px] font-semibold ${
+              receiptSent ? "bg-canvas text-secondary" : "text-navy"
+            }`}
+          >
+            {receiptSent ? <Check size={14} strokeWidth={2.5} /> : <Mail size={14} strokeWidth={1.75} />}
+            {receiptSent ? "Receipt sent" : "Email receipt"}
+          </motion.button>
         </div>
         <div className="shrink-0 px-6 pb-8">
           <DarkButton onClick={() => setRate(true)}>Rate the visit</DarkButton>
+          <button type="button" onClick={finishVisit} className="mt-3 w-full text-center text-[14px] font-semibold text-secondary">
+            Done
+          </button>
         </div>
 
-        <Sheet
-          open={rate}
-          onClose={() => setRate(false)}
-          title={
-            <span className="flex w-full items-center justify-between">
-              Rate your Client
-            </span>
-          }
-          sub="Emily Davis"
-        >
+        <Sheet open={rate} onClose={() => setRate(false)} title="Rate your Client" sub={clientName}>
           <div className="flex justify-center gap-2 py-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <motion.button key={i} whileTap={{ scale: 0.85 }} onClick={() => setStars(i)} aria-label={`${i} stars`}>
@@ -130,22 +237,10 @@ export default function CheckoutPage() {
             />
           </div>
           <div className="pt-4">
-            <DarkButton
-              onClick={() => {
-                store.resetCheckout();
-                store.setApptStatus("done");
-                router.push("/app");
-              }}
-            >
-              Submit Rating
-            </DarkButton>
+            <DarkButton onClick={finishVisit}>Submit Rating</DarkButton>
             <button
               type="button"
-              onClick={() => {
-                store.resetCheckout();
-                store.setApptStatus("done");
-                router.push("/app");
-              }}
+              onClick={finishVisit}
               className="mt-3 w-full text-center text-[14px] font-semibold text-secondary"
             >
               Skip
@@ -158,7 +253,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex min-h-full flex-col bg-white pb-4">
-      <div className="flex items-center gap-2 px-4 py-4">
+      <div className="sticky top-0 z-10 flex items-center gap-2 bg-white px-4 py-4">
         <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-1 p-1 text-navy">
           <ChevronLeft size={22} strokeWidth={2} />
         </button>
@@ -167,10 +262,10 @@ export default function CheckoutPage() {
 
       <div className="mx-4 flex items-center gap-3 rounded-2xl bg-canvas p-4">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[11px] font-bold text-secondary">
-          SJ
+          {clientInitials}
         </span>
         <div>
-          <p className="text-[15px] font-bold text-navy">Sarah Johnson</p>
+          <p className="text-[15px] font-bold text-navy">{clientName}</p>
           <p className="text-[12px] text-muted">
             {store.items.length} item{store.items.length === 1 ? "" : "s"} · {fmt(totals.subtotal)}
           </p>
@@ -194,9 +289,12 @@ export default function CheckoutPage() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] font-semibold text-navy">{item.name}</span>
-                <span className="block text-[12px] text-muted">{item.sub}</span>
+                <span className="block text-[12px] text-muted">
+                  {item.sub}
+                  {item.qty > 1 && ` · ${item.qty} × ${fmt(item.price)}`}
+                </span>
               </span>
-              <span className="text-[15px] font-bold text-navy">{fmt(item.price)}</span>
+              <span className="text-[15px] font-bold text-navy">{fmt(item.price * item.qty)}</span>
               <button
                 type="button"
                 aria-label={`Remove ${item.name}`}
@@ -269,12 +367,16 @@ export default function CheckoutPage() {
         })}
         <button
           type="button"
-          onClick={() => store.setTip(0, 5)}
+          onClick={() => {
+            setTipPick(null);
+            setTipCustomDraft(0);
+            setTipSheet(true);
+          }}
           className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
             store.tipCustom > 0 ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
           }`}
         >
-          Custom
+          {store.tipCustom > 0 ? fmt(store.tipCustom) : "Custom"}
         </button>
       </div>
 
@@ -360,21 +462,15 @@ export default function CheckoutPage() {
       {/* Add service / product / discount sheets */}
       <Sheet open={addSheet === "service"} onClose={() => setAddSheet(null)} title="Add service">
         {services.map((s) => (
-          <button
+          <CatalogRow
             key={s.id}
-            type="button"
-            onClick={() => store.addItem({ kind: "service", name: s.name, sub: `${s.duration} · ${s.category}`, price: s.price })}
-            className="flex w-full items-center justify-between border-b border-border py-4 text-left last:border-0"
-          >
-            <span>
-              <span className="block text-[15px] font-semibold text-navy">{s.name}</span>
-              <span className="block text-[12px] text-muted">{s.duration} · {s.category}</span>
-            </span>
-            <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
-              £{s.price}
-              <Plus size={16} className="text-secondary" />
-            </span>
-          </button>
+            name={s.name}
+            sub={`${s.duration} · ${s.category}`}
+            price={s.price}
+            qty={qtyOf("service", s.name)}
+            onAdd={() => store.addItem({ kind: "service", name: s.name, sub: `${s.duration} · ${s.category}`, price: s.price })}
+            onRemove={() => store.decrementItem("service", s.name)}
+          />
         ))}
         <div className="pt-4">
           <DarkButton onClick={() => setAddSheet(null)}>Done</DarkButton>
@@ -383,21 +479,15 @@ export default function CheckoutPage() {
 
       <Sheet open={addSheet === "product"} onClose={() => setAddSheet(null)} title="Add Product">
         {products.map((p) => (
-          <button
+          <CatalogRow
             key={p.id}
-            type="button"
-            onClick={() => store.addItem({ kind: "product", name: p.name, sub: p.size, price: p.price })}
-            className="flex w-full items-center justify-between border-b border-border py-4 text-left last:border-0"
-          >
-            <span>
-              <span className="block text-[15px] font-semibold text-navy">{p.name}</span>
-              <span className="block text-[12px] text-muted">{p.size}</span>
-            </span>
-            <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
-              £{p.price}
-              <Plus size={16} className="text-secondary" />
-            </span>
-          </button>
+            name={p.name}
+            sub={p.size}
+            price={p.price}
+            qty={qtyOf("product", p.name)}
+            onAdd={() => store.addItem({ kind: "product", name: p.name, sub: p.size, price: p.price })}
+            onRemove={() => store.decrementItem("product", p.name)}
+          />
         ))}
         <div className="pt-4">
           <DarkButton onClick={() => setAddSheet(null)}>Done</DarkButton>
@@ -426,6 +516,89 @@ export default function CheckoutPage() {
             </span>
           </button>
         ))}
+      </Sheet>
+
+      {/* Customer-facing tip sheet — hand the phone over */}
+      <Sheet open={tipSheet} onClose={() => setTipSheet(false)}>
+        <div className="flex flex-col items-center pb-2 text-center">
+          <span className="flex items-center gap-1.5 rounded-full bg-canvas px-3.5 py-1.5 text-[11px] font-semibold text-secondary">
+            <Smartphone size={12} strokeWidth={2} />
+            Hand the phone to your client
+          </span>
+          <span className="mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-canvas text-navy">
+            <Heart size={20} strokeWidth={1.6} />
+          </span>
+          <h2 className="pt-3 text-[22px] font-bold leading-tight text-navy">
+            Would you like to
+            <br />
+            leave a tip?
+          </h2>
+          <p className="pt-1.5 text-[13px] text-secondary">
+            100% goes to {appt?.staff ?? "your stylist"} · service {fmt(tipBase)}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2.5 pt-4">
+          {[10, 15, 20].map((pct) => {
+            const active = tipPick === pct && tipCustomDraft === 0;
+            return (
+              <motion.button
+                key={pct}
+                type="button"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setTipPick(pct);
+                  setTipCustomDraft(0);
+                }}
+                className={`flex flex-col items-center rounded-2xl border py-4 transition-colors ${
+                  active ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                }`}
+              >
+                <span className="text-[17px] font-bold">{pct}%</span>
+                <span className={`pt-0.5 text-[12px] ${active ? "text-white/60" : "text-muted"}`}>
+                  {fmt(Math.round((tipBase * pct) / 100))}
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border px-4 py-3">
+          <span className="text-[15px] font-bold text-muted">£</span>
+          <input
+            value={tipCustomDraft || ""}
+            onChange={(e) => {
+              setTipCustomDraft(Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0));
+              setTipPick(null);
+            }}
+            inputMode="numeric"
+            placeholder="Other amount"
+            aria-label="Custom tip amount"
+            className="w-full bg-transparent text-[15px] font-semibold text-navy placeholder:font-normal placeholder:text-muted focus:outline-none"
+          />
+        </div>
+
+        <div className="pt-5">
+          <DarkButton
+            disabled={draftTip <= 0}
+            onClick={() => {
+              store.setTip(0, Math.round(draftTip));
+              setTipSheet(false);
+            }}
+          >
+            {draftTip > 0 ? `Add ${fmt(Math.round(draftTip))} tip` : "Add tip"}
+          </DarkButton>
+          <button
+            type="button"
+            onClick={() => {
+              store.setTip(0, 0);
+              setTipSheet(false);
+            }}
+            className="mt-3 w-full text-center text-[14px] font-semibold text-secondary"
+          >
+            No tip today
+          </button>
+        </div>
       </Sheet>
 
       {/* Payment method sheets */}

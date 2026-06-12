@@ -6,24 +6,63 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, AlertTriangle, FileText, MessageSquare, RotateCcw, X,
   CheckCircle2, Play, CreditCard, ChevronRight, Plus, CalendarPlus, Link2, Pause,
+  Copy, Check, Send, CalendarCheck2,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { upNextQueue } from "@/lib/data/product";
 
 /**
  * The Up Next appointment card and its lifecycle:
  * upcoming → Check In → arrived → Start service → in-progress → Checkout.
- * The ↺ icon opens Reschedule (day + time picker), ✕ opens Cancel.
+ * Finishing checkout advances the card to the next appointment in the queue.
+ * Tapping the client opens the appointment details sheet; ↺ opens Reschedule,
+ * ✕ opens Cancel, and the freed-up state can share a booking link for the gap.
  */
 export function UpNextCard({ compact }: { compact?: boolean }) {
   const router = useRouter();
   const {
-    apptStatus, setApptStatus, movedTo, setMovedTo,
+    apptIdx, apptStatus, setApptStatus, movedTo, setMovedTo, advanceAppt, setApptSheet,
   } = useAppStore();
   const [resched, setResched] = useState(false);
   const [cancel, setCancel] = useState(false);
+  const [share, setShare] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
+
+  const appt = upNextQueue[apptIdx];
+  const next = upNextQueue[apptIdx + 1];
+
+  // Queue finished — the day is wrapped up.
+  if (!appt) {
+    return (
+      <div className="flex flex-col items-center rounded-3xl border border-border bg-white p-6 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas text-navy">
+          <CalendarCheck2 size={20} strokeWidth={1.6} />
+        </span>
+        <p className="pt-3 text-[15px] font-bold text-navy">That&rsquo;s everyone for today</p>
+        <p className="pt-1 text-[12px] text-muted">Next appointment: tomorrow, 09:00</p>
+        <GhostButton className="mt-4 !h-10 !text-[13px]" onClick={() => router.push("/app/schedule")}>
+          View tomorrow&rsquo;s schedule
+        </GhostButton>
+      </div>
+    );
+  }
+
+  const openDetails = () =>
+    setApptSheet({
+      client: appt.client,
+      initials: appt.initials,
+      service: appt.service,
+      staff: appt.staff,
+      time: appt.time,
+      duration: appt.duration,
+      price: appt.price,
+      tags: appt.tags,
+      live: true,
+    });
 
   const pill =
     movedTo ? `Moved · ${movedTo}`
@@ -43,19 +82,83 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
 
   if (apptStatus === "cancelled") {
     return (
-      <div className="rounded-3xl border border-dashed border-border bg-white p-4">
-        <p className="text-[14px] font-semibold text-navy">11:00 – 12:30 freed up</p>
-        <p className="mt-0.5 text-[12px] text-muted">Sarah Johnson&rsquo;s appointment was cancelled — we let her know.</p>
-        <div className="mt-3 flex gap-2.5">
-          <GhostButton className="!h-10 flex-1 !text-[13px]" onClick={() => useAppStore.getState().setQuickAction("appointment")}>
-            <CalendarPlus size={15} />
-            New booking
-          </GhostButton>
-          <GhostButton className="!h-10 !w-12 shrink-0">
-            <Link2 size={15} />
-          </GhostButton>
+      <>
+        <div className="rounded-3xl border border-dashed border-border bg-white p-4">
+          <p className="text-[14px] font-semibold text-navy">{appt.time} · {appt.duration} freed up</p>
+          <p className="mt-0.5 text-[12px] text-muted">{appt.client}&rsquo;s appointment was cancelled — we let them know.</p>
+          <div className="mt-3 flex gap-2.5">
+            <GhostButton className="!h-10 flex-1 !text-[13px]" onClick={() => useAppStore.getState().setQuickAction("appointment")}>
+              <CalendarPlus size={15} />
+              New booking
+            </GhostButton>
+            <GhostButton className="!h-10 !w-12 shrink-0" onClick={() => setShare(true)} ariaLabel="Share booking link">
+              <Link2 size={15} />
+            </GhostButton>
+          </div>
+          {next && (
+            <button
+              type="button"
+              onClick={advanceAppt}
+              className="mt-3 flex w-full items-center justify-between border-t border-border pt-3 text-[13px] text-secondary"
+            >
+              Next: {next.client} · {next.time}
+              <span className="flex items-center gap-1 font-semibold text-navy">
+                Show <ChevronRight size={14} strokeWidth={1.75} />
+              </span>
+            </button>
+          )}
         </div>
-      </div>
+
+        {/* Share the freed slot as a booking link */}
+        <Sheet
+          open={share}
+          onClose={() => setShare(false)}
+          title="Fill this slot"
+          sub={`${appt.time} · ${appt.duration} · ${appt.staff}`}
+        >
+          <p className="pb-3 text-[13px] leading-relaxed text-secondary">
+            Anyone with this link can book this exact slot — first come, first served.
+          </p>
+          <div className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3.5">
+            <Link2 size={15} className="shrink-0 text-secondary" strokeWidth={1.75} />
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-navy">
+              thattime.com/salon-soho/slot-1100
+            </span>
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => setCopied(true)}
+              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-colors ${
+                copied ? "bg-canvas text-secondary" : "bg-[#14181F] text-white"
+              }`}
+            >
+              {copied ? <Check size={12} strokeWidth={2.5} /> : <Copy size={12} strokeWidth={2} />}
+              {copied ? "Copied" : "Copy"}
+            </motion.button>
+          </div>
+          <div className="pt-4">
+            <DarkButton
+              onClick={() => setLinkSent(true)}
+              disabled={linkSent}
+            >
+              {linkSent ? (
+                <>
+                  <Check size={15} strokeWidth={2.5} />
+                  Sent to 12 waitlisted clients
+                </>
+              ) : (
+                <>
+                  <Send size={15} />
+                  Send to waitlist · 12 clients
+                </>
+              )}
+            </DarkButton>
+            <GhostButton className="mt-3" onClick={() => { setShare(false); router.push("/app/messages"); }}>
+              <MessageSquare size={15} />
+              Message a client instead
+            </GhostButton>
+          </div>
+        </Sheet>
+      </>
     );
   }
 
@@ -65,8 +168,8 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-[15px] font-bold">
             <Clock size={15} strokeWidth={1.75} />
-            11:00 AM
-            <span className="text-[12px] font-medium text-white/55">· 1h 30m</span>
+            {appt.time}
+            <span className="text-[12px] font-medium text-white/55">· {appt.duration}</span>
           </span>
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
@@ -84,32 +187,37 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
           </AnimatePresence>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[12px] font-bold">
-            SJ
+        <button type="button" onClick={openDetails} className="mt-4 flex w-full items-center gap-3 text-left">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[12px] font-bold">
+            {appt.initials}
           </span>
-          <div className="min-w-0">
-            <p className="text-[15px] font-bold">Sarah Johnson</p>
-            <p className="truncate text-[12px] text-white/55">Cut & Colour · Emma S.</p>
-          </div>
-        </div>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold">{appt.client}</span>
+            <span className="block truncate text-[12px] text-white/55">{appt.service} · {appt.staff}</span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-white/40" />
+        </button>
 
         <div className="mt-3 flex items-center gap-3 text-[11px] text-white/70">
-          <span className="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5">
-            <AlertTriangle size={11} /> Allergy
-          </span>
-          <span className="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5">
-            <FileText size={11} /> Form
-          </span>
-          <span>Note attached</span>
+          {appt.tags.includes("Allergy") && (
+            <span className="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5">
+              <AlertTriangle size={11} /> Allergy
+            </span>
+          )}
+          {appt.tags.includes("Form") && (
+            <span className="flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5">
+              <FileText size={11} /> Form
+            </span>
+          )}
+          {appt.note && <span>{appt.note}</span>}
         </div>
 
         {!compact && (
           <div className="mt-4 flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.92 }}
-              aria-label="Message Sarah"
-              onClick={() => router.push("/app/messages/sarah")}
+              aria-label={`Message ${appt.client}`}
+              onClick={() => router.push(`/app/messages/${appt.id}`)}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10"
             >
               <MessageSquare size={15} />
@@ -153,7 +261,7 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
         open={resched}
         onClose={() => setResched(false)}
         title="Reschedule"
-        sub="Sarah Johnson · Cut & Colour · Emma S."
+        sub={`${appt.client} · ${appt.service} · ${appt.staff}`}
         full
       >
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a day</p>
@@ -176,8 +284,8 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
       {/* Cancel sheet */}
       <Sheet open={cancel} onClose={() => setCancel(false)} title="Cancel this appointment?">
         <p className="pb-5 text-[14px] leading-relaxed text-secondary">
-          Sarah Johnson · Cut & Colour · Emma S. at 11:00 AM. We&rsquo;ll let them know and free up the
-          slot.
+          {appt.client} · {appt.service} · {appt.staff} at {appt.time}. We&rsquo;ll let them know and
+          free up the slot.
         </p>
         <DarkButton
           onClick={() => {

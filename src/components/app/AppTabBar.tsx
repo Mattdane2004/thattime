@@ -21,6 +21,10 @@ export function AppTabBar() {
   const { quickAction, setQuickAction } = useAppStore();
   const menuOpen = quickAction !== null;
 
+  // Checkout is a focused flow — the back arrow in its header is the only
+  // way out, so the tab bar stays hidden.
+  if (pathname.startsWith("/app/checkout")) return null;
+
   return (
     <nav className="z-50 grid shrink-0 grid-cols-5 border-t border-border bg-surface px-2 pb-3 pt-2">
       {TABS.map(({ key, label, icon: Icon, href }) => {

@@ -1,20 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Coffee, CalendarCog, SlidersHorizontal,
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
 } from "lucide-react";
-import { AppHeader, Segmented, Sheet, DarkButton, StatusPill, MiniCalendar } from "@/components/app/ui";
+import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/app/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
-import { myDayAgenda, threeDayGrid, teamColumns, masterclass, type GridBlock } from "@/lib/data/product";
+import { useAppStore } from "@/lib/store/appStore";
+import { myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, type GridBlock } from "@/lib/data/product";
 
 // Schedule — My Day agenda, 3-day calendar grid, and team columns, with the
 // class sheet (attendee check-in) and calendar settings (jump-to-date).
+// Tapping any appointment row/block opens the shared appointment sheet.
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 const HOUR_PX = 64;
+
+const initialsOf = (name: string) =>
+  name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const hhmm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+const spanLabel = (span: number) => {
+  const m = Math.round(span * 60);
+  return m % 60 === 0 ? `${m / 60}h` : m > 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+};
+const isBreakBlock = (name: string) => name.includes("Break");
 
 function shadeClass(shade: GridBlock["shade"]) {
   switch (shade) {
@@ -32,6 +44,7 @@ function shadeClass(shade: GridBlock["shade"]) {
 }
 
 function MyDayView() {
+  const setApptSheet = useAppStore((s) => s.setApptSheet);
   return (
     <div className="flex flex-col gap-2.5 px-4 pb-6 pt-4">
       {myDayAgenda.map((row) => {
@@ -70,6 +83,17 @@ function MyDayView() {
               <button
                 key={row.id}
                 type="button"
+                onClick={() =>
+                  setApptSheet({
+                    client: row.client!,
+                    initials: initialsOf(row.client!),
+                    service: row.service ?? "Appointment",
+                    staff: "Emma S.",
+                    time: row.time!,
+                    duration: `ends ${row.end}`,
+                    status: row.past ? "Done" : "Confirmed",
+                  })
+                }
                 className={`flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
                   row.past ? "opacity-50" : ""
                 }`}
@@ -92,6 +116,7 @@ function MyDayView() {
 }
 
 function ThreeDayView() {
+  const setApptSheet = useAppStore((s) => s.setApptSheet);
   return (
     <div className="px-2 pb-6 pt-2">
       <div className="grid grid-cols-[34px_1fr_1fr_1fr]">
@@ -115,12 +140,27 @@ function ThreeDayView() {
               <span key={i} className="absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR_PX + 8 }} />
             ))}
             {d.blocks.map((b, i) => (
-              <motion.div
+              <motion.button
                 key={i}
+                type="button"
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.03 * i }}
-                className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 ${shadeClass(b.shade)}`}
+                onClick={
+                  isBreakBlock(b.name)
+                    ? undefined
+                    : () =>
+                        setApptSheet({
+                          client: b.name,
+                          initials: initialsOf(b.name),
+                          service: b.service ?? "Appointment",
+                          staff: "Emma S.",
+                          time: hhmm(b.start),
+                          duration: spanLabel(b.span),
+                          status: "Confirmed",
+                        })
+                }
+                className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(b.shade)}`}
                 style={{ top: (b.start - 8) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
               >
                 <p className="truncate text-[11px] font-bold leading-tight">
@@ -128,7 +168,7 @@ function ThreeDayView() {
                   {b.name}
                 </p>
                 {b.service && <p className="truncate text-[10px] opacity-75">{b.service}</p>}
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         ))}
@@ -137,7 +177,8 @@ function ThreeDayView() {
   );
 }
 
-function TeamView({ onOpenClass }: { onOpenClass: () => void }) {
+function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; classCancelled: boolean }) {
+  const setApptSheet = useAppStore((s) => s.setApptSheet);
   return (
     <div className="px-2 pb-6 pt-2">
       <div className="grid grid-cols-[34px_1fr_1fr_1fr]">
@@ -165,6 +206,8 @@ function TeamView({ onOpenClass }: { onOpenClass: () => void }) {
             </span>
             {c.blocks.map((b, i) => {
               const isClass = b.status === "Class";
+              const shade = isClass && classCancelled ? "muted" : b.shade;
+              const status = isClass && classCancelled ? "Cancelled" : b.status;
               return (
                 <motion.button
                   key={i}
@@ -172,13 +215,28 @@ function TeamView({ onOpenClass }: { onOpenClass: () => void }) {
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.03 * i }}
-                  onClick={isClass ? onOpenClass : undefined}
-                  className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(b.shade)}`}
+                  onClick={
+                    isClass
+                      ? onOpenClass
+                      : isBreakBlock(b.name)
+                        ? undefined
+                        : () =>
+                            setApptSheet({
+                              client: b.name,
+                              initials: initialsOf(b.name),
+                              service: b.service ?? "Appointment",
+                              staff: c.name,
+                              time: hhmm(b.start),
+                              duration: b.price ?? spanLabel(b.span),
+                              status: b.status ?? "Confirmed",
+                            })
+                  }
+                  className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(shade)}`}
                   style={{ top: (b.start - 9) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
                 >
-                  {b.status && (
+                  {status && (
                     <span className="float-right ml-1">
-                      <StatusPill tone={b.shade === "dark" ? "dark" : "light"}>{b.status}</StatusPill>
+                      <StatusPill tone={shade === "dark" ? "dark" : "light"}>{status}</StatusPill>
                     </span>
                   )}
                   <p className="truncate text-[11px] font-bold leading-tight">
@@ -197,13 +255,30 @@ function TeamView({ onOpenClass }: { onOpenClass: () => void }) {
   );
 }
 
-function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ClassSheet({
+  open,
+  onClose,
+  cancelled,
+  onCancelClass,
+}: {
+  open: boolean;
+  onClose: () => void;
+  cancelled: boolean;
+  onCancelClass: () => void;
+}) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [arrived, setArrived] = useState<Record<string, boolean>>({});
+  const [addOpen, setAddOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [extra, setExtra] = useState<{ id: string; initials: string; name: string; status: string; warn: boolean }[]>([]);
   const arrivedCount = Object.values(arrived).filter(Boolean).length;
   const m = masterclass;
+  const attendees = [...m.attendees, ...extra];
+  const booked = m.booked + extra.length;
 
   return (
+    <>
     <Sheet
       open={open}
       onClose={onClose}
@@ -224,19 +299,19 @@ function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           <span className="text-muted">·</span>
           <span>{m.location}</span>
         </span>
-        <StatusPill>Scheduled</StatusPill>
+        <StatusPill tone={cancelled ? "danger" : "light"}>{cancelled ? "Cancelled" : "Scheduled"}</StatusPill>
       </div>
 
       <div className="h-2 overflow-hidden rounded-full bg-canvas">
         <motion.div
           className="h-full rounded-full bg-[#14181F]"
           initial={{ width: 0 }}
-          animate={{ width: `${(m.booked / m.capacity) * 100}%` }}
+          animate={{ width: `${(booked / m.capacity) * 100}%` }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
       </div>
       <p className="pt-1.5 text-right text-[11px] text-muted">
-        {m.booked}/{m.capacity} · {m.capacity - m.booked} left
+        {booked}/{m.capacity} · {m.capacity - booked} left
       </p>
 
       <button
@@ -245,18 +320,18 @@ function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-4 text-left"
       >
         <span className="flex -space-x-2">
-          {m.attendees.slice(0, 4).map((a) => (
+          {attendees.slice(0, 4).map((a) => (
             <span key={a.id} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-canvas text-[9px] font-bold text-secondary">
               {a.initials}
             </span>
           ))}
           <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#14181F] text-[9px] font-bold text-white">
-            +2
+            +{attendees.length - 4}
           </span>
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[14px] font-bold text-navy">
-            {m.booked} attendees · {arrivedCount} arrived
+            {booked} attendees · {arrivedCount} arrived
           </span>
           <span className="block text-[12px] text-muted">1 unpaid · 1 waiver pending</span>
         </span>
@@ -274,7 +349,7 @@ function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
             className="overflow-hidden"
           >
             <div className="flex flex-col gap-2 pt-3">
-              {m.attendees.map((a) => (
+              {attendees.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[11px] font-bold text-secondary">
                     {a.initials}
@@ -303,14 +378,19 @@ function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
       <div className="grid grid-cols-3 gap-2.5 pt-4">
         {[
-          { icon: <MessageSquare size={17} strokeWidth={1.7} />, label: "Message all" },
-          { icon: <UserPlus size={17} strokeWidth={1.7} />, label: "Add attendee" },
-          { icon: <Ban size={17} strokeWidth={1.7} />, label: "Cancel class" },
+          {
+            icon: <MessageSquare size={17} strokeWidth={1.7} />, label: "Message all",
+            run: () => { onClose(); router.push("/app/messages/team"); },
+          },
+          { icon: <UserPlus size={17} strokeWidth={1.7} />, label: "Add attendee", run: () => setAddOpen(true) },
+          { icon: <Ban size={17} strokeWidth={1.7} />, label: "Cancel class", run: () => setCancelOpen(true) },
         ].map((a) => (
           <motion.button
             key={a.label}
             whileTap={{ scale: 0.96 }}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-canvas px-2 py-4 text-[12px] font-medium text-navy"
+            onClick={a.run}
+            disabled={cancelled && a.label !== "Message all"}
+            className="flex flex-col items-center gap-2 rounded-2xl bg-canvas px-2 py-4 text-[12px] font-medium text-navy disabled:opacity-40"
           >
             {a.icon}
             {a.label}
@@ -337,12 +417,60 @@ function ClassSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       </p>
 
       <div className="sticky bottom-0 -mx-6 mt-4 bg-white px-6 pb-1 pt-3">
-        <DarkButton onClick={onClose}>
-          <Play size={15} />
-          Start class
+        <DarkButton onClick={cancelled ? undefined : onClose} disabled={cancelled}>
+          {!cancelled && <Play size={15} />}
+          {cancelled ? "Class cancelled" : "Start class"}
         </DarkButton>
       </div>
     </Sheet>
+
+    {/* Add attendee */}
+    <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Add attendee" sub={`${m.capacity - booked} seats left`}>
+      {clientRows
+        .filter((c) => !attendees.some((a) => a.name === c.name) && !c.tags.includes("Blocked"))
+        .slice(0, 5)
+        .map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => {
+              setExtra((x) => [
+                ...x,
+                { id: c.id, initials: initialsOf(c.name), name: c.name, status: "Added · collect payment", warn: true },
+              ]);
+              setExpanded(true);
+              setAddOpen(false);
+            }}
+            className="flex w-full items-center gap-3 border-b border-border py-3.5 text-left last:border-0"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
+              {initialsOf(c.name)}
+            </span>
+            <span className="flex-1 text-[14px] font-semibold text-navy">{c.name}</span>
+            <UserPlus size={15} className="text-secondary" />
+          </button>
+        ))}
+    </Sheet>
+
+    {/* Cancel class confirm */}
+    <Sheet open={cancelOpen} onClose={() => setCancelOpen(false)} title="Cancel this class?">
+      <p className="pb-5 text-[14px] leading-relaxed text-secondary">
+        {m.name} · {m.time} · {booked} attendees. Everyone will be notified and refunded
+        automatically.
+      </p>
+      <DarkButton
+        onClick={() => {
+          onCancelClass();
+          setCancelOpen(false);
+        }}
+      >
+        Cancel class · notify {booked}
+      </DarkButton>
+      <div className="pt-3">
+        <GhostButton onClick={() => setCancelOpen(false)}>Keep it</GhostButton>
+      </div>
+    </Sheet>
+    </>
   );
 }
 
@@ -388,10 +516,20 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
+const dayLabels = [
+  "Monday 2 March",
+  "Tuesday 3 March",
+  "Wednesday 4 March",
+  "Thursday 5 March",
+  "Friday 6 March",
+];
+
 export default function SchedulePage() {
   const [view, setView] = useState("My Day");
   const [classOpen, setClassOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [classCancelled, setClassCancelled] = useState(false);
+  const [dayIdx, setDayIdx] = useState(1);
 
   return (
     <div className="flex min-h-full flex-col bg-fog">
@@ -409,11 +547,32 @@ export default function SchedulePage() {
           </button>
         </div>
         <div className="flex items-center justify-between border-b border-border px-4 pb-3">
-          <button aria-label="Previous day" className="p-1 text-muted">
+          <button
+            aria-label="Previous day"
+            onClick={() => setDayIdx((d) => Math.max(0, d - 1))}
+            className="p-1 text-muted disabled:opacity-30"
+            disabled={dayIdx === 0}
+          >
             <ChevronLeft size={18} />
           </button>
-          <span className="text-[15px] font-bold text-navy">Tuesday 3 March</span>
-          <button aria-label="Next day" className="p-1 text-muted">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={dayIdx}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              className="text-[15px] font-bold text-navy"
+            >
+              {dayLabels[dayIdx]}
+            </motion.span>
+          </AnimatePresence>
+          <button
+            aria-label="Next day"
+            onClick={() => setDayIdx((d) => Math.min(dayLabels.length - 1, d + 1))}
+            className="p-1 text-muted disabled:opacity-30"
+            disabled={dayIdx === dayLabels.length - 1}
+          >
             <ChevronRight size={18} />
           </button>
         </div>
@@ -429,11 +588,16 @@ export default function SchedulePage() {
         >
           {view === "My Day" && <MyDayView />}
           {view === "Calendar" && <ThreeDayView />}
-          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} />}
+          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} />}
         </motion.div>
       </AnimatePresence>
 
-      <ClassSheet open={classOpen} onClose={() => setClassOpen(false)} />
+      <ClassSheet
+        open={classOpen}
+        onClose={() => setClassOpen(false)}
+        cancelled={classCancelled}
+        onCancelClass={() => setClassCancelled(true)}
+      />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );

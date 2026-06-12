@@ -97,15 +97,15 @@ export function Sheet({
       {open && (
         <>
           <motion.div
-            className="absolute inset-0 z-40 bg-black/40"
+            className={`absolute inset-0 bg-black/40 ${aboveNav ? "z-40" : "z-[70]"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
           <motion.div
-            className={`absolute inset-x-0 z-50 flex flex-col rounded-t-[24px] bg-white ${
-              aboveNav ? "bottom-[64px]" : "bottom-0"
+            className={`absolute inset-x-0 flex flex-col rounded-t-[24px] bg-white ${
+              aboveNav ? "bottom-[64px] z-50" : "bottom-0 z-[80]"
             } ${full ? "top-[7%]" : "max-h-[88%]"}`}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -165,16 +165,19 @@ export function GhostButton({
   children,
   onClick,
   className = "",
+  ariaLabel,
 }: {
   children: ReactNode;
   onClick?: () => void;
   className?: string;
+  ariaLabel?: string;
 }) {
   return (
     <motion.button
       type="button"
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
+      aria-label={ariaLabel}
       className={`flex h-12 w-full items-center justify-center gap-2 rounded-full border border-border bg-white text-[15px] font-semibold text-navy ${className}`}
     >
       {children}

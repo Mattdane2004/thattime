@@ -5,9 +5,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ChevronDown, Clock, AlertTriangle, CalendarDays, Plane, Stethoscope,
-  CirclePlus,
+  CirclePlus, Check, MapPin, Plus,
 } from "lucide-react";
-import { AppHeader, SectionLabel } from "@/components/app/ui";
+import { AppHeader, SectionLabel, Sheet, DarkButton, MiniCalendar } from "@/components/app/ui";
 import { UpNextSection } from "@/components/app/UpNextCard";
 import {
   homeHeader, staffStats, needsAttention, teamToday, upcomingShifts, timeOff,
@@ -43,6 +43,13 @@ function NeedsAttentionList() {
 }
 
 export default function HomePage() {
+  const [location, setLocation] = useState(homeHeader.location);
+  const [locOpen, setLocOpen] = useState(false);
+  const [totOpen, setTotOpen] = useState(false);
+  const [totType, setTotType] = useState("Annual Leave");
+  const [totDay, setTotDay] = useState<number | null>(null);
+  const [extraTimeOff, setExtraTimeOff] = useState<typeof timeOff>([]);
+
   return (
     <div className="bg-fog pb-6">
       <div className="bg-white">
@@ -50,8 +57,8 @@ export default function HomePage() {
       </div>
 
       <div className="px-4 pt-3">
-        <button className="flex items-center gap-1 text-[12px] font-medium text-muted">
-          {homeHeader.location}
+        <button onClick={() => setLocOpen(true)} className="flex items-center gap-1 text-[12px] font-medium text-muted">
+          {location}
           <ChevronDown size={13} strokeWidth={1.75} />
         </button>
         <div className="mt-3 flex items-center gap-3">
@@ -126,7 +133,9 @@ export default function HomePage() {
           <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
             <div className="flex items-center justify-between px-4 pb-1 pt-4">
               <span className="text-[15px] font-bold text-navy">Upcoming Shifts</span>
-              <span className="text-[12px] font-medium text-muted">View all</span>
+              <Link href="/app/schedule" className="text-[12px] font-medium text-muted">
+                View all
+              </Link>
             </div>
             {upcomingShifts.map((shift) => (
               <div key={shift.id} className="flex items-center gap-3 px-4 py-3">
@@ -149,12 +158,18 @@ export default function HomePage() {
           <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
             <div className="flex items-center justify-between px-4 pb-1 pt-4">
               <span className="text-[15px] font-bold text-navy">Time Off</span>
-              <button className="flex items-center gap-1 rounded-full bg-canvas px-3 py-1.5 text-[12px] font-medium text-secondary">
+              <button
+                onClick={() => {
+                  setTotDay(null);
+                  setTotOpen(true);
+                }}
+                className="flex items-center gap-1 rounded-full bg-canvas px-3 py-1.5 text-[12px] font-medium text-secondary"
+              >
                 <CirclePlus size={13} strokeWidth={1.75} />
                 Request
               </button>
             </div>
-            {timeOff.map((item) => (
+            {[...timeOff, ...extraTimeOff].map((item) => (
               <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas">
                   {item.detail === "Annual Leave" ? (
@@ -179,6 +194,73 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Location switcher */}
+      <Sheet open={locOpen} onClose={() => setLocOpen(false)} title="Your locations">
+        {["Salon Soho", "Salon Shoreditch"].map((loc) => (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => {
+              setLocation(loc);
+              setLocOpen(false);
+            }}
+            className="flex w-full items-center gap-3 border-b border-border py-4 text-left"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas text-secondary">
+              <MapPin size={16} strokeWidth={1.75} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-[14px] font-semibold text-navy">{loc}</span>
+              <span className="block text-[12px] text-muted">
+                {loc === "Salon Soho" ? "6 staff · open today" : "4 staff · open today"}
+              </span>
+            </span>
+            {location === loc && <Check size={16} className="text-navy" strokeWidth={2.25} />}
+          </button>
+        ))}
+        <button type="button" className="flex w-full items-center gap-3 py-4 text-left">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-border text-secondary">
+            <Plus size={16} strokeWidth={1.75} />
+          </span>
+          <span className="text-[14px] font-semibold text-navy">Add a location</span>
+        </button>
+      </Sheet>
+
+      {/* Request time off */}
+      <Sheet open={totOpen} onClose={() => setTotOpen(false)} title="Request time off" sub="Your manager will be notified" full>
+        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</p>
+        <div className="flex gap-2">
+          {["Annual Leave", "Sick Leave", "Other"].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTotType(t)}
+              className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
+                totType === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">First day off</p>
+        <MiniCalendar selected={totDay} onSelect={setTotDay} />
+        <div className="pt-6">
+          <DarkButton
+            disabled={!totDay}
+            onClick={() => {
+              setExtraTimeOff((x) => [
+                ...x,
+                { id: `tot${x.length}`, title: `${totDay} March`, detail: totType, badge: "Pending" },
+              ]);
+              setTotOpen(false);
+            }}
+          >
+            {totDay ? `Request ${totType} · ${totDay} March` : "Pick a day"}
+          </DarkButton>
+        </div>
+      </Sheet>
     </div>
   );
 }

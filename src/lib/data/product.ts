@@ -54,6 +54,41 @@ export const clientReviews = [
   { id: "r3", stars: 4, date: "20 Jan 2026", text: "Lovely cut, just took a bit longer than expected.", service: "Cut & Blow Dry" },
 ];
 
+// ── Up Next queue (Home / My Day live card) ──
+
+export interface UpNextAppt {
+  id: string;
+  time: string;
+  duration: string;
+  client: string;
+  initials: string;
+  service: string;
+  staff: string;
+  price: number;
+  tags: string[];
+  note?: string;
+}
+
+export const upNextQueue: UpNextAppt[] = [
+  {
+    id: "sarah", time: "11:00 AM", duration: "1h 30m", client: "Sarah Johnson", initials: "SJ",
+    service: "Cut & Colour", staff: "Emma S.", price: 140, tags: ["Allergy", "Form"],
+    note: "Note attached",
+  },
+  {
+    id: "lisa", time: "1:00 PM", duration: "1h", client: "Lisa Anderson", initials: "LA",
+    service: "Blow Dry & Style", staff: "Emma S.", price: 55, tags: [],
+  },
+  {
+    id: "emily", time: "2:30 PM", duration: "1h", client: "Emily Davis", initials: "ED",
+    service: "Cut & Colour", staff: "Emma S.", price: 140, tags: ["Form"],
+  },
+  {
+    id: "amanda", time: "3:30 PM", duration: "1h", client: "Amanda White", initials: "AW",
+    service: "Haircut", staff: "Emma S.", price: 65, tags: [],
+  },
+];
+
 // ── Schedule ──
 
 export interface AgendaRow {

@@ -49,6 +49,7 @@ export default function ValuePage() {
   const router = useRouter();
   const { weeklyBookings, avgPrice, businessName } = useOnboarding2();
   const [step, setStep] = useState(0); // 0 = loading, 1..5 = slides
+  const [loadPhase, setLoadPhase] = useState(0); // 0 = checking, 1 = Fresha import pitch
   const touchX = useRef<number | null>(null);
 
   const monthly = Math.max(1, Math.round(weeklyBookings * 4.3));
@@ -58,10 +59,16 @@ export default function ValuePage() {
   const booksie = Math.max(42, Math.round(revenue * 0.087));
   const saved = Math.max(35, Math.round(revenue * 0.072 / 10) * 10);
 
+  // Loading runs two beats: checking volume, then the "we can import your
+  // Fresha data" pitch, before the value slides start.
   useEffect(() => {
     if (step === 0) {
-      const t = setTimeout(() => setStep(1), 2300);
-      return () => clearTimeout(t);
+      const t1 = setTimeout(() => setLoadPhase(1), 1600);
+      const t2 = setTimeout(() => setStep(1), 4200);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [step]);
 
@@ -89,20 +96,75 @@ export default function ValuePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -16 }}
           >
-            <h1 className="font-display text-[32px] font-extrabold leading-[1.1] tracking-tight text-ink">
-              Right, let&rsquo;s talk bookings.
-            </h1>
-            <p className="mt-4 text-[15px] text-secondary">
-              Here&rsquo;s what 0% commission could mean for {businessLabel(businessName)}.
-            </p>
-            <div className="flex flex-1 flex-col items-center justify-center pb-16">
-              <p className="text-[15px] font-semibold text-ink">Checking your booking volume ...</p>
-              <div className="mt-4 h-[3px] w-[260px] overflow-hidden rounded-full bg-ink">
+            <AnimatePresence mode="wait">
+              {loadPhase === 0 ? (
+                <motion.div
+                  key="checking"
+                  className="flex flex-1 flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <h1 className="font-display text-[32px] font-extrabold leading-[1.1] tracking-tight text-ink">
+                    Right, let&rsquo;s talk bookings.
+                  </h1>
+                  <p className="mt-4 text-[15px] text-secondary">
+                    Here&rsquo;s what 0% commission could mean for {businessLabel(businessName)}.
+                  </p>
+                  <div className="flex flex-1 flex-col items-center justify-center pb-10">
+                    <p className="text-[15px] font-semibold text-ink">Checking your booking volume ...</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="import"
+                  className="flex flex-1 flex-col"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <h1 className="font-display text-[32px] font-extrabold leading-[1.1] tracking-tight text-ink">
+                    Already on Fresha?
+                  </h1>
+                  <p className="mt-4 text-[15px] text-secondary">
+                    We&rsquo;ll import your clients, services and booking history for you — nothing
+                    gets left behind.
+                  </p>
+                  <div className="flex flex-1 flex-col items-center justify-center gap-4 pb-10">
+                    <div className="flex gap-2">
+                      {["Fresha", "Booksy", "Treatwell"].map((b, i) => (
+                        <motion.span
+                          key={b}
+                          initial={{ opacity: 0, y: 8, scale: 0.92 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: 0.15 + i * 0.12, type: "spring", stiffness: 320, damping: 22 }}
+                          className="rounded-full border border-border bg-white/80 px-4 py-2 text-[13px] font-semibold text-ink"
+                        >
+                          {b}
+                        </motion.span>
+                      ))}
+                    </div>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="text-[13px] font-medium text-secondary"
+                    >
+                      One-tap import · free · about 2 minutes
+                    </motion.p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="flex flex-col items-center pb-16">
+              <div className="h-[3px] w-[260px] overflow-hidden rounded-full bg-ink">
                 <motion.div
                   className="h-full bg-coral"
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
-                  transition={{ duration: 2.1, ease: "easeInOut" }}
+                  transition={{ duration: 4, ease: "easeInOut" }}
                 />
               </div>
             </div>

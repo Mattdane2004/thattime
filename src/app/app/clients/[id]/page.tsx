@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, Pencil, Star, CalendarPlus, MessageSquare, Phone, Plus,
   RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell,
-  Send, MapPin, Mail,
+  Send, MapPin, Mail, Copy, Check,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { useAppStore } from "@/lib/store/appStore";
 import { pastAppointments, clientForms, clientReviews } from "@/lib/data/product";
 
 // Client detail — Overview / Bookings / Forms / Reviews tabs (Figma → Client).
@@ -56,6 +57,13 @@ function NextAppointmentCard({ onReschedule, onCancel, moved }: { onReschedule: 
   );
 }
 
+const formTemplates = [
+  "Consultation Form",
+  "Allergy Questionnaire",
+  "Aftercare Instructions",
+  "Pre-Appointment Checklist",
+];
+
 export default function ClientDetailPage() {
   const router = useRouter();
   const [tab, setTab] = useState("Overview");
@@ -65,6 +73,12 @@ export default function ClientDetailPage() {
   const [moved, setMoved] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [numberCopied, setNumberCopied] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formPick, setFormPick] = useState<string | null>(null);
+  const [formSent, setFormSent] = useState<string[]>([]);
+  const [reminded, setReminded] = useState(false);
 
   return (
     <div className="min-h-full bg-fog pb-6">
@@ -94,7 +108,10 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="flex gap-2.5 px-4 pt-4">
-          <DarkButton className="!h-11 flex-[1.2] !text-[14px]">
+          <DarkButton
+            className="!h-11 flex-[1.2] !text-[14px]"
+            onClick={() => useAppStore.getState().setQuickAction("appointment")}
+          >
             <CalendarPlus size={15} />
             Book
           </DarkButton>
@@ -102,7 +119,13 @@ export default function ClientDetailPage() {
             <MessageSquare size={15} />
             Message
           </GhostButton>
-          <GhostButton className="!h-11 !w-12 shrink-0">
+          <GhostButton
+            className="!h-11 !w-12 shrink-0"
+            onClick={() => {
+              setNumberCopied(false);
+              setContactOpen(true);
+            }}
+          >
             <Phone size={15} />
           </GhostButton>
         </div>
@@ -237,8 +260,15 @@ export default function ClientDetailPage() {
                     </button>
                   )}
                   {f.state === "remind" && (
-                    <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#FEF3C7] px-3.5 py-1.5 text-[12px] font-semibold text-[#B45309]">
-                      <Bell size={12} strokeWidth={2} /> Remind
+                    <button
+                      onClick={() => setReminded(true)}
+                      disabled={reminded}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold ${
+                        reminded ? "bg-canvas text-muted" : "bg-[#FEF3C7] text-[#B45309]"
+                      }`}
+                    >
+                      {reminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
+                      {reminded ? "Reminded" : "Remind"}
                     </button>
                   )}
                   {f.state === "not-sent" && (
@@ -246,7 +276,12 @@ export default function ClientDetailPage() {
                   )}
                 </div>
               ))}
-              <DarkButton>
+              <DarkButton
+                onClick={() => {
+                  setFormPick(null);
+                  setFormOpen(true);
+                }}
+              >
                 <Send size={15} />
                 Send New Form
               </DarkButton>
@@ -308,6 +343,74 @@ export default function ClientDetailPage() {
         </DarkButton>
         <div className="pt-3">
           <GhostButton onClick={() => setCancel(false)}>Keep it</GhostButton>
+        </div>
+      </Sheet>
+
+      {/* Contact */}
+      <Sheet open={contactOpen} onClose={() => setContactOpen(false)} title="Contact Sarah" sub="(555) 234-5678">
+        <div className="flex flex-col gap-2.5 pt-1">
+          <DarkButton onClick={() => setContactOpen(false)}>
+            <Phone size={15} />
+            Call (555) 234-5678
+          </DarkButton>
+          <GhostButton onClick={() => setNumberCopied(true)}>
+            {numberCopied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} />}
+            {numberCopied ? "Number copied" : "Copy number"}
+          </GhostButton>
+          <GhostButton
+            onClick={() => {
+              setContactOpen(false);
+              router.push("/app/messages/sarah");
+            }}
+          >
+            <MessageSquare size={15} />
+            Send a message
+          </GhostButton>
+        </div>
+      </Sheet>
+
+      {/* Send new form */}
+      <Sheet open={formOpen} onClose={() => setFormOpen(false)} title="Send a form" sub="Sarah will get it by SMS and email">
+        {formTemplates.map((t) => {
+          const sent = formSent.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              disabled={sent}
+              onClick={() => setFormPick(t)}
+              className="flex w-full items-center gap-3 border-b border-border py-3.5 text-left last:border-0"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas text-secondary">
+                <FileText size={16} strokeWidth={1.6} />
+              </span>
+              <span className={`flex-1 text-[14px] font-semibold ${sent ? "text-muted" : "text-navy"}`}>{t}</span>
+              {sent ? (
+                <span className="flex items-center gap-1 text-[12px] font-semibold text-muted">
+                  <Check size={13} strokeWidth={2.5} /> Sent
+                </span>
+              ) : (
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full border transition-colors ${
+                    formPick === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                  }`}
+                >
+                  {formPick === t && <Check size={11} strokeWidth={3} />}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        <div className="pt-4">
+          <DarkButton
+            disabled={!formPick}
+            onClick={() => {
+              if (formPick) setFormSent((x) => [...x, formPick]);
+              setFormOpen(false);
+            }}
+          >
+            {formPick ? `Send ${formPick}` : "Pick a form"}
+          </DarkButton>
         </div>
       </Sheet>
     </div>
