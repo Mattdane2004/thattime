@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ChevronLeft, CheckCircle2, CircleDashed, Circle, LockKeyhole } from "lucide-react";
 import { setupLevels, STATUS_LABEL, setupProgress, type StepStatus } from "@/lib/data/setupGuide";
 
@@ -21,14 +23,15 @@ function StatusIcon({ status }: { status: StepStatus }) {
 }
 
 export default function SetupGuidePage() {
+  const router = useRouter();
   const { done, total } = setupProgress();
 
   return (
     <div className="flex h-full flex-col bg-canvas">
       <div className="flex h-16 items-center px-4">
-        <Link href="/app/hub" aria-label="Back to hub" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-surface">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-surface">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Setup guide</span>
       </div>
 

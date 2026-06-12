@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Calendar, MessageSquare, Star, Sparkles, Heart } from "lucide-react";
 import { alertGroups, alertFilters, ALERT_FILTER_KIND, type AlertKind } from "@/lib/data/alerts";
 
@@ -13,6 +13,7 @@ const ICON: Record<AlertKind, typeof Calendar> = {
 };
 
 export default function AlertsPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState<string>("All");
   const kind = ALERT_FILTER_KIND[filter];
 
@@ -23,9 +24,9 @@ export default function AlertsPage() {
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center px-5">
-        <Link href="/app" aria-label="Back" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Alerts</span>
       </div>
 

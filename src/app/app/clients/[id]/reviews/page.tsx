@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, Star, Send, Check } from "lucide-react";
 import { Sheet, DarkButton } from "@/components/app/ui";
@@ -22,8 +21,7 @@ function Stars({ n, size = 13 }: { n: number; size?: number }) {
 }
 
 export default function ClientReviewsPage() {
-  const params = useParams<{ id: string }>();
-  const clientId = params?.id ?? "sarah";
+  const router = useRouter();
 
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, string>>({});
@@ -36,9 +34,9 @@ export default function ClientReviewsPage() {
   return (
     <div className="min-h-full bg-fog pb-6">
       <div className="bg-white px-4 pb-4 pt-4">
-        <Link href={`/app/clients/${clientId}`} aria-label="Back to profile" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} strokeWidth={2} />
-        </Link>
+        </button>
         <h1 className="pt-1 text-[24px] font-bold text-navy">Reviews</h1>
         <p className="pt-0.5 text-[13px] text-muted">Sarah Johnson · what she says about you</p>
       </div>

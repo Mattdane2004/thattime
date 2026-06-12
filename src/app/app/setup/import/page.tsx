@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Upload, Building2, Users, CalendarDays, Check } from "lucide-react";
 
 // Import data — bring clients & bookings in. Functional port of the legacy
@@ -18,6 +18,7 @@ const DATA = [
 ] as const;
 
 export default function ImportDataPage() {
+  const router = useRouter();
   const [source, setSource] = useState<string | null>(null);
   const [types, setTypes] = useState<string[]>(["clients"]);
   const toggle = (k: string) => setTypes((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]));
@@ -27,9 +28,9 @@ export default function ImportDataPage() {
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center px-5">
-        <Link href="/app/setup" aria-label="Back to setup" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Import data</span>
       </div>
 

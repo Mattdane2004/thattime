@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock,
@@ -44,9 +44,14 @@ interface BookingNote {
  */
 export function AppointmentSheetHost() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     apptSheet, setApptSheet, apptStatus, setApptStatus, movedTo, setMovedTo,
   } = useAppStore();
+  // The route the sheet was opened on. Detours (client profile, messages)
+  // navigate without closing — the sheet hides while the path differs and
+  // restores, state intact, when the user backs out to where they started.
+  const [homePath, setHomePath] = useState<string | null>(null);
   const [view, setView] = useState<"details" | "reschedule" | "cancel" | "note" | "picker">("details");
   const [localMoved, setLocalMoved] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
@@ -69,6 +74,7 @@ export function AppointmentSheetHost() {
   const open = apptSheet !== null;
   useEffect(() => {
     if (open) {
+      setHomePath(window.location.pathname);
       setView("details");
       setLocalMoved(null);
       setDay(null);
@@ -91,6 +97,8 @@ export function AppointmentSheetHost() {
   const a = apptSheet;
   const close = () => setApptSheet(null);
   if (!a) return null;
+  // Suspended during a detour — keep state, render nothing until back.
+  if (homePath && pathname !== homePath) return null;
 
   const moved = a.live ? movedTo : localMoved;
   const status = a.live
@@ -250,7 +258,7 @@ export function AppointmentSheetHost() {
               {[
                 {
                   icon: <MessageSquare size={17} strokeWidth={1.7} />, label: "Message",
-                  run: () => { close(); router.push(`/app/messages/${slug}`); },
+                  run: () => router.push(`/app/messages/${slug}`),
                 },
                 { icon: <RotateCcw size={17} strokeWidth={1.7} />, label: "Reschedule", run: () => setView("reschedule") },
                 { icon: <X size={17} strokeWidth={1.7} />, label: "Cancel", run: () => setView("cancel") },
@@ -577,7 +585,7 @@ export function AppointmentSheetHost() {
         <div className="flex flex-col pt-1">
           {[
             { icon: <StickyNote size={17} strokeWidth={1.8} />, t: "Add note & photos", run: () => { setNoteDraft(""); setNotePhotos(0); setView("note"); } },
-            { icon: <UserRound size={17} strokeWidth={1.8} />, t: "View client profile", run: () => { close(); router.push(`/app/clients/${slug}`); } },
+            { icon: <UserRound size={17} strokeWidth={1.8} />, t: "View client profile", run: () => router.push(`/app/clients/${slug}`) },
             { icon: <EyeOff size={16} strokeWidth={1.8} />, t: "Mark as no-show", run: () => setLocalStatus("No-show") },
           ].map((q) => (
             <button

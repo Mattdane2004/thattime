@@ -18,7 +18,7 @@ const TABS = [
 
 export function AppTabBar() {
   const pathname = usePathname();
-  const { quickAction, setQuickAction } = useAppStore();
+  const { quickAction, setQuickAction, setApptSheet } = useAppStore();
   const menuOpen = quickAction !== null;
 
   // Checkout is a focused flow — the back arrow in its header is the only
@@ -30,7 +30,16 @@ export function AppTabBar() {
       {TABS.map(({ key, label, icon: Icon, href }) => {
         const active = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
         return (
-          <Link key={key} href={href} className="flex flex-col items-center gap-1 py-1" onClick={() => setQuickAction(null)}>
+          <Link
+            key={key}
+            href={href}
+            className="flex flex-col items-center gap-1 py-1"
+            onClick={() => {
+              setQuickAction(null);
+              // Tab navigation abandons any suspended appointment detour.
+              setApptSheet(null);
+            }}
+          >
             <Icon size={20} strokeWidth={active ? 2.25 : 1.75} className={active ? "text-navy" : "text-muted"} />
             <span className={`text-[11px] ${active ? "font-semibold text-navy" : "font-medium text-muted"}`}>
               {label}

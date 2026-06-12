@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Check } from "lucide-react";
 import { variantsCatalog, variantTypes, deltaLabel } from "@/lib/data/modules";
 
@@ -10,16 +10,17 @@ import { variantsCatalog, variantTypes, deltaLabel } from "@/lib/data/modules";
 
 const TYPE_LABEL: Record<string, string> = { duration: "Duration", staff: "Staff", time: "Time" };
 
-export default function VariantsModulePage({ params }: { params: { id: string } }) {
+export default function VariantsModulePage() {
+  const router = useRouter();
   const [selected, setSelected] = useState<string[]>(["v2"]);
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center px-5">
-        <Link href={`/app/services/${params.id}`} aria-label="Back to offer" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Variants</span>
       </div>
       <div className="px-4 pb-2 text-[12px] text-muted">{selected.length} active · adjust price & duration per option</div>

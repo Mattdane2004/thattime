@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Check, Plus } from "lucide-react";
 import { demoOffers, offerMeta } from "@/lib/data/offers";
 
@@ -9,6 +9,7 @@ import { demoOffers, offerMeta } from "@/lib/data/offers";
 // from the legacy that-time-app RelatedServices module. Local selection state.
 
 export default function RelatedModulePage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
@@ -18,9 +19,9 @@ export default function RelatedModulePage({ params }: { params: { id: string } }
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center px-5">
-        <Link href={`/app/services/${params.id}`} aria-label="Back to offer" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Related</span>
       </div>
       <div className="px-4 pb-2 text-[12px] text-muted">{selected.length} suggested at checkout</div>
