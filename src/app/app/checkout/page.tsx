@@ -155,6 +155,9 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState<MethodSheet>(null);
   const [cashAmount, setCashAmount] = useState(10);
   const [otherAmount, setOtherAmount] = useState(0);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftAmount, setGiftAmount] = useState(0);
+  const giftValid = giftCode.replace(/[^A-Z0-9]/g, "").length >= 6;
   const [paidScreen, setPaidScreen] = useState(false);
   const [receiptSent, setReceiptSent] = useState(false);
   const [rate, setRate] = useState(false);
@@ -515,6 +518,10 @@ export default function CheckoutPage() {
             whileTap={{ scale: 0.97 }}
             onClick={() => {
               if (m === "Other") setOtherAmount(totals.remaining);
+              if (m === "Gift card") {
+                setGiftCode("");
+                setGiftAmount(Math.min(totals.remaining, 50));
+              }
               setMethod(m);
             }}
             disabled={totals.remaining <= 0}
@@ -708,9 +715,9 @@ export default function CheckoutPage() {
 
       {/* Payment method sheets */}
       <Sheet
-        open={method === "Card" || method === "Gift card"}
+        open={method === "Card"}
         onClose={() => setMethod(null)}
-        title={method ?? ""}
+        title="Card"
         sub={`${fmt(totals.remaining)} remaining`}
       >
         <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount to charge</p>
@@ -718,14 +725,66 @@ export default function CheckoutPage() {
           <span className="pr-1 text-[20px] font-bold text-muted">£</span>
           <span className="text-[24px] font-bold text-navy">{totals.remaining}</span>
         </div>
-        <p className="pt-3 text-[13px] text-secondary">
-          {method === "Card"
-            ? "The card reader will prompt the client to tap or insert."
-            : "The balance will be deducted from their gift card."}
-        </p>
+        <p className="pt-3 text-[13px] text-secondary">The card reader will prompt the client to tap or insert.</p>
         <div className="pt-5">
-          <DarkButton onClick={() => method && finishPayment(method, totals.remaining)}>
+          <DarkButton onClick={() => finishPayment("Card", totals.remaining)}>
             Charge {fmt(totals.remaining)}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Gift card — code first, then how much to draw from it */}
+      <Sheet open={method === "Gift card"} onClose={() => setMethod(null)} title="Gift card" sub={`${fmt(totals.remaining)} remaining`}>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Gift card code</p>
+        <div className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3.5">
+          <Gift size={16} strokeWidth={1.75} className="shrink-0 text-secondary" />
+          <input
+            value={giftCode}
+            onChange={(e) => setGiftCode(e.target.value.toUpperCase())}
+            placeholder="e.g. GIFT-4F2K-99"
+            className="w-full bg-transparent text-[15px] font-semibold tracking-wide text-navy placeholder:font-normal placeholder:tracking-normal placeholder:text-muted focus:outline-none"
+            aria-label="Gift card code"
+          />
+          {giftValid && <Check size={16} strokeWidth={2.5} className="shrink-0 text-navy" />}
+        </div>
+        {giftValid ? (
+          <p className="pt-2 text-[12px] font-semibold text-navy">Card found · £50 balance available</p>
+        ) : (
+          <p className="pt-2 text-[12px] text-muted">Enter the code printed on the card or in their email.</p>
+        )}
+
+        <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount to charge to the card</p>
+        <div className={`flex items-center rounded-2xl bg-canvas px-4 py-4 ${giftValid ? "" : "opacity-40"}`}>
+          <span className="pr-1 text-[20px] font-bold text-muted">£</span>
+          <input
+            value={giftAmount}
+            disabled={!giftValid}
+            onChange={(e) => setGiftAmount(Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))}
+            inputMode="numeric"
+            className="w-full bg-transparent text-[24px] font-bold text-navy focus:outline-none"
+            aria-label="Amount to charge to the gift card"
+          />
+        </div>
+        {giftValid && giftAmount > 50 && (
+          <p className="mt-3 rounded-xl bg-[#FEF3C7] px-4 py-3 text-[12px] font-medium text-[#92400E]">
+            Only £50 is on this card — we&rsquo;ll charge £50 and the rest stays due.
+          </p>
+        )}
+        {giftValid && Math.min(giftAmount, 50) < totals.remaining && giftAmount > 0 && (
+          <p className="mt-3 rounded-xl bg-canvas px-4 py-3 text-[12px] text-secondary">
+            {fmt(totals.remaining - Math.min(giftAmount, 50, totals.remaining))} will still be due — take the rest with another method.
+          </p>
+        )}
+        <div className="pt-5">
+          <DarkButton
+            disabled={!giftValid || giftAmount <= 0}
+            onClick={() => finishPayment("Gift card", Math.min(giftAmount, 50, totals.remaining))}
+          >
+            {!giftValid
+              ? "Enter the card code first"
+              : Math.min(giftAmount, 50) >= totals.remaining
+                ? `Charge ${fmt(totals.remaining)} to gift card`
+                : `Add ${fmt(Math.min(giftAmount, 50))} · split payment`}
           </DarkButton>
         </div>
       </Sheet>
