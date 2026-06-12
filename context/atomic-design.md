@@ -23,6 +23,23 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
   (+ Matt's `app/ui.tsx` primitives that overlap ours: Sheet/Segmented/StatusPill)
   into `ui/` is the **Phase-2 consolidation** — coordinate with Matt.
 
+## Componentisation (Phase-2) — IN PROGRESS
+
+Reality: canonical `ui/` (mine) was imported by **1 file**; the app actually runs on
+Matt's `onboarding2/controls.tsx` (**41 imports**) + `app/ui.tsx` (**10**). Consolidation
+strategy (staged, low-conflict):
+
+- **Stage 1 ✅ (additive, no Matt conflict):** ported the 8 onboarding **gap** components
+  into canonical `ui/` with **identical prop APIs** (so Stage 2 is a pure import-path
+  swap, not a JSX rewrite): `CheckCircle` (atom) + `PhoneInput`, `OtpInput`, `SelectCard`,
+  `CheckRow`, `SocialButtons`, `OrDivider`, `ProgressDashes` (molecules). Smoke-gated.
+  Overlaps already in `ui/`: PrimaryButton→Button, Field→Field, BottomSheet→Sheet,
+  StatusPill→Badge, Segmented→SegmentedControl, PermissionDialog→Dialog.
+- **Stage 2 (PENDING — touches Matt's files):** codemod screen imports
+  `onboarding2/controls` + `app/ui` → `@/components/ui`; map PrimaryButton→`Button
+  variant="primary"` etc.; then retire the duplicate files. Coordinate/brief Matt.
+- **Still a gap in `ui/`:** `MiniCalendar`, `TimeChips` (app/booking) not yet ported.
+
 ## Remaining before "done"
 1. **Tokens** — ✅ *pipeline + warm-palette + app-wide repoint landed.*
    - `scripts/build-tokens.mjs` → `src/styles/tokens.css` (channel pattern: `--x: r g b`,

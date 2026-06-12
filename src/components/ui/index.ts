@@ -15,6 +15,7 @@ export { Spinner, type SpinnerProps } from "./atoms/Spinner";
 export { Separator, type SeparatorProps } from "./atoms/Separator";
 export { Switch } from "./atoms/Switch";
 export { Checkbox } from "./atoms/Checkbox";
+export { CheckCircle } from "./atoms/CheckCircle";
 
 // ── molecules ──
 export { Card, cardVariants, type CardProps } from "./molecules/Card";
@@ -28,3 +29,12 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from "./molecules/Tabs";
 export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogTitle, DialogDescription } from "./molecules/Dialog";
 export { Sheet, SheetTrigger, SheetClose, SheetContent, type SheetContentProps } from "./molecules/Sheet";
 export { Toaster, toast, type ToastItem } from "./molecules/Toast";
+
+// ── onboarding/form molecules (ported from onboarding2/controls; identical APIs) ──
+export { PhoneInput, inputClass } from "./molecules/PhoneInput";
+export { OtpInput } from "./molecules/OtpInput";
+export { SelectCard } from "./molecules/SelectCard";
+export { CheckRow } from "./molecules/CheckRow";
+export { SocialButtons } from "./molecules/SocialButtons";
+export { OrDivider } from "./molecules/OrDivider";
+export { ProgressDashes } from "./molecules/ProgressDashes";

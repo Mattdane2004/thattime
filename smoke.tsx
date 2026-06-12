@@ -44,7 +44,7 @@ import PickTimePage from "./src/app/client/book/time/page";
 import ReviewBookingPage from "./src/app/client/book/review/page";
 import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, SheetTrigger, Toaster, toast } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, SheetTrigger, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -265,6 +265,16 @@ check("Tabs renders tablist + active tab", (() => { const s = h(React.createElem
 check("Dialog renders trigger", h(React.createElement(Dialog, { children: React.createElement(DialogTrigger, { children: "Open dialog" }) })).includes("Open dialog"));
 check("Sheet renders trigger", h(React.createElement(Sheet, { children: React.createElement(SheetTrigger, { children: "Open sheet" }) })).includes("Open sheet"));
 check("Toaster mounts (toast fn is callable)", typeof toast === "function" && h(React.createElement(Toaster, {})).length >= 0);
+
+// 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
+check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));
+check("PhoneInput shows +44 + tel input", (() => { const s = h(React.createElement(PhoneInput, { value: "", onChange: () => {} })); return s.includes("44") && s.includes('type="tel"'); })());
+check("OtpInput renders 6 boxes", (() => { const s = h(React.createElement(OtpInput, {})); return (s.match(/aria-label="Digit/g) || []).length === 6; })());
+check("SelectCard shows title + check", (() => { const s = h(React.createElement(SelectCard, { title: "Mobile", selected: true })); return s.includes("Mobile") && s.includes("bg-fg-primary"); })());
+check("CheckRow shows title", h(React.createElement(CheckRow, { checked: false, onToggle: () => {}, title: "Agree to terms" })).includes("Agree to terms"));
+check("SocialButtons render Apple/Google", (() => { const s = h(React.createElement(SocialButtons, { onPick: () => {} })); return s.includes("Apple") && s.includes("Google"); })());
+check("OrDivider shows label", h(React.createElement(OrDivider, {})).includes("Or"));
+check("ProgressDashes renders total dashes", (() => { const s = h(React.createElement(ProgressDashes, { total: 4, active: 2 })); return (s.match(/rounded-full/g) || []).length >= 4; })());
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
