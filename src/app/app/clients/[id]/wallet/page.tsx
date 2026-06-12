@@ -44,29 +44,41 @@ export default function ClientWalletPage() {
   const clientId = params?.id ?? "sarah";
 
   const [balance, setBalance] = useState(25);
-  const [topup, setTopup] = useState<number | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([
     { id: "r1", label: "Free blow dry", sub: "Unlocks at 400 pts · 80 to go" },
     { id: "r2", label: "10% off colour", sub: "Unlocks at 250 pts · available now" },
   ]);
 
-  // Add-reward flow
+  // Top-up is a deliberate flow behind its own button — no accidental credit.
+  const [topupOpen, setTopupOpen] = useState(false);
+  const [topup, setTopup] = useState<number | null>(null);
+  const [topupCustom, setTopupCustom] = useState("");
+  const topupValue = topup ?? (Number(topupCustom) > 0 ? Math.floor(Number(topupCustom)) : null);
+
+  // Add-reward flow — chips for the common values, custom input for the rest.
   const [addOpen, setAddOpen] = useState(false);
   const [kind, setKind] = useState<RewardKind | null>(null);
   const [pctPick, setPctPick] = useState<number | null>(null);
+  const [pctCustom, setPctCustom] = useState("");
   const [amtPick, setAmtPick] = useState<number | null>(null);
+  const [amtCustom, setAmtCustom] = useState("");
   const [itemPick, setItemPick] = useState<string | null>(null);
+
+  const pctValue = pctPick ?? (Number(pctCustom) > 0 && Number(pctCustom) <= 100 ? Math.floor(Number(pctCustom)) : null);
+  const amtValue = amtPick ?? (Number(amtCustom) > 0 ? Math.floor(Number(amtCustom)) : null);
 
   const resetAdd = () => {
     setKind(null);
     setPctPick(null);
+    setPctCustom("");
     setAmtPick(null);
+    setAmtCustom("");
     setItemPick(null);
   };
 
   const draftLabel =
-    kind === "percent" && pctPick ? `${pctPick}% off any visit`
-      : kind === "amount" && amtPick ? `£${amtPick} off the bill`
+    kind === "percent" && pctValue ? `${pctValue}% off any visit`
+      : kind === "amount" && amtValue ? `£${amtValue} off the bill`
         : kind === "service" && itemPick ? `Free ${itemPick}`
           : kind === "product" && itemPick ? `Free ${itemPick}`
             : null;
@@ -89,17 +101,20 @@ export default function ClientWalletPage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4 pt-4">
-        {/* Balance + points hero */}
+        {/* Balance + points hero — labels first, numbers loud */}
         <div className="rounded-3xl bg-[#14181F] p-5 text-white">
-          <div className="flex items-start justify-between">
-            <span>
-              <span className="block text-[28px] font-bold leading-none">£{balance}</span>
-              <span className="block pt-1.5 text-[12px] text-white/60">Wallet balance</span>
-            </span>
-            <span className="text-right">
-              <span className="block text-[28px] font-bold leading-none">320</span>
-              <span className="block pt-1.5 text-[12px] text-white/60">Loyalty points</span>
-            </span>
+          <div className="flex">
+            <div className="flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">Wallet balance</p>
+              <p className="pt-1.5 text-[32px] font-bold leading-none">£{balance}</p>
+              <p className="pt-1.5 text-[11px] text-white/60">Spends automatically at checkout</p>
+            </div>
+            <div className="mx-4 w-px bg-white/12" />
+            <div className="flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">Loyalty points</p>
+              <p className="pt-1.5 text-[32px] font-bold leading-none">320</p>
+              <p className="pt-1.5 text-[11px] text-white/60">{rewards.length} reward{rewards.length === 1 ? "" : "s"} to redeem</p>
+            </div>
           </div>
           {/* Progress to the next points reward */}
           <div className="pt-5">
@@ -118,39 +133,15 @@ export default function ClientWalletPage() {
           </div>
         </div>
 
-        {/* Top up */}
-        <div>
-          <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Top up credit</p>
-          <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-            <div className="flex gap-2">
-              {[5, 10, 25].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setTopup(topup === v ? null : v)}
-                  className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-                    topup === v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-                  }`}
-                >
-                  +£{v}
-                </button>
-              ))}
-            </div>
-            <p className="pt-3 text-[12px] leading-snug text-muted">
-              Use credit to apologise for a mix-up, reward loyalty, or pre-load a package. Sarah sees it at checkout automatically.
-            </p>
-            <div className="pt-3">
-              <DarkButton
-                disabled={!topup}
-                onClick={() => {
-                  if (topup) setBalance((b) => b + topup);
-                  setTopup(null);
-                }}
-              >
-                {topup ? `Add £${topup} credit` : "Pick an amount"}
-              </DarkButton>
-            </div>
-          </div>
-        </div>
+        {/* Topping up is deliberate: its own button, its own confirm */}
+        <button
+          type="button"
+          onClick={() => { setTopup(null); setTopupCustom(""); setTopupOpen(true); }}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-border bg-white text-[14px] font-semibold text-navy"
+        >
+          <Plus size={15} strokeWidth={2} />
+          Add top-up
+        </button>
 
         {/* Rewards */}
         <div>
@@ -205,6 +196,48 @@ export default function ClientWalletPage() {
         </div>
       </div>
 
+      {/* Add top-up — confirm before any credit lands */}
+      <Sheet open={topupOpen} onClose={() => setTopupOpen(false)} title="Add top-up" sub="Credit Sarah spends automatically at checkout">
+        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">How much?</p>
+        <div className="flex gap-2">
+          {[5, 10, 25].map((v) => (
+            <button
+              key={v}
+              onClick={() => { setTopup(topup === v ? null : v); setTopupCustom(""); }}
+              className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
+                topup === v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              +£{v}
+            </button>
+          ))}
+        </div>
+        <div className="relative mt-3">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-muted">£</span>
+          <input
+            value={topupCustom}
+            onChange={(e) => { setTopupCustom(e.target.value.replace(/[^0-9]/g, "")); setTopup(null); }}
+            inputMode="numeric"
+            placeholder="Custom amount"
+            className="h-12 w-full rounded-xl bg-canvas pl-8 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        <p className="pt-3 text-[12px] leading-snug text-muted">
+          Use credit to apologise for a mix-up, reward loyalty, or pre-load a package.
+        </p>
+        <div className="pt-4">
+          <DarkButton
+            disabled={!topupValue}
+            onClick={() => {
+              if (topupValue) setBalance((b) => b + topupValue);
+              setTopupOpen(false);
+            }}
+          >
+            {topupValue ? `Confirm £${topupValue} top-up` : "Pick or enter an amount"}
+          </DarkButton>
+        </div>
+      </Sheet>
+
       {/* Add reward */}
       <Sheet
         open={addOpen}
@@ -237,7 +270,7 @@ export default function ClientWalletPage() {
               {percentOptions.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setPctPick(p)}
+                  onClick={() => { setPctPick(pctPick === p ? null : p); setPctCustom(""); }}
                   className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
                     pctPick === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
                   }`}
@@ -245,6 +278,16 @@ export default function ClientWalletPage() {
                   {p}%
                 </button>
               ))}
+            </div>
+            <div className="relative mt-3">
+              <input
+                value={pctCustom}
+                onChange={(e) => { setPctCustom(e.target.value.replace(/[^0-9]/g, "")); setPctPick(null); }}
+                inputMode="numeric"
+                placeholder="Custom percentage"
+                className="h-12 w-full rounded-xl bg-canvas px-4 pr-9 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-muted">%</span>
             </div>
           </>
         )}
@@ -256,7 +299,7 @@ export default function ClientWalletPage() {
               {amountOptions.map((p) => (
                 <button
                   key={p}
-                  onClick={() => setAmtPick(p)}
+                  onClick={() => { setAmtPick(amtPick === p ? null : p); setAmtCustom(""); }}
                   className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
                     amtPick === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
                   }`}
@@ -264,6 +307,16 @@ export default function ClientWalletPage() {
                   £{p}
                 </button>
               ))}
+            </div>
+            <div className="relative mt-3">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-muted">£</span>
+              <input
+                value={amtCustom}
+                onChange={(e) => { setAmtCustom(e.target.value.replace(/[^0-9]/g, "")); setAmtPick(null); }}
+                inputMode="numeric"
+                placeholder="Custom amount"
+                className="h-12 w-full rounded-xl bg-canvas pl-8 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+              />
             </div>
           </>
         )}

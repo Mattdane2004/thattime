@@ -189,10 +189,10 @@ export default function ClientDetailPage() {
 
   return (
     <div className="min-h-full bg-fog pb-6">
-      {/* ── Header: identity, primary actions, stats, tabs ── */}
-      <div className="bg-white pb-3">
-        <div className="flex items-center justify-between px-4 pt-4">
-          <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-1 p-1 text-navy">
+      {/* ── Header: identity, primary actions, stats — generous spacing ── */}
+      <div className="bg-white px-5 pb-6">
+        <div className="-mx-1 flex items-center justify-between pt-4">
+          <button type="button" aria-label="Back" onClick={() => router.back()} className="p-1 text-navy">
             <ChevronLeft size={22} strokeWidth={2} />
           </button>
           <button
@@ -205,18 +205,18 @@ export default function ClientDetailPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-4 px-4 pt-2">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas text-[17px] font-semibold text-muted">
+        <div className="flex items-center gap-4 pt-4">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-canvas text-[20px] font-semibold text-muted">
             SJ
           </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-[20px] font-bold text-navy">Sarah Johnson</h1>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <h1 className="truncate text-[22px] font-bold text-navy">Sarah Johnson</h1>
+              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
                 {blocked ? "Blocked" : "Active"}
               </span>
             </div>
-            <span className="mt-1 flex items-center gap-2 text-[13px] font-medium text-navy">
+            <span className="mt-1.5 flex items-center gap-2 text-[13px] font-medium text-navy">
               <span className="flex items-center gap-1"><Star size={13} className="fill-current" /> 4.8</span>
               {tags.map((t) => (
                 <span key={t} className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">{t}</span>
@@ -225,7 +225,7 @@ export default function ClientDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-2.5 px-4 pt-4">
+        <div className="flex gap-2.5 pt-6">
           <DarkButton className="!h-11 flex-[1.2] !text-[14px]" onClick={() => setQuickAction("appointment")}>
             <CalendarPlus size={15} />
             Book
@@ -246,23 +246,24 @@ export default function ClientDetailPage() {
           </GhostButton>
         </div>
 
-        {/* One quiet stats strip instead of three boxes */}
-        <div className="mx-4 mt-4 flex divide-x divide-border rounded-2xl border border-border">
+        {/* Stats breathe on their own line — no boxes */}
+        <div className="flex divide-x divide-border pt-6">
           {[
             ["Last Visit", "3 Mar 2026"],
             ["Total Bookings", "24"],
             ["Total Sales", "£1,870"],
           ].map(([k, v]) => (
-            <div key={k} className="flex-1 px-3 py-2.5 text-center">
-              <p className="text-[10px] text-muted">{k}</p>
-              <p className="pt-0.5 text-[13px] font-bold text-navy">{v}</p>
+            <div key={k} className="flex-1 text-center first:pl-0 last:pr-0">
+              <p className="text-[11px] text-muted">{k}</p>
+              <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="px-4 pt-3">
-          <Segmented options={["Overview", "Appointments", "Record"]} value={tab} onChange={setTab} />
-        </div>
+      {/* ── Sticky section nav: stays pinned while the page scrolls ── */}
+      <div className="sticky top-0 z-30 border-b border-border bg-white px-4 pb-3 pt-2">
+        <Segmented options={["Overview", "Appointments", "Record"]} value={tab} onChange={setTab} />
       </div>
 
       <AnimatePresence mode="wait" initial={false}>

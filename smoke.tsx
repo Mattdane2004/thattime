@@ -78,7 +78,7 @@ renderContains("ClientDetail", React.createElement(ClientDetailPage), [
 
 // 3b-ii) Client sub-pages: wallet, reviews, settings.
 renderContains("ClientWallet", React.createElement(ClientWalletPage), [
-  "Wallet &amp; loyalty", "Loyalty points", "Top up credit", "Rewards", "Add reward", "Recent activity",
+  "Wallet &amp; loyalty", "Loyalty points", "Add top-up", "Rewards", "Add reward", "Recent activity",
 ]);
 renderContains("ClientReviews", React.createElement(ClientReviewsPage), [
   "Reviews", "4.7", "Ask for a review", "Reply",
