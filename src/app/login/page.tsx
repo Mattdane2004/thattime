@@ -1,5 +1,6 @@
-import { LoginScreen } from "@/components/onboarding/screens";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <LoginScreen />;
+// The standalone /login route is superseded by the new onboarding flow.
+export default function LoginRedirect() {
+  redirect("/onboarding/login");
 }
