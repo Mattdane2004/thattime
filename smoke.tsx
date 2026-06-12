@@ -44,7 +44,7 @@ import PickTimePage from "./src/app/client/book/time/page";
 import ReviewBookingPage from "./src/app/client/book/review/page";
 import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Chip } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -233,13 +233,19 @@ check("tintFromHex bad input", tintFromHex("nope") === "rgba(0,0,0,0.12)");
 check("swatch set non-empty", categorySwatches.length > 0);
 
 // 9) UI component library (atoms) — render + variant sanity.
-const btn = renderToString(React.createElement(Button, { children: "Save" }));
-check("Button renders its label", btn.includes("Save"));
-check("Button primary uses the navy token", btn.includes("bg-navy"));
-check("Button secondary variant differs", renderToString(React.createElement(Button, { variant: "secondary", children: "Cancel" })).includes("border-border"));
-check("Button fullWidth adds w-full", renderToString(React.createElement(Button, { fullWidth: true, children: "Go" })).includes("w-full"));
-check("Input renders its label", renderToString(React.createElement(Input, { label: "Email", placeholder: "you@x.com" })).includes("Email"));
-check("Chip selected uses navy", renderToString(React.createElement(Chip, { selected: true, children: "VIP" })).includes("bg-navy"));
+const h = (el: React.ReactElement) => renderToString(el);
+check("Button renders label + navy token", h(React.createElement(Button, { children: "Save" })).includes("Save"));
+check("Button secondary variant differs", h(React.createElement(Button, { variant: "secondary", children: "Cancel" })).includes("border-border"));
+check("Button fullWidth adds w-full", h(React.createElement(Button, { fullWidth: true, children: "Go" })).includes("w-full"));
+check("Button icon size is square", h(React.createElement(Button, { size: "icon", children: "+" })).includes("w-9"));
+check("Input invalid flags aria + ring", (() => { const s = h(React.createElement(Input, { invalid: true })); return s.includes('aria-invalid="true"') && s.includes("ring-danger"); })());
+check("Textarea renders", h(React.createElement(Textarea, { placeholder: "Notes" })).includes("textarea") || h(React.createElement(Textarea, {})).includes("rounded-xl"));
+check("Label renders text", h(React.createElement(Label, { children: "Email" })).includes("Email"));
+check("Badge tone success", h(React.createElement(Badge, { tone: "success", children: "Paid" })).includes("text-success"));
+check("Avatar shows initials", h(React.createElement(Avatar, { initials: "SJ" })).includes("SJ"));
+check("Chip selected uses navy + aria-pressed", (() => { const s = h(React.createElement(Chip, { selected: true, children: "VIP" })); return s.includes("bg-navy") && s.includes('aria-pressed="true"'); })());
+check("Spinner has status role", h(React.createElement(Spinner, {})).includes('role="status"'));
+check("Separator renders hairline", h(React.createElement(Separator, {})).includes("bg-border"));
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

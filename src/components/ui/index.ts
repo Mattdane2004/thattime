@@ -1,6 +1,15 @@
 // Component library barrel — screens import from "@/components/ui".
-// Atomic design: atoms → molecules → organisms. Keep this the single entry point.
+// Atomic design: atoms → molecules → organisms. Single entry point.
+// Built shadcn-style (cva + cn); token classes remap to the Figma shadcn
+// palette when that JSON lands — variant APIs stay stable.
 
-export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from "./atoms/Button";
+// ── atoms ──
+export { Button, buttonVariants, type ButtonProps } from "./atoms/Button";
 export { Input, type InputProps } from "./atoms/Input";
+export { Textarea, type TextareaProps } from "./atoms/Textarea";
+export { Label } from "./atoms/Label";
+export { Badge, badgeVariants, type BadgeProps } from "./atoms/Badge";
+export { Avatar, avatarVariants, type AvatarProps } from "./atoms/Avatar";
 export { Chip, type ChipProps } from "./atoms/Chip";
+export { Spinner, type SpinnerProps } from "./atoms/Spinner";
+export { Separator, type SeparatorProps } from "./atoms/Separator";
