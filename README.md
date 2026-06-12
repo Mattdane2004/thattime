@@ -4,7 +4,8 @@ The **That Time** product app — a booking/scheduling platform for beauty &
 wellness businesses. Next.js 14 (App Router) + TypeScript + Tailwind.
 
 The repo also holds the onboarding flow; the consolidation of the original
-prototypes into this single app is tracked in [`PORTING.md`](./PORTING.md).
+prototypes into this single app is tracked in [`context/PORTING.md`](./context/PORTING.md).
+Team workflow and conventions live in [`context/WAYS_OF_WORKING.md`](./context/WAYS_OF_WORKING.md).
 
 ## Local development
 

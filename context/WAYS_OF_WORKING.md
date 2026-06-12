@@ -9,6 +9,7 @@ people touch the same product.
 | | **Austin — UI** | **Matt — UX** |
 |---|---|---|
 | Focus | Component library, design system, Figma↔code, styling rollout | Flows, screens, wiring, the UX of the wireframes |
+| Branch | `rollout` (the component library) | `ux-<flow>` per flow |
 | Owns these files | `src/components/ui/**` (the component library), `tailwind.config.ts`, `src/lib/tokens/**`, `src/app/globals.css` | `src/app/**` (routes/pages), `src/lib/data/**` (screen data), `src/lib/store/**` (state), navigation |
 | Don't edit without a heads-up | the other person's column | the other person's column |
 | Shared (coordinate first) | `src/lib/types/**`, route structure, anything in both columns | same |
@@ -44,19 +45,33 @@ library; don't block on a big-bang refactor.
 - New colours/spacing/radii go into `tailwind.config.ts` (Austin), then get used
   by name — not as one-off arbitrary values.
 
-## Single sources of truth (this is what just bit us)
+## Design-system rollout (Austin, on the `rollout` branch)
 
-We had two onboarding flows and two data layers (`product.ts` vs `offers.ts`)
-because work landed in parallel. Don't re-create that:
+The component library is built on a long-running **`rollout`** branch, in two
+phases so it never clashes with Matt's screens:
 
-- **One data module per domain** in `src/lib/data`. Extend the existing one;
-  don't add a parallel `productV2.ts`.
-- **One store per concern** in `src/lib/store`. **One** design-token set. **One**
-  onboarding flow (`components/onboarding2` is canonical).
-- **Domain types** live in `src/lib/types` — import them, never redefine.
+- **Phase 1 — build the library (conflict-free).** Extract the recurring inline
+  Tailwind into `src/components/ui/`, organised atomic-design style:
+  ```
+  ui/atoms/      Button, Input, Toggle, Chip, Badge, Avatar
+  ui/molecules/  Card, ListRow, FieldRow, BottomSheet, SegmentedTabs, StatTile
+  ui/organisms/  ScreenHeader, AppTabBar, EmptyState
+  ```
+  These are **new files** → no conflict with `app/*`. Each is token-driven and
+  variant-based: `<Button variant="primary" size="md">`.
+- **Phase 2 — migrate screens (coordinated).** Swap inline Tailwind in screens
+  for these components, gradually and in step with Matt, so you're never both
+  editing the same `page.tsx`.
 
-Before adding a new `lib/data` / `lib/store` / `components/*` file, grep for an
-existing one that already covers it.
+These atomic components are the **source of truth** for the design system — and
+exactly what gets pushed to Figma.
+
+### Code ↔ Figma round-trip
+We don't hand-copy components into Figma:
+- **`/figma-generate-library`** builds the Figma design system **from** the
+  `src/components/ui/` code.
+- Style/refine in Figma → sync the changes back (Figma "get design context" /
+  `DesignSync`) → update the code components to match. One loop, not copy-paste.
 
 ## Branch workflow
 
@@ -64,16 +79,26 @@ existing one that already covers it.
 # always start from the latest main
 git fetch origin
 git switch main && git pull --ff-only origin main
-git switch -c <area>-<short-desc>        # e.g. ui-button-library, ux-checkout-flow
+git switch -c <area>-<short-desc>        # e.g. rollout (Austin), ux-checkout (Matt)
 ```
 
-- **Branch from latest `main` every time.** Never commit to `main` directly.
+- **Branch from latest `main` every time.** Never commit to `main` directly
+  (docs/housekeeping is the only pragmatic exception).
 - **Keep branches small and short-lived.** A branch open for a week = a painful
-  merge. Aim for a PR every day or two.
+  merge. Aim for a PR every day or two. (`rollout` is the exception — it's
+  long-running, but it only adds *new* `ui/` files, so it stays mergeable.)
 - **Pull `main` into your branch daily** (`git merge origin/main` or rebase) so
   conflicts surface small and early, not as a giant wall at the end.
 - **PR → `main`**, the other person gives it a glance, then merge. Delete the
   branch after.
+
+### Branch vs worktree
+- Use a normal **branch** for your work — you're on separate machines, so
+  branches + PRs are all you need.
+- A **worktree** (`git worktree add ../thattime-live main`) gives you a *second
+  folder* with a different branch checked out at the same time, on **your own**
+  machine. Only useful if you personally want to e.g. keep the live app running
+  from `main` while you edit the library on `rollout`. Optional, not required.
 
 ## The quality gate — run before EVERY commit
 
@@ -88,6 +113,20 @@ npm run smoke             # renders ported screens via react-dom/server
 `npm run dev` uses Turbopack (`next dev --turbo`). If it hangs, use
 `npm run dev:webpack`.
 
+## Single sources of truth (this is what just bit us)
+
+We had two onboarding flows and two data layers (`product.ts` vs `offers.ts`)
+because work landed in parallel. Don't re-create that:
+
+- **One data module per domain** in `src/lib/data`. Extend the existing one;
+  don't add a parallel `productV2.ts`.
+- **One store per concern** in `src/lib/store`. **One** design-token set. **One**
+  onboarding flow (`components/onboarding2` is canonical).
+- **Domain types** live in `src/lib/types` — import them, never redefine.
+
+Before adding a new `lib/data` / `lib/store` / `components/*` file, grep for an
+existing one that already covers it.
+
 ## Architecture map (where things go)
 
 ```
@@ -97,7 +136,7 @@ src/app/
   new/          ← the offer-creation wizard
   client/       ← consumer-facing flow
 src/components/
-  ui/           ← the component library (Austin) — primitives screens compose
+  ui/           ← the component library (Austin) — atoms / molecules / organisms
   app/          ← product app chrome (AppFrame, AppTabBar, ScreenHeader)
   onboarding2/  ← onboarding shell/controls
 src/lib/
@@ -106,6 +145,7 @@ src/lib/
   store/        ← Zustand stores (one per concern)
   tokens/       ← design tokens (category palette)
 tailwind.config.ts  ← brand/surface tokens + fonts (Austin)
+context/        ← this file + PORTING.md (shared context for both of us / our AIs)
 ```
 
 Each screen is a `page.tsx`. `main` auto-deploys to Vercel — **keep `main`
@@ -113,7 +153,10 @@ green**; never merge a red branch.
 
 ## TL;DR
 1. Branch from latest `main`; keep it small; pull `main` in daily.
-2. Austin owns `components/ui` + tokens; Matt owns `app/*` + data/state.
+2. Austin owns `components/ui` + tokens (on `rollout`); Matt owns `app/*` +
+   data/state (on `ux-<flow>` branches).
 3. Screens compose components; no inline Tailwind sprawl; no hardcoded hex.
-4. One source of truth per domain — grep before you create.
-5. `tsc` + `next lint` + `npm run smoke` green before every commit.
+4. Component library is atomic (atoms/molecules/organisms) and is the source of
+   truth pushed to Figma via `/figma-generate-library`.
+5. One source of truth per domain — grep before you create.
+6. `tsc` + `next lint` + `npm run smoke` green before every commit.
