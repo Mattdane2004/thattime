@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Repeat, CreditCard, BadgePercent, Check } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
 
 // Subscription wizard 1/3 — type. Ported from that-time-app
@@ -49,11 +50,12 @@ export default function SubscriptionTypePage() {
           })}
         </div>
       </div>
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button onClick={() => router.push("/new/subscription-benefits")} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white hover:bg-navy/90">
-          Continue
-        </button>
-      </div>
+      <WizardFooter
+        step={2}
+        total={TOTAL_STEPS.subscription}
+        onBack={() => router.push("/new/basics")}
+        onNext={() => router.push("/new/subscription-benefits")}
+      />
     </>
   );
 }

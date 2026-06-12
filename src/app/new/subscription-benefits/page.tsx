@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Scissors, CreditCard, TicketPercent, LockKeyhole, Check } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
 
 // Subscription wizard 2/3 — benefits. Ported from that-time-app
@@ -92,12 +93,13 @@ export default function SubscriptionBenefitsPage() {
           )}
         </div>
       </div>
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button onClick={() => canContinue && router.push("/new/subscription-billing")} disabled={!canContinue}
-          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white hover:bg-navy/90 disabled:bg-border disabled:text-muted">
-          Continue
-        </button>
-      </div>
+      <WizardFooter
+        step={3}
+        total={TOTAL_STEPS.subscription}
+        onBack={() => router.push("/new/subscription-type")}
+        onNext={() => canContinue && router.push("/new/subscription-billing")}
+        disabled={!canContinue}
+      />
     </>
   );
 }

@@ -1,21 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore } from "@/lib/store/wizardStore";
-import { teamRoster, initialsOf } from "@/lib/data/team";
+import { initialsOf } from "@/lib/data/team";
+import { useTeamStore } from "@/lib/store/teamStore";
 
-// Wizard step — staff. Functional port of the legacy that-time-app
-// /routes/wizard/Staff.jsx. Reuses the shared team roster; only bookable
-// members can deliver an offer.
+// Wizard step — staff (Figma 12135:44440 / 12135:44969). Searchable; classes
+// only show members with the Instructor system role.
 
 export default function StaffPage() {
   const router = useRouter();
   const draft = useWizardStore((s) => s.draft);
   const updateDraft = useWizardStore((s) => s.updateDraft);
+  const members = useTeamStore((s) => s.members);
+  const [query, setQuery] = useState("");
 
-  const bookable = teamRoster.filter((m) => m.bookable);
+  const isClass = draft.type === "class";
+  const eligible = members.filter(
+    (m) => m.bookable && (!isClass || m.systemRoles.includes("Instructor")),
+  );
+  const visible = eligible.filter((m) => m.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   const toggle = (id: string) =>
     updateDraft({
@@ -24,18 +32,27 @@ export default function StaffPage() {
         : [...draft.staffIds, id],
     });
 
-  const canContinue = draft.staffIds.length > 0;
-
   return (
     <>
-      <ScreenHeader onBack={() => router.push("/new/locations")} />
+      <ScreenHeader onBack={() => router.push("/new/locations")} rightAction={<span className="text-[13px] text-muted">Help</span>} />
       <div className="flex-1 overflow-y-auto px-5">
-        <div className="pb-6 pt-2">
-          <div className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Who can deliver it?</div>
-          <div className="mt-1 text-[14px] text-muted">Pick the team members clients can book with.</div>
+        <WizardTitle
+          title={isClass ? "Who teaches it?" : "Who can deliver it?"}
+          subtitle={isClass ? "Pick the instructors who can lead this class." : "Pick the team members clients can book with."}
+        />
+
+        <div className="relative pb-4">
+          <Search size={16} className="absolute left-4 top-3.5 text-muted" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search team..."
+            className="h-12 w-full rounded-xl bg-canvas pl-11 pr-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+          />
         </div>
+
         <div className="space-y-2 pb-6">
-          {bookable.map((m) => {
+          {visible.map((m) => {
             const selected = draft.staffIds.includes(m.id);
             return (
               <button
@@ -54,17 +71,20 @@ export default function StaffPage() {
               </button>
             );
           })}
+          {visible.length === 0 && (
+            <div className="pt-8 text-center text-[13px] text-muted">
+              {eligible.length === 0 ? "No eligible team members yet — invite instructors from the Team section." : "No matches"}
+            </div>
+          )}
         </div>
       </div>
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button
-          onClick={() => canContinue && router.push("/new/price")}
-          disabled={!canContinue}
-          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white transition-colors hover:bg-navy/90 disabled:bg-border disabled:text-muted"
-        >
-          Continue
-        </button>
-      </div>
+      <WizardFooter
+        step={isClass ? 5 : 3}
+        total={TOTAL_STEPS[draft.type ?? "service"]}
+        onBack={() => router.push("/new/locations")}
+        onNext={() => draft.staffIds.length > 0 && router.push(isClass ? "/new/class-pricing" : "/new/price")}
+        disabled={draft.staffIds.length === 0}
+      />
     </>
   );
 }

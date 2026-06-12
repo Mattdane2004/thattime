@@ -2,88 +2,76 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   Scissors, Package, Users, MapPin, Wallet, BarChart3, Box, FileText,
   Building2, Settings2, Plug, Megaphone, ClipboardCheck, Database,
   CircleUser, CreditCard, Share2, Bell, Sliders, HelpCircle, FileCheck,
-  ArrowLeftRight, ChevronRight, ChevronLeft,
+  ArrowLeftRight, ChevronRight, TrendingUp,
 } from "lucide-react";
 
-// Hub landing — the home of the product app after onboarding. Ported from the
-// legacy that-time-app /hub. Destinations are inert pending their screen ports
-// (see PORTING.md); this establishes the shell + navigation surface.
+// Hub "Menu" — Figma node 11988:90748. Business tab: This-week stats, the
+// Operations card grid, Marketing & performance, Setup. Profile tab: profile
+// card, Wallet, Account list, Log out, Switch to B2C.
 
 interface MenuItem {
   key: string;
   label: string;
-  desc: string;
+  desc?: string;
   icon: LucideIcon;
   href?: string;
 }
 
 const operations: MenuItem[] = [
-  { key: "services", label: "Services", desc: "Services, classes, bundles", icon: Scissors, href: "/app/services" },
+  { key: "offerings", label: "Offerings", desc: "Services, classes, bundles and subscriptions", icon: Scissors, href: "/app/services" },
   { key: "products", label: "Products", desc: "Internal & retail library", icon: Package },
+  { key: "forms", label: "Forms", desc: "Templates & builder", icon: FileText },
+  { key: "resources", label: "Resources", desc: "Rooms & equipment library", icon: Box },
   { key: "team", label: "Team", desc: "Staff, roles, hours", icon: Users, href: "/app/team" },
   { key: "locations", label: "Locations", desc: "Multi-site management", icon: MapPin },
   { key: "payments", label: "Payments", desc: "Transactions, refunds, tax", icon: Wallet },
   { key: "analytics", label: "Analytics", desc: "Performance & opportunities", icon: BarChart3 },
-  { key: "notifications", label: "Notifications", desc: "Client messages & reminders", icon: Bell, href: "/app/alerts" },
-  { key: "resources", label: "Resources", desc: "Rooms & equipment library", icon: Box },
-  { key: "forms", label: "Forms", desc: "Templates & builder", icon: FileText },
+];
+
+const marketingItems: MenuItem[] = [
+  { key: "marketing", label: "Marketing", desc: "Campaigns, automations, rewards", icon: Megaphone, href: "/app/marketing" },
+  { key: "analytics", label: "Analytics", desc: "Performance & opportunities", icon: BarChart3 },
 ];
 
 const setupItems: MenuItem[] = [
-  { key: "setup-guide", label: "Setup guide", desc: "Guided setup & learning", icon: ClipboardCheck, href: "/app/setup" },
-  { key: "business-profile", label: "Business profile", desc: "Public identity clients see", icon: Building2 },
-  { key: "business-settings", label: "Business settings", desc: "Booking rules & policies", icon: Settings2 },
-  { key: "import-data", label: "Import data", desc: "Clients & bookings from CSV", icon: Database, href: "/app/setup/import" },
-  { key: "integrations", label: "Integrations", desc: "Stripe, Calendar, payments", icon: Plug },
+  { key: "business-profile", label: "Business profile", icon: Building2 },
+  { key: "setup-guide", label: "Set up guide", icon: ClipboardCheck, href: "/app/setup" },
+  { key: "import-data", label: "Data import", icon: Database, href: "/app/setup/import" },
+  { key: "business-settings", label: "Business settings", icon: Settings2 },
+  { key: "integrations", label: "Integrations", icon: Plug },
 ];
 
 const accountItems: MenuItem[] = [
-  { key: "my-profile", label: "My profile", desc: "Personal details, avatar", icon: CircleUser },
-  { key: "wallet", label: "Wallet", desc: "Payouts, bank account, payslips", icon: Wallet },
-  { key: "billing", label: "Plans & billing", desc: "Tier, payment, invoices", icon: CreditCard },
-  { key: "referrals", label: "Referrals", desc: "Refer other businesses", icon: Share2 },
-  { key: "preferences", label: "Preferences", desc: "Theme, language, units", icon: Sliders },
-  { key: "help", label: "Help & FAQ", desc: "Support & knowledge base", icon: HelpCircle },
-  { key: "legal", label: "Legal", desc: "Terms, privacy, data", icon: FileCheck },
+  { key: "my-profile", label: "My profile", icon: CircleUser },
+  { key: "billing", label: "Plans & billing", icon: CreditCard },
+  { key: "referrals", label: "Referrals", icon: Share2 },
+  { key: "notifications", label: "Notifications", icon: Bell, href: "/app/alerts" },
+  { key: "preferences", label: "Preferences", icon: Sliders },
+  { key: "help", label: "Help & FAQ", icon: HelpCircle },
+  { key: "legal", label: "Legal", icon: FileCheck },
 ];
 
-function GridCard({ item }: { item: MenuItem }) {
-  const { icon: Icon, label, desc, href } = item;
-  const inner = (
-    <>
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">
-        <Icon size={18} className="text-navy" />
-      </span>
-      <span>
-        <span className="block text-[14px] font-semibold text-navy">{label}</span>
-        <span className="mt-0.5 block text-[12px] text-secondary">{desc}</span>
-      </span>
-    </>
-  );
-  const cls = "flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-navy/20";
-  return href ? <Link href={href} className={cls}>{inner}</Link> : <button className={cls}>{inner}</button>;
-}
-
-function ListCard({ title, items }: { title: string; items: MenuItem[] }) {
+function ListCard({ title, items }: { title?: string; items: MenuItem[] }) {
   return (
     <div>
-      <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{title}</div>
+      {title && <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{title}</div>}
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
         {items.map(({ key, label, desc, icon: Icon, href }, i) => {
           const cls = `flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-canvas ${i > 0 ? "border-t border-border" : ""}`;
           const inner = (
             <>
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-canvas">
-                <Icon size={16} className="text-navy" />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas">
+                <Icon size={17} className="text-navy" strokeWidth={1.75} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] font-medium text-navy">{label}</span>
-                <span className="block truncate text-[12px] text-secondary">{desc}</span>
+                {desc && <span className="block truncate text-[12px] text-secondary">{desc}</span>}
               </span>
               <ChevronRight size={16} className="shrink-0 text-muted" />
             </>
@@ -95,19 +83,74 @@ function ListCard({ title, items }: { title: string; items: MenuItem[] }) {
   );
 }
 
+function GridCard({ item }: { item: MenuItem }) {
+  const { icon: Icon, label, desc, href } = item;
+  const inner = (
+    <>
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">
+        <Icon size={18} className="text-navy" strokeWidth={1.75} />
+      </span>
+      <span>
+        <span className="block text-[15px] font-semibold text-navy">{label}</span>
+        <span className="mt-1 block text-[12px] leading-snug text-secondary">{desc}</span>
+      </span>
+    </>
+  );
+  const cls = "flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-navy/20";
+  return href ? <Link href={href} className={cls}>{inner}</Link> : <button className={cls}>{inner}</button>;
+}
+
+function ThisWeekCard() {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <div className="flex items-center gap-2 text-muted">
+        <BarChart3 size={15} strokeWidth={1.75} />
+        <span className="text-[11px] font-semibold uppercase tracking-wider">This week</span>
+      </div>
+      <div className="mt-4 flex">
+        <div className="flex-1">
+          <div className="text-[12px] text-secondary">Revenue</div>
+          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">£4,280</div>
+          <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
+            <TrendingUp size={12} />+12% vs last week
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="text-[12px] text-secondary">Bookings</div>
+          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">87</div>
+          <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
+            <TrendingUp size={12} />+8% vs last week
+          </div>
+        </div>
+      </div>
+      <button className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-navy text-[13px] font-semibold text-white hover:bg-navy/90">
+        <BarChart3 size={15} strokeWidth={1.75} />View analytics
+      </button>
+    </div>
+  );
+}
+
 export default function HubPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<"business" | "profile">("business");
 
   return (
-    <>
-      <header className="shrink-0 bg-canvas">
-        <div className="flex h-14 items-center px-4">
-          <Link href="/app" aria-label="Back to home" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
-            <ChevronLeft size={22} />
-          </Link>
-          <h1 className="ml-1 text-[17px] font-semibold text-navy">Hub</h1>
+    <div className="flex h-full flex-col bg-canvas">
+      <header className="shrink-0 bg-surface">
+        <div className="flex h-[72px] items-center justify-between px-4">
+          <button type="button" onClick={() => router.back()} aria-label="Back" className="min-w-0 text-left">
+            <div className="text-[15px] font-bold text-navy">Menu</div>
+            <div className="text-[12px] text-muted">Wednesday 4 March</div>
+          </button>
+          <div className="flex items-center gap-2">
+            <Link href="/app/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+              <Bell size={19} strokeWidth={1.75} />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger" />
+            </Link>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-[13px] font-semibold text-navy">MD</span>
+          </div>
         </div>
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-2">
           <div className="flex rounded-full border border-border bg-surface p-1">
             {(["business", "profile"] as const).map((t) => (
               <button
@@ -124,22 +167,10 @@ export default function HubPage() {
         </div>
       </header>
 
-      <div className="px-4 pb-8 pt-2">
-        <Link href="/app/b2c" className="mb-6 flex w-full items-center gap-3 rounded-2xl bg-navy px-4 py-3.5 text-white transition-colors hover:bg-navy/90">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-            <ArrowLeftRight size={18} />
-          </span>
-          <span className="min-w-0 flex-1 text-left">
-            <span className="block text-[15px] font-semibold">Switch to client view</span>
-            <span className="mt-0.5 block text-[12px] text-white/60">See the B2C app clients use to book</span>
-          </span>
-          <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-widest">
-            B2C
-          </span>
-        </Link>
-
+      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4">
         {tab === "business" ? (
           <div className="space-y-6">
+            <ThisWeekCard />
             <div>
               <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Operations</div>
               <div className="grid grid-cols-2 gap-3">
@@ -148,27 +179,42 @@ export default function HubPage() {
                 ))}
               </div>
             </div>
-            <Link href="/app/marketing" className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left hover:border-navy/20">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas">
-                <Megaphone size={18} className="text-navy" />
-              </span>
-              <span className="flex-1">
-                <span className="block text-[14px] font-semibold text-navy">Marketing</span>
-                <span className="mt-0.5 block text-[12px] text-secondary">Campaigns, automations, rewards</span>
-              </span>
-              <ChevronRight size={16} className="text-muted" />
-            </Link>
-            <ListCard title="Business setup" items={setupItems} />
+            <ListCard title="Marketing and performance" items={marketingItems} />
+            <ListCard title="Setup" items={setupItems} />
           </div>
         ) : (
           <div className="space-y-6">
+            <button className="flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left hover:border-navy/20">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy text-[16px] font-semibold text-white">MD</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[16px] font-semibold text-navy">Mathew Dane</span>
+                <span className="block text-[13px] text-secondary">Admin · Pro plan</span>
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-muted" />
+            </button>
+
+            <button className="flex w-full items-center gap-4 rounded-2xl border border-border bg-surface p-4 text-left hover:border-navy/20">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[16px] font-semibold text-navy">Wallet</span>
+                <span className="block text-[13px] text-secondary">£0.00</span>
+              </span>
+              <Wallet size={26} strokeWidth={1.5} className="shrink-0 text-navy" />
+            </button>
+
             <ListCard title="Account" items={accountItems} />
-            <button className="h-12 w-full rounded-full border border-border bg-surface text-[14px] font-medium text-danger transition-colors hover:bg-canvas">
+
+            <button className="h-12 w-full rounded-2xl border border-border bg-surface text-[14px] font-medium text-danger transition-colors hover:bg-canvas">
               Log out
             </button>
+
+            <div className="flex justify-center pb-2">
+              <Link href="/c/home" className="flex h-10 items-center gap-2 rounded-full bg-navy px-4 text-[13px] font-semibold text-white hover:bg-navy/90">
+                <ArrowLeftRight size={15} />Switch to B2C
+              </Link>
+            </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

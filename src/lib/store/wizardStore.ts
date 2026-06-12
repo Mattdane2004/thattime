@@ -22,23 +22,34 @@ export interface ServiceDraft {
   classDetails: ClassDraft;
 }
 
-// Class-branch fields (wizard: participants → schedule).
+// Class-branch fields (wizard: participants → schedule → pricing).
 export interface ClassDraft {
   bookingStructure: "seat_based" | "private_group";
   capacity: number;
   minParticipants: number;
-  date: string;
+  /** Cancel the session automatically if minParticipants isn't reached. */
+  autoCancel: boolean;
+  /** "single" = one-off class; "multi" = course of dates booked together. */
+  scheduleMode: "single" | "multi";
+  dates: string[];
   startTime: string;
   endTime: string;
+  /** "none" = one-off session; "weekly" repeats on the same weekday(s). */
+  repeat: "none" | "weekly";
+  repeatWeeks: number;
 }
 
 export const emptyClassDraft: ClassDraft = {
   bookingStructure: "seat_based",
   capacity: 12,
   minParticipants: 1,
-  date: "",
+  autoCancel: false,
+  scheduleMode: "single",
+  dates: [],
   startTime: "09:00",
   endTime: "10:00",
+  repeat: "none",
+  repeatWeeks: 8,
 };
 
 // Bundle-branch fields (wizard: services → pricing).

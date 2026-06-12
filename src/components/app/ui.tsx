@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
 
-/** Tab-page header: bold title + date, bell (→ notifications), avatar (→ hub). */
+/** Tab-page header: bold title + date, bell (→ notifications), avatar. */
 export function AppHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-between px-4 pb-3 pt-4">
@@ -18,11 +18,7 @@ export function AppHeader({ title }: { title: string }) {
           <Bell size={20} strokeWidth={1.75} />
           <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-danger" />
         </Link>
-        <Link
-          href="/app/hub"
-          aria-label="Open business management hub"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary transition-colors hover:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30"
-        >
+        <Link href="/app/hub" aria-label="Open menu" className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary transition-colors hover:bg-border/60">
           SJ
         </Link>
       </div>

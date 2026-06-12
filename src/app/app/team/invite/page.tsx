@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { FieldLabel, fieldInput, Toggle } from "@/components/app/WizardChrome";
+import { ACCESS_LEVELS } from "@/lib/data/team";
+import { useTeamStore } from "@/lib/store/teamStore";
+import type { AccessLevel } from "@/lib/types";
 
-// Team invite — functional port of the legacy that-time-app /routes/team/QuickAdd.jsx
-// (the multi-step rent/commission setup is deferred). Collects the essentials
-// and returns to the roster; persisting the new member needs the shared
-// app-state slice (backlog).
+// Team invite — collects the essentials plus a workspace access level,
+// persists the member as "Invite sent", and confirms before returning.
 
 const TYPES = [
   { key: "employee", label: "Employee", desc: "On your books — you set their schedule." },
@@ -16,13 +19,45 @@ const TYPES = [
 
 export default function TeamInvitePage() {
   const router = useRouter();
+  const inviteMember = useTeamStore((s) => s.inviteMember);
   const [memberType, setMemberType] = useState<"employee" | "freelancer">("employee");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [takesBookings, setTakesBookings] = useState(true);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>("low");
+  const [sentTo, setSentTo] = useState<{ name: string; id: string } | null>(null);
 
   const valid = Boolean(name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+
+  const send = () => {
+    if (!valid) return;
+    const created = inviteMember({ name: name.trim(), email: email.trim(), role: jobTitle.trim(), memberType, bookable: takesBookings, accessLevel });
+    setSentTo({ name: created.name, id: created.id });
+  };
+
+  if (sentTo) {
+    return (
+      <>
+        <ScreenHeader onClose={() => router.push("/app/team")} />
+        <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+          <CheckCircle2 size={44} className="text-success" strokeWidth={1.5} />
+          <div className="mt-4 text-[20px] font-semibold text-navy">Invite sent</div>
+          <div className="mt-1.5 text-[13px] leading-relaxed text-muted">
+            {sentTo.name} has been emailed a link to join your workspace. They&apos;ll show as &quot;Invite sent&quot; until they accept — you can resend it from their profile.
+          </div>
+        </div>
+        <div className="shrink-0 space-y-3 px-5 pb-5">
+          <button onClick={() => router.push(`/app/team/${sentTo.id}`)} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white hover:bg-navy/90">
+            Set up their profile
+          </button>
+          <button onClick={() => router.push("/app/team")} className="h-12 w-full rounded-full border border-border text-[15px] font-semibold text-navy hover:bg-canvas">
+            Done
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -44,31 +79,48 @@ export default function TeamInvitePage() {
 
         <div className="space-y-4 pb-6">
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Name</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name"
-              className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
+            <FieldLabel>Name</FieldLabel>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className={fieldInput} />
           </label>
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com"
-              className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
+            <FieldLabel>Email</FieldLabel>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" className={fieldInput} />
           </label>
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Job title</span>
-            <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Senior stylist"
-              className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
+            <FieldLabel>Job title</FieldLabel>
+            <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Senior stylist" className={fieldInput} />
           </label>
+
           <button onClick={() => setTakesBookings((v) => !v)} className="flex w-full items-center justify-between rounded-xl bg-canvas px-4 py-3 text-left">
             <span className="text-[14px] font-medium text-navy">Takes bookings</span>
-            <span className={`relative h-6 w-10 rounded-full ${takesBookings ? "bg-navy" : "bg-border"}`}>
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-all ${takesBookings ? "left-[1.125rem]" : "left-0.5"}`} />
-            </span>
+            <Toggle on={takesBookings} />
           </button>
+
+          <div>
+            <FieldLabel>Workspace access</FieldLabel>
+            <div className="space-y-2">
+              {ACCESS_LEVELS.filter((l) => l.key !== "owner").map((l) => (
+                <button
+                  key={l.key}
+                  onClick={() => setAccessLevel(l.key)}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                    accessLevel === l.key ? "border-navy" : "border-border hover:bg-canvas"
+                  }`}
+                >
+                  <span>
+                    <span className="block text-[13px] font-semibold text-navy">{l.label}</span>
+                    <span className="block text-[12px] text-muted">{l.desc}</span>
+                  </span>
+                  <span className={`h-4 w-4 shrink-0 rounded-full border-2 ${accessLevel === l.key ? "border-navy bg-navy" : "border-border"}`} />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="shrink-0 border-t border-border px-5 py-4">
-        <button onClick={() => valid && router.push("/app/team")} disabled={!valid}
+        <button onClick={send} disabled={!valid}
           className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white hover:bg-navy/90 disabled:bg-border disabled:text-muted">
           Send invite
         </button>

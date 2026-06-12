@@ -1,20 +1,23 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Clock, MapPin, Star } from "lucide-react";
-import { getOffer } from "@/lib/data/offers";
+import { useOffersStore } from "@/lib/store/offersStore";
 
 // Service preview — how clients see an offer. Functional port of the legacy
 // that-time-app /routes/ServicePreview.jsx (the full client booking flow is the
 // separate B2C app; this is the offer card preview).
 
 export default function ServicePreviewPage({ params }: { params: { id: string } }) {
-  const offer = getOffer(params.id);
+  const router = useRouter();
+  const offer = useOffersStore((s) => s.offers.find((o) => o.id === params.id));
 
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-14 items-center px-4">
-        <Link href={`/app/services/${params.id}`} aria-label="Back to offer" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" onClick={() => router.back()} aria-label="Back" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[11px] font-semibold uppercase tracking-widest text-muted">Client preview</span>
       </div>
 
