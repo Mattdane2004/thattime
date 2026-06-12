@@ -145,7 +145,9 @@ src/lib/
   store/        ← Zustand stores (one per concern)
   tokens/       ← design tokens (category palette)
 tailwind.config.ts  ← brand/surface tokens + fonts (Austin)
-context/        ← this file + PORTING.md (shared context for both of us / our AIs)
+context/        ← shared docs: this file, PORTING.md, atomic-design.md,
+                  matt-status.md (Matt's latest handoff)
+logs/           ← dated session logs + handovers (newest file = current status)
 ```
 
 Each screen is a `page.tsx`. `main` auto-deploys to Vercel — **keep `main`

@@ -37,6 +37,12 @@ import BundleServicesPage from "./src/app/new/bundle-services/page";
 import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
+import ClientBusinessPage from "./src/app/client/business/page";
+import ChooseServicesPage from "./src/app/client/book/page";
+import ChooseProfessionalPage from "./src/app/client/book/professional/page";
+import PickTimePage from "./src/app/client/book/time/page";
+import ReviewBookingPage from "./src/app/client/book/review/page";
+import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 import { Button, Input, Chip } from "./src/components/ui";
 
@@ -199,7 +205,27 @@ renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",
 ]);
 
-// 8) Shared category tokens.
+// 8) Client booking flow (B2C — business profile → services → professional → time → review).
+renderContains("Client/business", React.createElement(ClientBusinessPage), [
+  "Salon Soho", "Greek Street", "Services", "The team", "About", "Reviews", "Book now",
+]);
+renderContains("Client/book", React.createElement(ChooseServicesPage), [
+  "Choose services", "Classic haircut", "Select a service",
+]);
+renderContains("Client/book/professional", React.createElement(ChooseProfessionalPage), [
+  "Choose a professional", "Any professional", "Alex Morgan", "Continue",
+]);
+renderContains("Client/book/time", React.createElement(PickTimePage), [
+  "Pick a time", "Morning", "Afternoon", "Evening", "09:00",
+]);
+renderContains("Client/book/review", React.createElement(ReviewBookingPage), [
+  "Review and confirm", "Salon Soho", "Total", "Pay at the venue", "Confirm booking",
+]);
+renderContains("Client/book/confirmed", React.createElement(BookingConfirmedPage), [
+  "Booking confirmed", "Add to calendar", "Done",
+]);
+
+// 9) Shared category tokens.
 check("9 default categories", defaultCategories.length === 9);
 check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");

@@ -5,7 +5,21 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Star, Bell, UserRound, House, Search, MessageCircle, Calendar } from "lucide-react";
 
-function BizCard({ onClick, delay }: { onClick: () => void; delay: number }) {
+function BizCard({
+  onClick,
+  delay,
+  name = "Village barbers",
+  rating = "5.0",
+  reviews = "(765)",
+  address = "92. Sunningdale high street",
+}: {
+  onClick: () => void;
+  delay: number;
+  name?: string;
+  rating?: string;
+  reviews?: string;
+  address?: string;
+}) {
   return (
     <motion.button
       type="button"
@@ -19,19 +33,19 @@ function BizCard({ onClick, delay }: { onClick: () => void; delay: number }) {
       <span className="relative block h-[150px] w-full overflow-hidden rounded-2xl bg-border">
         <Image
           src="/onboarding/photo-carousel-center.png"
-          alt="Village barbers"
+          alt={name}
           fill
           sizes="210px"
           className="object-cover"
         />
       </span>
-      <span className="mt-2 block text-[16px] font-bold text-navy">Village barbers</span>
+      <span className="mt-2 block text-[16px] font-bold text-navy">{name}</span>
       <span className="mt-0.5 flex items-center gap-1 text-[13px] text-navy">
-        5.0
+        {rating}
         <Star size={12} className="fill-current" />
-        <span className="text-secondary">(765)</span>
+        <span className="text-secondary">{reviews}</span>
       </span>
-      <span className="mt-0.5 block text-[13px] text-secondary">92. Sunningdale high street</span>
+      <span className="mt-0.5 block text-[13px] text-secondary">{address}</span>
     </motion.button>
   );
 }
@@ -45,7 +59,7 @@ const tabs = [
 
 export default function ClientHomePage() {
   const router = useRouter();
-  const book = () => router.push("/client/signup");
+  const book = () => router.push("/client/business");
 
   return (
     <div className="flex h-full flex-col bg-cream font-body text-navy">
@@ -69,14 +83,28 @@ export default function ClientHomePage() {
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">
         <h2 className="px-5 pb-3 pt-5 font-display text-[19px] font-extrabold text-navy">Near you</h2>
         <div className="flex gap-4 overflow-x-auto px-5 [scrollbar-width:none]">
-          <BizCard onClick={book} delay={0.05} />
+          <BizCard
+            onClick={book}
+            delay={0.05}
+            name="Salon Soho"
+            rating="4.9"
+            reviews="(1,234)"
+            address="14 Greek Street, Soho"
+          />
           <BizCard onClick={book} delay={0.12} />
         </div>
         <h2 className="px-5 pb-3 pt-6 font-display text-[19px] font-extrabold text-navy">
           Recommendations
         </h2>
         <div className="flex gap-4 overflow-x-auto px-5 [scrollbar-width:none]">
-          <BizCard onClick={book} delay={0.1} />
+          <BizCard
+            onClick={book}
+            delay={0.1}
+            name="Salon Soho"
+            rating="4.9"
+            reviews="(1,234)"
+            address="14 Greek Street, Soho"
+          />
           <BizCard onClick={book} delay={0.17} />
         </div>
       </div>

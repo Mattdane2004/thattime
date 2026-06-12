@@ -32,7 +32,7 @@ export interface CheckoutItem {
 
 export interface PaymentEntry {
   id: string;
-  method: "Card" | "Cash" | "Bank transfer" | "Gift card";
+  method: "Card" | "Cash" | "Other" | "Gift card";
   amount: number;
 }
 
