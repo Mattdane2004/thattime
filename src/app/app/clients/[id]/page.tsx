@@ -8,15 +8,19 @@ import {
   RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell,
   Send, MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
-  Camera, Image as ImageIcon, BadgePercent, Repeat, Pencil, FlaskConical,
+  Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { pastAppointments, clientForms, clientReviews } from "@/lib/data/product";
 
-// Client detail — Overview / Bookings / Documents / Reviews, with a 3-dot
-// action menu, structured allergies, wallet & loyalty, clinical notes with
-// images, booking detail + rebook, review replies and client settings.
+// Client detail, organised by job-to-be-done:
+//   Overview     — what to know right now: safety strip, needs-attention rows,
+//                  next appointment, account links (wallet/reviews/settings/contact)
+//   Appointments — upcoming + searchable history with booking detail sheet
+//   Record       — the care record: allergies, patch tests, notes & images, forms
+// Reviews and contact live in sheets; the 3-dot menu holds profile-level
+// actions only (edit / VIP / merge / block / delete).
 
 function Stars({ n }: { n: number }) {
   return (
@@ -61,6 +65,16 @@ function NextAppointmentCard({ onReschedule, onCancel, moved }: { onReschedule: 
   );
 }
 
+/** Section heading inside a tab (the Record tab is one page, not sub-tabs). */
+function RecordHeading({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between pb-1 pt-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{children}</p>
+      {action}
+    </div>
+  );
+}
+
 interface Allergy {
   name: string;
   type: "Drug" | "Non-drug" | "Note";
@@ -96,7 +110,7 @@ export default function ClientDetailPage() {
   const setQuickAction = useAppStore((s) => s.setQuickAction);
   const [tab, setTab] = useState("Overview");
 
-  // Next-appointment actions (existing behaviour)
+  // Next-appointment actions
   const [resched, setResched] = useState(false);
   const [cancel, setCancel] = useState(false);
   const [cancelled, setCancelled] = useState(false);
@@ -104,7 +118,7 @@ export default function ClientDetailPage() {
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
 
-  // Contact + forms (existing behaviour)
+  // Contact + forms
   const [contactOpen, setContactOpen] = useState(false);
   const [numberCopied, setNumberCopied] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -118,7 +132,7 @@ export default function ClientDetailPage() {
   const [tags, setTags] = useState<string[]>(["Regular"]);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Allergies — structured, Fresha-style
+  // Allergies — structured records
   const [allergies, setAllergies] = useState<Allergy[]>([
     { name: "PPD (hair dye)", type: "Drug", reaction: "Itching", severity: "Severe" },
     { name: "Sensitive scalp", type: "Note", reaction: "—", severity: "Mild" },
@@ -143,8 +157,7 @@ export default function ClientDetailPage() {
   const [afterOne, setAfterOne] = useState(true);
   const [policy, setPolicy] = useState("24h notice");
 
-  // Documents: notes & images
-  const [docTab, setDocTab] = useState("Forms");
+  // Record: notes & images, patch tests
   const [notes, setNotes] = useState<ClinicalNote[]>([
     { date: "3 Mar 2026 · 11:42", appt: "Cut & Style", note: "Toner 9V for 20 mins. Scalp fine after patch test. Before/after taken.", imgs: 2 },
     { date: "10 Feb 2026 · 15:08", appt: "Cut & Style", note: "Trim only. Discussed balayage for spring — book a consult.", imgs: 0 },
@@ -154,11 +167,13 @@ export default function ClientDetailPage() {
   const [noteDraft, setNoteDraft] = useState("");
   const [noteAppt, setNoteAppt] = useState<string | null>("General");
   const [notePhotos, setNotePhotos] = useState(0);
+  const [patchRecorded, setPatchRecorded] = useState(false);
 
-  // Bookings
+  // Appointments
   const [bookingSel, setBookingSel] = useState<(typeof pastAppointments)[number] | null>(null);
 
-  // Reviews
+  // Reviews (sheet)
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [replyDraft, setReplyDraft] = useState("");
@@ -166,9 +181,43 @@ export default function ClientDetailPage() {
   const [askSent, setAskSent] = useState(false);
 
   const unpaid = pastAppointments.find((p) => p.id === "p3");
+  const severe = allergies.some((a) => a.severity === "Severe" || a.severity === "Fatal");
+
+  // Needs-attention rows, most urgent first. Each is one compact row with a
+  // single clear action — not a separate full-width card per concern.
+  const attention: { id: string; icon: React.ReactNode; title: string; sub: string; action: string; done?: boolean; run: () => void }[] = [
+    ...(unpaid
+      ? [{
+          id: "unpaid",
+          icon: <AlertTriangle size={14} strokeWidth={2} className="text-[#B45309]" />,
+          title: "£75 outstanding",
+          sub: "Cut & Blow Dry · 20 Jan",
+          action: "Take payment",
+          run: () => router.push("/app/checkout"),
+        }]
+      : []),
+    {
+      id: "form",
+      icon: <FileText size={14} strokeWidth={2} className="text-secondary" />,
+      title: "Aftercare form pending",
+      sub: "Sent 16 Mar · not completed",
+      action: reminded ? "Reminded" : "Remind",
+      done: reminded,
+      run: () => setReminded(true),
+    },
+    {
+      id: "followup",
+      icon: <Repeat size={14} strokeWidth={2} className="text-secondary" />,
+      title: "Colour follow-up due",
+      sub: "Refresh every 6–8 weeks · last colour 3 Mar",
+      action: "Book",
+      run: () => setQuickAction("appointment"),
+    },
+  ];
 
   return (
     <div className="min-h-full bg-fog pb-6">
+      {/* ── Header: identity, primary actions, stats, tabs ── */}
       <div className="bg-white pb-3">
         <div className="flex items-center justify-between px-4 pt-4">
           <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-1 p-1 text-navy">
@@ -185,7 +234,7 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="flex items-center gap-4 px-4 pt-2">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-canvas text-[18px] font-semibold text-muted">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas text-[17px] font-semibold text-muted">
             SJ
           </span>
           <div>
@@ -225,8 +274,22 @@ export default function ClientDetailPage() {
           </GhostButton>
         </div>
 
-        <div className="px-4 pt-4">
-          <Segmented options={["Overview", "Bookings", "Documents", "Reviews"]} value={tab} onChange={setTab} />
+        {/* One quiet stats strip instead of three boxes */}
+        <div className="mx-4 mt-4 flex divide-x divide-border rounded-2xl border border-border">
+          {[
+            ["Last Visit", "3 Mar 2026"],
+            ["Total Bookings", "24"],
+            ["Total Sales", "£1,870"],
+          ].map(([k, v]) => (
+            <div key={k} className="flex-1 px-3 py-2.5 text-center">
+              <p className="text-[10px] text-muted">{k}</p>
+              <p className="pt-0.5 text-[13px] font-bold text-navy">{v}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-4 pt-3">
+          <Segmented options={["Overview", "Appointments", "Record"]} value={tab} onChange={setTab} />
         </div>
       </div>
 
@@ -239,192 +302,117 @@ export default function ClientDetailPage() {
           transition={{ duration: 0.18 }}
           className="px-4 pt-4"
         >
+          {/* ════ OVERVIEW — what to know right now ════ */}
           {tab === "Overview" && (
             <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  ["Last Visit", "3 Mar 2026"],
-                  ["Total Bookings", "24"],
-                  ["Total Sales", "£1,870"],
-                ].map(([k, v]) => (
-                  <div key={k} className="rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                    <p className="text-[11px] text-muted">{k}</p>
-                    <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Outstanding payment flag */}
-              {unpaid && (
-                <button
-                  type="button"
-                  onClick={() => router.push("/app/checkout")}
-                  className="flex items-center gap-3 rounded-2xl bg-[#FEF3C7] px-4 py-3 text-left"
-                >
-                  <AlertTriangle size={15} strokeWidth={2} className="shrink-0 text-[#B45309]" />
-                  <span className="flex-1 text-[13px] font-semibold text-[#92400E]">
-                    £75 outstanding — Cut & Blow Dry, 20 Jan
+              {/* Safety first: always in the first viewport, taps through to the record */}
+              <button
+                type="button"
+                onClick={() => setTab("Record")}
+                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                  severe ? "border-danger/40" : "border-border"
+                }`}
+              >
+                <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-bold text-navy">Allergies</span>
+                  <span className="block truncate pt-0.5 text-[12px] text-secondary">
+                    {allergies.length
+                      ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
+                      : "None recorded — tap to add"}
                   </span>
-                  <span className="text-[12px] font-bold text-[#92400E]">Take payment ›</span>
-                </button>
-              )}
+                </span>
+                <ChevronRight size={14} className="shrink-0 text-muted" />
+              </button>
 
-              {/* Follow-up due */}
-              <div className="rounded-2xl border border-border bg-white p-4">
-                <p className="flex items-center gap-2 text-[13px] font-bold text-navy">
-                  <Repeat size={14} strokeWidth={2} className="text-secondary" />
-                  Follow-up due
-                </p>
-                <p className="pt-1 text-[12px] leading-snug text-secondary">
-                  Colour treatments need a refresh every 6–8 weeks. Sarah&rsquo;s last colour was 3 Mar.
-                </p>
-                <div className="flex gap-2 pt-3">
-                  <button onClick={() => setQuickAction("appointment")} className="h-9 flex-1 rounded-full bg-[#14181F] text-[12px] font-semibold text-white">
-                    Book follow-up
-                  </button>
-                  <button onClick={() => router.push("/app/messages/sarah")} className="h-9 flex-1 rounded-full border border-border text-[12px] font-semibold text-navy">
-                    Send reminder
-                  </button>
+              {/* One card for everything that needs an action, not a card per concern */}
+              {attention.length > 0 && (
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <p className="px-4 pb-1 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                    Needs attention
+                  </p>
+                  {attention.map((a, i) => (
+                    <div key={a.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas">{a.icon}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-semibold text-navy">{a.title}</span>
+                        <span className="block text-[11px] text-muted">{a.sub}</span>
+                      </span>
+                      <button
+                        type="button"
+                        disabled={a.done}
+                        onClick={a.run}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                          a.done
+                            ? "bg-canvas text-muted"
+                            : a.id === "unpaid"
+                              ? "bg-[#FEF3C7] text-[#B45309]"
+                              : "bg-[#14181F] text-white"
+                        }`}
+                      >
+                        {a.done && <Check size={11} strokeWidth={3} className="mr-1 inline" />}
+                        {a.action}
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
 
               {!cancelled && (
                 <NextAppointmentCard moved={moved} onReschedule={() => setResched(true)} onCancel={() => setCancel(true)} />
               )}
 
-              {/* Wallet & loyalty */}
-              <button type="button" onClick={() => setWalletOpen(true)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <div className="flex items-center justify-between">
-                  <p className="flex items-center gap-2 text-[13px] font-medium text-muted">
-                    <Wallet size={14} strokeWidth={1.75} />
-                    Wallet & loyalty
-                  </p>
-                  <ChevronRight size={14} className="text-muted" />
-                </div>
-                <div className="flex gap-6 pt-2.5">
-                  <span>
-                    <span className="block text-[16px] font-bold text-navy">£{walletBalance}</span>
-                    <span className="block text-[11px] text-muted">Wallet balance</span>
-                  </span>
-                  <span>
-                    <span className="block text-[16px] font-bold text-navy">320 pts</span>
-                    <span className="block text-[11px] text-muted">2 rewards available</span>
-                  </span>
-                </div>
-              </button>
-
-              {/* Allergies — structured records, not just pills */}
-              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <div className="flex items-center justify-between pb-1">
-                  <p className="text-[13px] font-medium text-muted">Allergies</p>
-                  <button
-                    type="button"
-                    aria-label="Add allergy"
-                    onClick={() => {
-                      setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild");
-                      setAllergyOpen(true);
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-navy"
-                  >
-                    <Plus size={14} strokeWidth={2} />
-                  </button>
-                </div>
-                {allergies.length === 0 && <p className="py-2 text-[13px] text-muted">No known allergies.</p>}
-                <div className="flex flex-col gap-2 pt-1">
-                  {allergies.map((al) => {
-                    const expandedNow = expandedAllergy === al.name;
-                    return (
-                      <button
-                        key={al.name}
-                        type="button"
-                        onClick={() => setExpandedAllergy(expandedNow ? null : al.name)}
-                        className="rounded-xl border border-border p-3 text-left"
-                      >
-                        <span className="flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
-                            <AlertTriangle size={13} strokeWidth={2} className={al.severity === "Severe" || al.severity === "Fatal" ? "text-danger" : "text-secondary"} />
-                            {al.name}
-                          </span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${severityTone[al.severity]}`}>
-                            {al.severity}
-                          </span>
-                        </span>
-                        <span className="block pt-0.5 text-[12px] text-muted">
-                          {al.type === "Note" ? "Note" : `${al.type} allergy`}{al.reaction !== "—" ? ` · Reaction: ${al.reaction.toLowerCase()}` : ""}
-                        </span>
-                        {expandedNow && (
-                          <span className="mt-2 flex items-center justify-between border-t border-border pt-2">
-                            <span className="text-[11px] text-muted">Added 15 Jan 2024 · flagged on every booking</span>
-                            <span
-                              role="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAllergies((a) => a.filter((x) => x.name !== al.name));
-                              }}
-                              className="text-[11px] font-semibold text-danger"
-                            >
-                              Remove
-                            </span>
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Command centre */}
+              {/* Everything else is one tap away, not eight cards deep */}
               <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
                 {[
-                  { icon: <FileText size={15} strokeWidth={1.75} />, t: "Documents", s: "Forms, notes & images, patch tests", run: () => setTab("Documents") },
-                  { icon: <BadgePercent size={15} strokeWidth={1.75} />, t: "Loyalty & rewards", s: "320 pts · free blow dry at 400", run: () => setWalletOpen(true) },
-                  { icon: <Settings size={15} strokeWidth={1.75} />, t: "Settings & policies", s: "Payments, notifications, cancellation", run: () => setSettingsOpen(true) },
+                  { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: `£${walletBalance} credit · 320 pts · 2 rewards`, run: () => setWalletOpen(true) },
+                  { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => setReviewsOpen(true) },
+                  { icon: <Settings size={15} strokeWidth={1.75} />, t: "Settings & policies", s: "Payments, marketing, cancellation", run: () => setSettingsOpen(true) },
+                  { icon: <Phone size={15} strokeWidth={1.75} />, t: "Contact details", s: "(555) 234-5678 · sarah.j@email.com", run: () => { setNumberCopied(false); setContactOpen(true); } },
                 ].map((r, i) => (
                   <button key={r.t} type="button" onClick={r.run} className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${i > 0 ? "border-t border-border" : ""}`}>
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-secondary">{r.icon}</span>
-                    <span className="flex-1">
+                    <span className="min-w-0 flex-1">
                       <span className="block text-[14px] font-semibold text-navy">{r.t}</span>
-                      <span className="block text-[11px] text-muted">{r.s}</span>
+                      <span className="block truncate text-[11px] text-muted">{r.s}</span>
                     </span>
-                    <ChevronRight size={14} className="text-muted" />
+                    <ChevronRight size={14} className="shrink-0 text-muted" />
                   </button>
-                ))}
-              </div>
-
-              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <p className="pb-2 text-[13px] font-medium text-muted">Contact</p>
-                {[
-                  [<Phone key="p" size={14} strokeWidth={1.75} />, "(555) 234-5678"],
-                  [<Mail key="m" size={14} strokeWidth={1.75} />, "sarah.j@email.com"],
-                  [<MapPin key="a" size={14} strokeWidth={1.75} />, "14 Maple Lane, London"],
-                ].map(([icon, v], i) => (
-                  <p key={i} className="flex items-center gap-3 py-1.5 text-[14px] text-navy">
-                    <span className="text-secondary">{icon}</span>
-                    {v}
-                  </p>
                 ))}
               </div>
             </div>
           )}
 
-          {tab === "Bookings" && (
+          {/* ════ APPOINTMENTS — upcoming + history ════ */}
+          {tab === "Appointments" && (
             <div className="flex flex-col gap-3">
-              {!cancelled && (
+              <RecordHeading>Upcoming</RecordHeading>
+              {cancelled ? (
+                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <span className="text-[13px] text-muted">No upcoming appointments.</span>
+                  <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white">
+                    Book
+                  </button>
+                </div>
+              ) : (
                 <NextAppointmentCard moved={moved} onReschedule={() => setResched(true)} onCancel={() => setCancel(true)} />
               )}
-              <div className="relative">
-                <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-                <input
-                  placeholder="Search service, date, staff..."
-                  className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
-                />
+
+              <RecordHeading>History · {pastAppointments.length}</RecordHeading>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+                  <input
+                    placeholder="Search service, date, staff..."
+                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
+                  />
+                </div>
+                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <SlidersHorizontal size={13} strokeWidth={1.75} />
+                  All
+                  <ChevronDown size={12} className="text-muted" />
+                </button>
               </div>
-              <button className="flex w-fit items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <SlidersHorizontal size={13} strokeWidth={1.75} />
-                All
-                <ChevronDown size={12} className="text-muted" />
-              </button>
-              <p className="text-[12px] text-muted">4 past appointments · tap one for notes, forms and rebooking</p>
               {pastAppointments.map((p) => {
                 const isUnpaid = p.id === "p3";
                 return (
@@ -447,10 +435,9 @@ export default function ClientDetailPage() {
                     <div className="flex items-center justify-between pt-1">
                       <p className="text-[12px] text-muted">{p.meta}</p>
                       {p.docs > 0 && (
-                        <span className="flex gap-1 text-muted">
-                          {Array.from({ length: p.docs }, (_, i) => (
-                            <FileText key={i} size={12} strokeWidth={1.75} />
-                          ))}
+                        <span className="flex items-center gap-1 text-[11px] text-muted">
+                          <FileText size={12} strokeWidth={1.75} />
+                          {p.docs} attached
                         </span>
                       )}
                     </div>
@@ -460,183 +447,191 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          {tab === "Documents" && (
+          {/* ════ RECORD — the care record, one page, no sub-tabs ════ */}
+          {tab === "Record" && (
             <div className="flex flex-col gap-3">
-              <div className="flex gap-2">
-                {["Forms", "Notes & images", "Patch tests"].map((d) => (
+              <RecordHeading
+                action={
                   <button
-                    key={d}
-                    onClick={() => setDocTab(d)}
-                    className={`rounded-full px-3.5 py-2 text-[12px] font-semibold ${
-                      docTab === d ? "bg-[#14181F] text-white" : "bg-white text-secondary shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
-                    }`}
+                    type="button"
+                    aria-label="Add allergy"
+                    onClick={() => {
+                      setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild");
+                      setAllergyOpen(true);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
                   >
-                    {d}
+                    <Plus size={14} strokeWidth={2} />
                   </button>
-                ))}
-              </div>
-
-              {docTab === "Forms" && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[12px] text-muted">4 forms across all appointments</p>
-                    <span className="flex gap-1.5">
-                      <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">1 pending</span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-muted">1 not sent</span>
-                    </span>
-                  </div>
-                  {clientForms.map((f) => (
-                    <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
-                        <FileText size={17} strokeWidth={1.6} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] font-semibold text-navy">{f.name}</span>
-                        <span className="block pt-0.5 text-[12px] text-muted">{f.meta}</span>
-                        <span className="block pt-1 text-[11px] text-muted">⎘ {f.appt}</span>
-                        <span className="flex gap-2 pt-2">
-                          <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-secondary">View</span>
-                          <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-secondary">Edit</span>
-                          <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-secondary">Amend answers</span>
-                        </span>
-                      </span>
-                      {f.state === "view" && (
-                        <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-semibold text-navy">
-                          <Eye size={12} strokeWidth={2} /> View
-                        </button>
-                      )}
-                      {f.state === "remind" && (
-                        <button
-                          onClick={() => setReminded(true)}
-                          disabled={reminded}
-                          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold ${
-                            reminded ? "bg-canvas text-muted" : "bg-[#FEF3C7] text-[#B45309]"
-                          }`}
-                        >
-                          {reminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
-                          {reminded ? "Reminded" : "Remind"}
-                        </button>
-                      )}
-                      {f.state === "not-sent" && (
-                        <span className="shrink-0 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-medium text-muted">Not Sent</span>
-                      )}
-                    </div>
-                  ))}
-                  <DarkButton onClick={() => { setFormPick(null); setFormOpen(true); }}>
-                    <Send size={15} />
-                    Send New Form
-                  </DarkButton>
-                </>
+                }
+              >
+                Allergies
+              </RecordHeading>
+              {allergies.length === 0 && (
+                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]">No known allergies.</p>
               )}
-
-              {docTab === "Notes & images" && (
-                <>
-                  <p className="text-[12px] text-muted">
-                    Clinical record — every note is timestamped and linked to its appointment.
-                  </p>
-                  {notes.map((n, i) => (
-                    <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
-                          <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
-                          {n.appt ?? "General note"}
-                        </span>
-                        <span className="text-[11px] text-muted">{n.date}</span>
-                      </div>
-                      <p className="pt-2 text-[13px] leading-snug text-navy">{n.note}</p>
-                      {n.imgs > 0 && (
-                        <div className="flex gap-2 pt-3">
-                          {Array.from({ length: n.imgs }, (_, j) => (
-                            <span key={j} className="flex h-16 w-16 items-center justify-center rounded-xl bg-canvas text-muted">
-                              <ImageIcon size={18} strokeWidth={1.5} />
-                            </span>
-                          ))}
-                          <span className="flex h-16 items-center px-1 text-[11px] text-muted">Before / after</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <DarkButton onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteOpen(true); }}>
-                    <Plus size={15} />
-                    Add note or images
-                  </DarkButton>
-                </>
-              )}
-
-              {docTab === "Patch tests" && (
-                <>
-                  <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                    <div className="flex items-center justify-between">
+              {allergies.map((al) => {
+                const expandedNow = expandedAllergy === al.name;
+                return (
+                  <button
+                    key={al.name}
+                    type="button"
+                    onClick={() => setExpandedAllergy(expandedNow ? null : al.name)}
+                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                  >
+                    <span className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
-                        <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
-                        Colour patch test
+                        <AlertTriangle size={13} strokeWidth={2} className={al.severity === "Severe" || al.severity === "Fatal" ? "text-danger" : "text-secondary"} />
+                        {al.name}
                       </span>
-                      <span className="rounded-full bg-[#E8F6EE] px-2.5 py-1 text-[10px] font-semibold text-[#157347]">Passed</span>
-                    </div>
-                    <p className="pt-1 text-[12px] text-muted">1 Mar 2026 · valid for 6 months · Emma S.</p>
-                  </div>
-                  <GhostButton onClick={() => setActionsOpen(true)}>
-                    <Plus size={15} />
-                    Record a patch test
-                  </GhostButton>
-                </>
-              )}
-            </div>
-          )}
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${severityTone[al.severity]}`}>
+                        {al.severity}
+                      </span>
+                    </span>
+                    <span className="block pt-0.5 text-[12px] text-muted">
+                      {al.type === "Note" ? "Note" : `${al.type} allergy`}{al.reaction !== "—" ? ` · Reaction: ${al.reaction.toLowerCase()}` : ""}
+                    </span>
+                    {expandedNow && (
+                      <span className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                        <span className="text-[11px] text-muted">Added 15 Jan 2024 · flagged on every booking</span>
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAllergies((a) => a.filter((x) => x.name !== al.name));
+                          }}
+                          className="text-[11px] font-semibold text-danger"
+                        >
+                          Remove
+                        </span>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
 
-          {tab === "Reviews" && (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="flex items-center gap-2 text-[15px] font-bold text-navy">
-                  <Star size={15} className="fill-current" />
-                  4.7 <span className="font-normal text-muted">(3 reviews)</span>
-                </p>
-                <button
-                  onClick={() => { setAskSent(false); setAskReview(true); }}
-                  className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white"
-                >
-                  Ask for a review
-                </button>
+              <RecordHeading
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setPatchRecorded(true)}
+                    disabled={patchRecorded}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${patchRecorded ? "bg-white text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]" : "bg-[#14181F] text-white"}`}
+                  >
+                    {patchRecorded ? "Recorded" : "Record new"}
+                  </button>
+                }
+              >
+                Patch tests
+              </RecordHeading>
+              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
+                    <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
+                    Colour patch test
+                  </span>
+                  <span className="rounded-full bg-[#E8F6EE] px-2.5 py-1 text-[10px] font-semibold text-[#157347]">Passed</span>
+                </div>
+                <p className="pt-1 text-[12px] text-muted">1 Mar 2026 · valid for 6 months · Emma S.</p>
               </div>
-              {clientReviews.map((r) => (
-                <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                  <div className="flex items-center gap-2.5">
-                    <Stars n={r.stars} />
-                    <span className="text-[11px] text-muted">{r.date}</span>
+              {patchRecorded && (
+                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
+                      <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
+                      Colour patch test
+                    </span>
+                    <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-muted">Result pending</span>
                   </div>
-                  <p className="pt-2 text-[14px] leading-snug text-navy">{r.text}</p>
-                  <p className="pt-1.5 text-[12px] text-muted">{r.service}</p>
-                  {replies[r.id] ? (
-                    <div className="mt-3 rounded-xl bg-canvas p-3">
-                      <p className="text-[11px] font-semibold text-secondary">You replied</p>
-                      <p className="pt-1 text-[13px] text-navy">{replies[r.id]}</p>
+                  <p className="pt-1 text-[12px] text-muted">Today · 4 Mar 2026 · check after 48h</p>
+                </div>
+              )}
+
+              <RecordHeading
+                action={
+                  <button
+                    type="button"
+                    onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteOpen(true); }}
+                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                  >
+                    Add note
+                  </button>
+                }
+              >
+                Notes & images
+              </RecordHeading>
+              {notes.map((n, i) => (
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
+                      <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
+                      {n.appt ?? "General note"}
+                    </span>
+                    <span className="text-[11px] text-muted">{n.date}</span>
+                  </div>
+                  <p className="pt-2 text-[13px] leading-snug text-navy">{n.note}</p>
+                  {n.imgs > 0 && (
+                    <div className="flex gap-2 pt-3">
+                      {Array.from({ length: n.imgs }, (_, j) => (
+                        <span key={j} className="flex h-16 w-16 items-center justify-center rounded-xl bg-canvas text-muted">
+                          <ImageIcon size={18} strokeWidth={1.5} />
+                        </span>
+                      ))}
+                      <span className="flex h-16 items-center px-1 text-[11px] text-muted">Before / after</span>
                     </div>
-                  ) : replyFor === r.id ? (
-                    <div className="mt-3 flex items-center gap-2">
-                      <input
-                        autoFocus
-                        value={replyDraft}
-                        onChange={(e) => setReplyDraft(e.target.value)}
-                        placeholder="Write a public reply..."
-                        className="h-10 flex-1 rounded-full bg-canvas px-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
-                      />
-                      <button
-                        aria-label="Send reply"
-                        disabled={!replyDraft.trim()}
-                        onClick={() => {
-                          setReplies((x) => ({ ...x, [r.id]: replyDraft }));
-                          setReplyFor(null);
-                          setReplyDraft("");
-                        }}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white disabled:opacity-40"
-                      >
-                        <Send size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setReplyFor(r.id)} className="mt-2.5 text-[12px] font-semibold text-navy underline">
-                      Reply
+                  )}
+                </div>
+              ))}
+
+              <RecordHeading
+                action={
+                  <button
+                    type="button"
+                    onClick={() => { setFormPick(null); setFormOpen(true); }}
+                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                  >
+                    Send form
+                  </button>
+                }
+              >
+                Forms
+              </RecordHeading>
+              <div className="flex items-center justify-between">
+                <p className="text-[12px] text-muted">4 forms across all appointments</p>
+                <span className="flex gap-1.5">
+                  <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-semibold text-[#B45309]">1 pending</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-muted">1 not sent</span>
+                </span>
+              </div>
+              {clientForms.map((f) => (
+                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
+                    <FileText size={17} strokeWidth={1.6} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-semibold text-navy">{f.name}</span>
+                    <span className="block pt-0.5 text-[12px] text-muted">{f.meta}</span>
+                    <span className="block pt-1 text-[11px] text-muted">⎘ {f.appt}</span>
+                  </span>
+                  {f.state === "view" && (
+                    <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-semibold text-navy">
+                      <Eye size={12} strokeWidth={2} /> View
                     </button>
+                  )}
+                  {f.state === "remind" && (
+                    <button
+                      onClick={() => setReminded(true)}
+                      disabled={reminded}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold ${
+                        reminded ? "bg-canvas text-muted" : "bg-[#FEF3C7] text-[#B45309]"
+                      }`}
+                    >
+                      {reminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
+                      {reminded ? "Reminded" : "Remind"}
+                    </button>
+                  )}
+                  {f.state === "not-sent" && (
+                    <span className="shrink-0 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-medium text-muted">Not Sent</span>
                   )}
                 </div>
               ))}
@@ -647,33 +642,20 @@ export default function ClientDetailPage() {
 
       {/* ── Sheets ── */}
 
-      {/* 3-dot actions */}
-      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Sarah Johnson" sub="Quick actions">
-        <div className="grid grid-cols-2 gap-2 pt-1">
+      {/* 3-dot: profile-level actions only */}
+      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Sarah Johnson" sub="Profile actions">
+        <div className="flex flex-col gap-2 pt-1">
           {[
             { icon: <Pencil size={15} />, t: "Edit details", run: () => setActionsOpen(false) },
-            { icon: <MessageSquare size={15} />, t: "Send message", run: () => { setActionsOpen(false); router.push("/app/messages/sarah"); } },
-            { icon: <TagIcon size={15} />, t: tags.includes("VIP") ? "VIP ✓" : "Add VIP tag", run: () => setTags((t) => (t.includes("VIP") ? t : [...t, "VIP"])) },
-            { icon: <AlertTriangle size={15} />, t: "Add allergy", run: () => { setActionsOpen(false); setAlName(""); setAllergyOpen(true); } },
-            { icon: <StickyNote size={15} />, t: "Add note", run: () => { setActionsOpen(false); setTab("Documents"); setDocTab("Notes & images"); setNoteOpen(true); } },
-            { icon: <FlaskConical size={15} />, t: "Add patch test", run: () => { setActionsOpen(false); setTab("Documents"); setDocTab("Patch tests"); } },
-            { icon: <Star size={15} />, t: "Add review", run: () => { setActionsOpen(false); setTab("Reviews"); setAskReview(true); } },
-            { icon: <Merge size={15} />, t: "Merge profile", run: () => setActionsOpen(false) },
+            { icon: <TagIcon size={15} />, t: tags.includes("VIP") ? "VIP tag added ✓" : "Add VIP tag", run: () => setTags((t) => (t.includes("VIP") ? t : [...t, "VIP"])) },
+            { icon: <Merge size={15} />, t: "Merge duplicate profile", run: () => setActionsOpen(false) },
+            { icon: <Ban size={15} />, t: blocked ? "Unblock client" : "Block client", run: () => { setBlocked((b) => !b); setActionsOpen(false); } },
           ].map((a) => (
-            <button key={a.t} onClick={a.run} className="flex items-center gap-2.5 rounded-2xl border border-border bg-white px-3.5 py-3.5 text-left text-[13px] font-semibold text-navy">
+            <button key={a.t} onClick={a.run} className="flex w-full items-center gap-2.5 rounded-2xl border border-border bg-white px-4 py-3.5 text-left text-[13px] font-semibold text-navy">
               <span className="text-secondary">{a.icon}</span>
               {a.t}
             </button>
           ))}
-        </div>
-        <div className="flex flex-col gap-2 pt-3">
-          <button
-            onClick={() => { setBlocked((b) => !b); setActionsOpen(false); }}
-            className="flex w-full items-center gap-2.5 rounded-2xl border border-border bg-white px-4 py-3.5 text-left text-[13px] font-semibold text-navy"
-          >
-            <Ban size={15} className="text-secondary" />
-            {blocked ? "Unblock client" : "Block client"}
-          </button>
           <button
             onClick={() => { setActionsOpen(false); setDeleteOpen(true); }}
             className="flex w-full items-center gap-2.5 rounded-2xl border border-danger/40 bg-white px-4 py-3.5 text-left text-[13px] font-semibold text-danger"
@@ -1001,6 +983,66 @@ export default function ClientDetailPage() {
         </div>
       </Sheet>
 
+      {/* Reviews */}
+      <Sheet open={reviewsOpen} onClose={() => setReviewsOpen(false)} title="Reviews" sub="Sarah Johnson · what she says about you" full>
+        <div className="flex items-center justify-between pt-1">
+          <p className="flex items-center gap-2 text-[15px] font-bold text-navy">
+            <Star size={15} className="fill-current" />
+            4.7 <span className="font-normal text-muted">(3 reviews)</span>
+          </p>
+          <button
+            onClick={() => { setReviewsOpen(false); setAskSent(false); setAskReview(true); }}
+            className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white"
+          >
+            Ask for a review
+          </button>
+        </div>
+        <div className="flex flex-col gap-3 pt-3">
+          {clientReviews.map((r) => (
+            <div key={r.id} className="rounded-2xl border border-border bg-white p-4">
+              <div className="flex items-center gap-2.5">
+                <Stars n={r.stars} />
+                <span className="text-[11px] text-muted">{r.date}</span>
+              </div>
+              <p className="pt-2 text-[14px] leading-snug text-navy">{r.text}</p>
+              <p className="pt-1.5 text-[12px] text-muted">{r.service}</p>
+              {replies[r.id] ? (
+                <div className="mt-3 rounded-xl bg-canvas p-3">
+                  <p className="text-[11px] font-semibold text-secondary">You replied</p>
+                  <p className="pt-1 text-[13px] text-navy">{replies[r.id]}</p>
+                </div>
+              ) : replyFor === r.id ? (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={replyDraft}
+                    onChange={(e) => setReplyDraft(e.target.value)}
+                    placeholder="Write a public reply..."
+                    className="h-10 flex-1 rounded-full bg-canvas px-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
+                  />
+                  <button
+                    aria-label="Send reply"
+                    disabled={!replyDraft.trim()}
+                    onClick={() => {
+                      setReplies((x) => ({ ...x, [r.id]: replyDraft }));
+                      setReplyFor(null);
+                      setReplyDraft("");
+                    }}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white disabled:opacity-40"
+                  >
+                    <Send size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setReplyFor(r.id)} className="mt-2.5 text-[12px] font-semibold text-navy underline">
+                  Reply
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </Sheet>
+
       {/* Ask for a review */}
       <Sheet open={askReview} onClose={() => setAskReview(false)} title="Ask for a review" sub="Sent by SMS and in-app">
         {askSent ? (
@@ -1069,9 +1111,21 @@ export default function ClientDetailPage() {
         </div>
       </Sheet>
 
-      {/* Contact */}
-      <Sheet open={contactOpen} onClose={() => setContactOpen(false)} title="Contact Sarah" sub="(555) 234-5678">
-        <div className="flex flex-col gap-2.5 pt-1">
+      {/* Contact — info + actions in one place */}
+      <Sheet open={contactOpen} onClose={() => setContactOpen(false)} title="Contact Sarah">
+        <div className="rounded-2xl bg-canvas p-1">
+          {[
+            [<Phone key="p" size={14} strokeWidth={1.75} />, "(555) 234-5678"],
+            [<Mail key="m" size={14} strokeWidth={1.75} />, "sarah.j@email.com"],
+            [<MapPin key="a" size={14} strokeWidth={1.75} />, "14 Maple Lane, London"],
+          ].map(([icon, v], i) => (
+            <p key={i} className={`flex items-center gap-3 px-3.5 py-3 text-[14px] text-navy ${i > 0 ? "border-t border-border" : ""}`}>
+              <span className="text-secondary">{icon}</span>
+              {v}
+            </p>
+          ))}
+        </div>
+        <div className="flex flex-col gap-2.5 pt-4">
           <DarkButton onClick={() => setContactOpen(false)}>
             <Phone size={15} />
             Call (555) 234-5678
