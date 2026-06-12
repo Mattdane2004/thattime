@@ -19,7 +19,44 @@ const fmt = (n: number) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
 type MethodSheet = PaymentEntry["method"] | null;
 
-/** Catalog row in the add-service/product sheets: + morphs into a − n + stepper. */
+/** Service row in the add-service sheet: services are multi-select, not quantities. */
+function ServiceRow({
+  name,
+  sub,
+  price,
+  selected,
+  onToggle,
+}: {
+  name: string;
+  sub: string;
+  price: number;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left last:border-0"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold text-navy">{name}</span>
+        <span className="block text-[12px] text-muted">{sub} · £{price}</span>
+      </span>
+      <motion.span
+        animate={{ scale: selected ? 1 : 0.92 }}
+        transition={{ type: "spring", stiffness: 480, damping: 28 }}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
+          selected ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-transparent"
+        }`}
+      >
+        <Check size={14} strokeWidth={2.5} />
+      </motion.span>
+    </button>
+  );
+}
+
+/** Catalog row in the add-product sheet: + morphs into a − n + stepper. */
 function CatalogRow({
   name,
   sub,
@@ -460,18 +497,24 @@ export default function CheckoutPage() {
       </div>
 
       {/* Add service / product / discount sheets */}
-      <Sheet open={addSheet === "service"} onClose={() => setAddSheet(null)} title="Add service">
-        {services.map((s) => (
-          <CatalogRow
-            key={s.id}
-            name={s.name}
-            sub={`${s.duration} · ${s.category}`}
-            price={s.price}
-            qty={qtyOf("service", s.name)}
-            onAdd={() => store.addItem({ kind: "service", name: s.name, sub: `${s.duration} · ${s.category}`, price: s.price })}
-            onRemove={() => store.decrementItem("service", s.name)}
-          />
-        ))}
+      <Sheet open={addSheet === "service"} onClose={() => setAddSheet(null)} title="Add services" sub="Select everything done in this visit">
+        {services.map((s) => {
+          const selected = qtyOf("service", s.name) > 0;
+          return (
+            <ServiceRow
+              key={s.id}
+              name={s.name}
+              sub={`${s.duration} · ${s.category}`}
+              price={s.price}
+              selected={selected}
+              onToggle={() =>
+                selected
+                  ? store.decrementItem("service", s.name)
+                  : store.addItem({ kind: "service", name: s.name, sub: `${s.duration} · ${s.category}`, price: s.price })
+              }
+            />
+          );
+        })}
         <div className="pt-4">
           <DarkButton onClick={() => setAddSheet(null)}>Done</DarkButton>
         </div>
