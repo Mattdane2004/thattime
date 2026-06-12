@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, X, Plus, Minus, Scissors, ShoppingBag, Percent, CreditCard,
-  Banknote, Landmark, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
+  Banknote, Coins, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
 import { useAppStore, checkoutTotals, type PaymentEntry, type CheckoutItem } from "@/lib/store/appStore";
@@ -154,6 +154,10 @@ export default function CheckoutPage() {
   const [addSheet, setAddSheet] = useState<"service" | "product" | "discount" | null>(null);
   const [method, setMethod] = useState<MethodSheet>(null);
   const [cashAmount, setCashAmount] = useState(10);
+  const [otherAmount, setOtherAmount] = useState(0);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftAmount, setGiftAmount] = useState(0);
+  const giftValid = giftCode.replace(/[^A-Z0-9]/g, "").length >= 6;
   const [paidScreen, setPaidScreen] = useState(false);
   const [receiptSent, setReceiptSent] = useState(false);
   const [rate, setRate] = useState(false);
@@ -505,14 +509,21 @@ export default function CheckoutPage() {
           [
             { m: "Card", icon: <CreditCard size={16} strokeWidth={1.75} /> },
             { m: "Cash", icon: <Banknote size={16} strokeWidth={1.75} /> },
-            { m: "Bank transfer", icon: <Landmark size={16} strokeWidth={1.75} /> },
+            { m: "Other", icon: <Coins size={16} strokeWidth={1.75} /> },
             { m: "Gift card", icon: <Gift size={16} strokeWidth={1.75} /> },
           ] as { m: PaymentEntry["method"]; icon: React.ReactNode }[]
         ).map(({ m, icon }) => (
           <motion.button
             key={m}
             whileTap={{ scale: 0.97 }}
-            onClick={() => setMethod(m)}
+            onClick={() => {
+              if (m === "Other") setOtherAmount(totals.remaining);
+              if (m === "Gift card") {
+                setGiftCode("");
+                setGiftAmount(Math.min(totals.remaining, 50));
+              }
+              setMethod(m);
+            }}
             disabled={totals.remaining <= 0}
             className="flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-white text-[14px] font-semibold text-navy disabled:opacity-40"
           >
@@ -569,28 +580,54 @@ export default function CheckoutPage() {
         </div>
       </Sheet>
 
-      <Sheet open={addSheet === "discount"} onClose={() => setAddSheet(null)} title="Add discount" sub={`Subtotal ${fmt(totals.subtotal)}`}>
-        {[
-          { label: "10% off", pct: 10, flat: 0 },
-          { label: "20% off", pct: 20, flat: 0 },
-          { label: "£5 off", pct: 0, flat: 5 },
-          { label: "£10 off", pct: 0, flat: 10 },
-        ].map((d) => (
-          <button
-            key={d.label}
-            type="button"
-            onClick={() => {
-              store.setDiscount(d.pct, d.flat);
-              setAddSheet(null);
-            }}
-            className="flex w-full items-center justify-between border-b border-border py-4 text-left last:border-0"
-          >
-            <span className="text-[15px] font-semibold text-navy">{d.label}</span>
-            <span className="text-[14px] font-medium text-secondary">
-              −{d.pct ? fmt((totals.subtotal * d.pct) / 100) : fmt(d.flat)}
-            </span>
-          </button>
-        ))}
+      <Sheet open={addSheet === "discount"} onClose={() => setAddSheet(null)} title="Add discount" sub="Tap one to apply it to this bill">
+        <div className="flex flex-col gap-2.5 pt-1">
+          {[
+            { label: "10% off", pct: 10, flat: 0 },
+            { label: "20% off", pct: 20, flat: 0 },
+            { label: "£5 off", pct: 0, flat: 5 },
+            { label: "£10 off", pct: 0, flat: 10 },
+          ].map((d) => {
+            const applied =
+              (d.pct > 0 && store.discountPct === d.pct) || (d.flat > 0 && store.discountFlat === d.flat);
+            const amount = d.pct ? (totals.subtotal * d.pct) / 100 : d.flat;
+            return (
+              <motion.button
+                key={d.label}
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  store.setDiscount(applied ? 0 : d.pct, applied ? 0 : d.flat);
+                  setAddSheet(null);
+                }}
+                className={`flex w-full items-center gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors ${
+                  applied ? "border-[#14181F]" : "border-border"
+                }`}
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-navy">
+                  <Percent size={16} strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-navy">{d.label}</span>
+                  <span className="block text-[12px] text-muted">
+                    Takes −{fmt(amount)} off the {fmt(totals.subtotal)} bill
+                  </span>
+                </span>
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    applied ? "border-[#14181F] bg-[#14181F] text-white" : "border-border text-transparent"
+                  }`}
+                >
+                  <Check size={13} strokeWidth={3} />
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <p className="pt-3 text-center text-[12px] text-muted">
+          {totals.discount > 0 ? "Tap the applied discount again to remove it." : "Discounts apply to the whole bill, before tip."}
+        </p>
+        <div className="h-2" />
       </Sheet>
 
       {/* Customer-facing tip sheet — hand the phone over */}
@@ -678,9 +715,9 @@ export default function CheckoutPage() {
 
       {/* Payment method sheets */}
       <Sheet
-        open={method === "Card" || method === "Bank transfer" || method === "Gift card"}
+        open={method === "Card"}
         onClose={() => setMethod(null)}
-        title={method ?? ""}
+        title="Card"
         sub={`${fmt(totals.remaining)} remaining`}
       >
         <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount to charge</p>
@@ -688,16 +725,115 @@ export default function CheckoutPage() {
           <span className="pr-1 text-[20px] font-bold text-muted">£</span>
           <span className="text-[24px] font-bold text-navy">{totals.remaining}</span>
         </div>
-        <p className="pt-3 text-[13px] text-secondary">
-          {method === "Card"
-            ? "The card reader will prompt the client to tap or insert."
-            : method === "Bank transfer"
-              ? "Mark as received once the transfer lands."
-              : "The balance will be deducted from their gift card."}
-        </p>
+        <p className="pt-3 text-[13px] text-secondary">The card reader will prompt the client to tap or insert.</p>
         <div className="pt-5">
-          <DarkButton onClick={() => method && finishPayment(method, totals.remaining)}>
+          <DarkButton onClick={() => finishPayment("Card", totals.remaining)}>
             Charge {fmt(totals.remaining)}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Gift card — code first, then how much to draw from it */}
+      <Sheet open={method === "Gift card"} onClose={() => setMethod(null)} title="Gift card" sub={`${fmt(totals.remaining)} remaining`}>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Gift card code</p>
+        <div className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3.5">
+          <Gift size={16} strokeWidth={1.75} className="shrink-0 text-secondary" />
+          <input
+            value={giftCode}
+            onChange={(e) => setGiftCode(e.target.value.toUpperCase())}
+            placeholder="e.g. GIFT-4F2K-99"
+            className="w-full bg-transparent text-[15px] font-semibold tracking-wide text-navy placeholder:font-normal placeholder:tracking-normal placeholder:text-muted focus:outline-none"
+            aria-label="Gift card code"
+          />
+          {giftValid && <Check size={16} strokeWidth={2.5} className="shrink-0 text-navy" />}
+        </div>
+        {giftValid ? (
+          <p className="pt-2 text-[12px] font-semibold text-navy">Card found · £50 balance available</p>
+        ) : (
+          <p className="pt-2 text-[12px] text-muted">Enter the code printed on the card or in their email.</p>
+        )}
+
+        <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount to charge to the card</p>
+        <div className={`flex items-center rounded-2xl bg-canvas px-4 py-4 ${giftValid ? "" : "opacity-40"}`}>
+          <span className="pr-1 text-[20px] font-bold text-muted">£</span>
+          <input
+            value={giftAmount}
+            disabled={!giftValid}
+            onChange={(e) => setGiftAmount(Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))}
+            inputMode="numeric"
+            className="w-full bg-transparent text-[24px] font-bold text-navy focus:outline-none"
+            aria-label="Amount to charge to the gift card"
+          />
+        </div>
+        {giftValid && giftAmount > 50 && (
+          <p className="mt-3 rounded-xl bg-[#FEF3C7] px-4 py-3 text-[12px] font-medium text-[#92400E]">
+            Only £50 is on this card — we&rsquo;ll charge £50 and the rest stays due.
+          </p>
+        )}
+        {giftValid && Math.min(giftAmount, 50) < totals.remaining && giftAmount > 0 && (
+          <p className="mt-3 rounded-xl bg-canvas px-4 py-3 text-[12px] text-secondary">
+            {fmt(totals.remaining - Math.min(giftAmount, 50, totals.remaining))} will still be due — take the rest with another method.
+          </p>
+        )}
+        <div className="pt-5">
+          <DarkButton
+            disabled={!giftValid || giftAmount <= 0}
+            onClick={() => finishPayment("Gift card", Math.min(giftAmount, 50, totals.remaining))}
+          >
+            {!giftValid
+              ? "Enter the card code first"
+              : Math.min(giftAmount, 50) >= totals.remaining
+                ? `Charge ${fmt(totals.remaining)} to gift card`
+                : `Add ${fmt(Math.min(giftAmount, 50))} · split payment`}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Other — bank transfer, voucher, app payment, anything else */}
+      <Sheet open={method === "Other"} onClose={() => setMethod(null)} title="Other payment" sub={`${fmt(totals.remaining)} remaining`}>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount paid by other means</p>
+        <div className="flex items-center rounded-2xl bg-canvas px-4 py-4">
+          <span className="pr-1 text-[20px] font-bold text-muted">£</span>
+          <input
+            value={otherAmount}
+            onChange={(e) => setOtherAmount(Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))}
+            inputMode="numeric"
+            className="w-full bg-transparent text-[24px] font-bold text-navy focus:outline-none"
+            aria-label="Amount paid by other means"
+          />
+        </div>
+        <div className="flex gap-2 pt-3">
+          {[
+            { label: `Full · ${fmt(totals.remaining)}`, v: totals.remaining },
+            { label: "£20", v: 20 },
+            { label: "£50", v: 50 },
+          ].map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => setOtherAmount(c.v)}
+              className={`rounded-full border px-3.5 py-2 text-[12px] font-semibold ${
+                otherAmount === c.v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <p className="pt-3 text-[13px] text-secondary">
+          Bank transfer, voucher, an app payment — anything taken outside That Time. It&rsquo;s recorded
+          against this bill.
+        </p>
+        {otherAmount < totals.remaining && otherAmount > 0 && (
+          <p className="mt-3 rounded-xl bg-canvas px-4 py-3 text-[12px] text-secondary">
+            {fmt(totals.remaining - otherAmount)} will still be due — take the rest with another method.
+          </p>
+        )}
+        <div className="pt-5">
+          <DarkButton disabled={otherAmount <= 0} onClick={() => finishPayment("Other", Math.min(otherAmount, totals.remaining))}>
+            {otherAmount >= totals.remaining
+              ? `Pay ${fmt(totals.remaining)} now`
+              : `Add ${fmt(otherAmount)} · split payment`}
           </DarkButton>
         </div>
       </Sheet>

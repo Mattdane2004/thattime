@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Scissors, Banknote, MapPin, MessageSquare, RotateCcw, X,
-  AlertTriangle, FileText, ChevronLeft, ChevronRight, CheckCircle2, Play, CreditCard,
+  AlertTriangle, FileText, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, Play, CreditCard,
   Bell, Check, Pencil, Plus, Search,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
@@ -42,6 +42,7 @@ export function AppointmentSheetHost() {
   const [pick, setPick] = useState<null | "change" | "add">(null);
   const [svcQuery, setSvcQuery] = useState("");
   const [svcCat, setSvcCat] = useState("All");
+  const [statusOpen, setStatusOpen] = useState(false);
 
   const open = apptSheet !== null;
   useEffect(() => {
@@ -57,6 +58,7 @@ export function AppointmentSheetHost() {
       setPick(null);
       setSvcQuery("");
       setSvcCat("All");
+      setStatusOpen(false);
     }
   }, [open]);
 
@@ -134,36 +136,60 @@ export function AppointmentSheetHost() {
         >
           {view === "details" && (
             <>
-              {/* Status is editable inline — fail-safe for early arrivals etc. */}
-              <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-3 [scrollbar-width:none]">
-                {statusChips.map((c) => {
-                  const active = status === c.label;
-                  return (
-                    <button
-                      key={c.label}
-                      type="button"
-                      onClick={() => {
-                        if (a.live && c.live) setApptStatus(c.live);
-                        setLocalStatus(c.label);
-                      }}
-                      className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
-                        active
-                          ? c.label === "No-show"
-                            ? "border-danger bg-danger text-white"
-                            : "border-[#14181F] bg-[#14181F] text-white"
-                          : "border-border bg-white text-secondary"
+              {/* Status: a deliberate dropdown — no accidental taps. */}
+              <div className="relative pb-3">
+                <button
+                  type="button"
+                  onClick={() => setStatusOpen((o) => !o)}
+                  className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-white px-4 text-left"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Status</span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[12px] font-bold ${
+                        status === "No-show"
+                          ? "bg-danger text-white"
+                          : status === "In progress"
+                            ? "bg-[#14181F] text-white"
+                            : status === "Done"
+                              ? "bg-[#E8F6EE] text-[#157347]"
+                              : "bg-canvas text-navy"
                       }`}
                     >
-                      {c.label}
-                    </button>
-                  );
-                })}
+                      {status}
+                    </span>
+                    {moved && <StatusPill tone="amber">Moved · {moved}</StatusPill>}
+                  </span>
+                  <motion.span animate={{ rotate: statusOpen ? 180 : 0 }} className="flex text-muted">
+                    <ChevronDown size={15} strokeWidth={1.75} />
+                  </motion.span>
+                </button>
+                {statusOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute inset-x-0 top-[50px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(15,26,46,0.12)]"
+                  >
+                    {statusChips.map((c) => (
+                      <button
+                        key={c.label}
+                        type="button"
+                        onClick={() => {
+                          if (a.live && c.live) setApptStatus(c.live);
+                          setLocalStatus(c.label);
+                          setStatusOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between px-4 py-3 text-left text-[14px] ${
+                          status === c.label ? "bg-canvas font-semibold" : ""
+                        } ${c.label === "No-show" ? "text-danger" : "text-navy"}`}
+                      >
+                        {c.label}
+                        {status === c.label && <Check size={14} strokeWidth={2.5} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
               </div>
-              {moved && (
-                <div className="pb-3">
-                  <StatusPill tone="amber">Moved · {moved}</StatusPill>
-                </div>
-              )}
 
               {/* Safety + admin callouts — visible at a glance, never buried */}
               {(notes?.allergies || notes?.formNote) && (
