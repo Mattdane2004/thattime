@@ -13,6 +13,8 @@ export { Avatar, avatarVariants, type AvatarProps } from "./atoms/Avatar";
 export { Chip, type ChipProps } from "./atoms/Chip";
 export { Spinner, type SpinnerProps } from "./atoms/Spinner";
 export { Separator, type SeparatorProps } from "./atoms/Separator";
+export { Switch } from "./atoms/Switch";
+export { Checkbox } from "./atoms/Checkbox";
 
 // ── molecules ──
 export { Card, cardVariants, type CardProps } from "./molecules/Card";
@@ -21,3 +23,5 @@ export { ListRow, type ListRowProps } from "./molecules/ListRow";
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from "./molecules/SegmentedControl";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { StatTile, type StatTileProps } from "./molecules/StatTile";
+export { RadioGroup, RadioGroupItem } from "./molecules/RadioGroup";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./molecules/Tabs";

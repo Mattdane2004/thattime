@@ -44,7 +44,7 @@ import PickTimePage from "./src/app/client/book/time/page";
 import ReviewBookingPage from "./src/app/client/book/review/page";
 import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -254,6 +254,12 @@ check("ListRow shows title + subtitle", (() => { const s = h(React.createElement
 check("SegmentedControl marks active tab", (() => { const s = h(React.createElement(SegmentedControl, { value: "a", onValueChange: () => {}, options: [{ value: "a", label: "Business" }, { value: "b", label: "Profile" }] })); return s.includes("Business") && s.includes('aria-selected="true"'); })());
 check("EmptyState shows title + desc", h(React.createElement(EmptyState, { title: "No clients", description: "Add one" })).includes("No clients"));
 check("StatTile shows label + value", (() => { const s = h(React.createElement(StatTile, { label: "Revenue", value: "£349" })); return s.includes("Revenue") && s.includes("£349"); })());
+
+// 11) UI interactive primitives (Radix).
+check("Switch renders role=switch", h(React.createElement(Switch, { checked: true })).includes('role="switch"'));
+check("Checkbox renders role=checkbox", h(React.createElement(Checkbox, { checked: true })).includes('role="checkbox"'));
+check("RadioGroup renders radios", (() => { const s = h(React.createElement(RadioGroup, { defaultValue: "a", children: [React.createElement(RadioGroupItem, { key: "a", value: "a" }), React.createElement(RadioGroupItem, { key: "b", value: "b" })] })); return s.includes('role="radiogroup"'); })());
+check("Tabs renders tablist + active tab", (() => { const s = h(React.createElement(Tabs, { defaultValue: "x", children: [React.createElement(TabsList, { key: "l", children: [React.createElement(TabsTrigger, { key: "x", value: "x", children: "Overview" }), React.createElement(TabsTrigger, { key: "y", value: "y", children: "Record" })] }), React.createElement(TabsContent, { key: "c", value: "x", children: "panel" })] })); return s.includes("Overview") && s.includes('role="tab"'); })());
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
