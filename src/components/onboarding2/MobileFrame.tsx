@@ -3,18 +3,14 @@
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
-import { useOnboardingStore } from "@/lib/store";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 import "@/components/onboarding2/motion-test-hook";
 
+// Phone shell for the onboarding/client flows: canonical frame geometry
+// (378×756 rounded-phone) plus a reset control for demo runs.
 export function MobileFrame({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const resetLegacy = useOnboardingStore((state) => state.reset);
-  const resetFlow = useOnboarding2((state) => state.reset);
-  const reset = () => {
-    resetLegacy();
-    resetFlow();
-  };
+  const reset = useOnboarding2((state) => state.reset);
 
   return (
     <main className="flex min-h-screen w-full items-start justify-center bg-gradient-to-b from-canvas to-[#EBEBED] sm:items-center sm:px-4 sm:py-8">
