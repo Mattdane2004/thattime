@@ -1,36 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, Star, CalendarPlus, MessageSquare, Phone, Plus,
   RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell,
-  Send, MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
+  MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
-import { pastAppointments, clientForms, clientReviews } from "@/lib/data/product";
+import { pastAppointments, clientForms } from "@/lib/data/product";
 
 // Client detail, organised by job-to-be-done:
-//   Overview     — what to know right now: safety strip, needs-attention rows,
-//                  next appointment, account links (wallet/reviews/settings/contact)
+//   Overview     — the dashboard: safety strip, next appointment, a
+//                  needs-attention rail, and links to the dedicated
+//                  wallet / reviews / settings pages (contact is a sheet)
 //   Appointments — upcoming + searchable history with booking detail sheet
 //   Record       — the care record: allergies, patch tests, notes & images, forms
-// Reviews and contact live in sheets; the 3-dot menu holds profile-level
-// actions only (edit / VIP / merge / block / delete).
-
-function Stars({ n }: { n: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} size={13} className={i <= n ? "fill-navy text-navy" : "text-border"} />
-      ))}
-    </span>
-  );
-}
+// The 3-dot menu holds profile-level actions only (edit / VIP / merge /
+// block / delete).
 
 function NextAppointmentCard({ onReschedule, onCancel, moved }: { onReschedule: () => void; onCancel: () => void; moved: string | null }) {
   return (
@@ -107,6 +98,8 @@ const formTemplates = [
 
 export default function ClientDetailPage() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const clientId = params?.id ?? "sarah";
   const setQuickAction = useAppStore((s) => s.setQuickAction);
   const [tab, setTab] = useState("Overview");
 
@@ -144,19 +137,6 @@ export default function ClientDetailPage() {
   const [alSeverity, setAlSeverity] = useState<Allergy["severity"]>("Mild");
   const [expandedAllergy, setExpandedAllergy] = useState<string | null>(null);
 
-  // Wallet & loyalty
-  const [walletBalance, setWalletBalance] = useState(25);
-  const [walletOpen, setWalletOpen] = useState(false);
-  const [topup, setTopup] = useState<number | null>(null);
-
-  // Settings & policies
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [payPrefs, setPayPrefs] = useState<string[]>(["Card"]);
-  const [marketing, setMarketing] = useState({ email: true, sms: false });
-  const [bookDays, setBookDays] = useState<string[]>(["Thu"]);
-  const [afterOne, setAfterOne] = useState(true);
-  const [policy, setPolicy] = useState("24h notice");
-
   // Record: notes & images, patch tests
   const [notes, setNotes] = useState<ClinicalNote[]>([
     { date: "3 Mar 2026 · 11:42", appt: "Cut & Style", note: "Toner 9V for 20 mins. Scalp fine after patch test. Before/after taken.", imgs: 2 },
@@ -171,14 +151,6 @@ export default function ClientDetailPage() {
 
   // Appointments
   const [bookingSel, setBookingSel] = useState<(typeof pastAppointments)[number] | null>(null);
-
-  // Reviews (sheet)
-  const [reviewsOpen, setReviewsOpen] = useState(false);
-  const [replyFor, setReplyFor] = useState<string | null>(null);
-  const [replies, setReplies] = useState<Record<string, string>>({});
-  const [replyDraft, setReplyDraft] = useState("");
-  const [askReview, setAskReview] = useState(false);
-  const [askSent, setAskSent] = useState(false);
 
   const unpaid = pastAppointments.find((p) => p.id === "p3");
   const severe = allergies.some((a) => a.severity === "Severe" || a.severity === "Fatal");
@@ -302,10 +274,10 @@ export default function ClientDetailPage() {
           transition={{ duration: 0.18 }}
           className="px-4 pt-4"
         >
-          {/* ════ OVERVIEW — what to know right now ════ */}
+          {/* ════ OVERVIEW — a dashboard: what's next, what needs doing, where to go ════ */}
           {tab === "Overview" && (
-            <div className="flex flex-col gap-3">
-              {/* Safety first: always in the first viewport, taps through to the record */}
+            <div className="flex flex-col gap-4">
+              {/* Safety first: one slim line, taps through to the record */}
               <button
                 type="button"
                 onClick={() => setTab("Record")}
@@ -325,60 +297,64 @@ export default function ClientDetailPage() {
                 <ChevronRight size={14} className="shrink-0 text-muted" />
               </button>
 
-              {/* One card for everything that needs an action, not a card per concern */}
-              {attention.length > 0 && (
-                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                  <p className="px-4 pb-1 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-                    Needs attention
-                  </p>
-                  {attention.map((a, i) => (
-                    <div key={a.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas">{a.icon}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] font-semibold text-navy">{a.title}</span>
-                        <span className="block text-[11px] text-muted">{a.sub}</span>
-                      </span>
-                      <button
-                        type="button"
-                        disabled={a.done}
-                        onClick={a.run}
-                        className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ${
-                          a.done
-                            ? "bg-canvas text-muted"
-                            : a.id === "unpaid"
-                              ? "bg-[#FEF3C7] text-[#B45309]"
-                              : "bg-[#14181F] text-white"
-                        }`}
-                      >
-                        {a.done && <Check size={11} strokeWidth={3} className="mr-1 inline" />}
-                        {a.action}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
+              {/* What's next lives at the top of the dashboard */}
               {!cancelled && (
                 <NextAppointmentCard moved={moved} onReschedule={() => setResched(true)} onCancel={() => setCancel(true)} />
               )}
 
-              {/* Everything else is one tap away, not eight cards deep */}
-              <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                {[
-                  { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: `£${walletBalance} credit · 320 pts · 2 rewards`, run: () => setWalletOpen(true) },
-                  { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => setReviewsOpen(true) },
-                  { icon: <Settings size={15} strokeWidth={1.75} />, t: "Settings & policies", s: "Payments, marketing, cancellation", run: () => setSettingsOpen(true) },
-                  { icon: <Phone size={15} strokeWidth={1.75} />, t: "Contact details", s: "(555) 234-5678 · sarah.j@email.com", run: () => { setNumberCopied(false); setContactOpen(true); } },
-                ].map((r, i) => (
-                  <button key={r.t} type="button" onClick={r.run} className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${i > 0 ? "border-t border-border" : ""}`}>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-secondary">{r.icon}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[14px] font-semibold text-navy">{r.t}</span>
-                      <span className="block truncate text-[11px] text-muted">{r.s}</span>
-                    </span>
-                    <ChevronRight size={14} className="shrink-0 text-muted" />
-                  </button>
-                ))}
+              {/* Needs attention: a glanceable horizontal rail, one card per item */}
+              {attention.length > 0 && (
+                <div>
+                  <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                    Needs attention · {attention.filter((a) => !a.done).length}
+                  </p>
+                  <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+                    {attention.map((a) => (
+                      <div key={a.id} className="flex w-[185px] shrink-0 flex-col rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-canvas">{a.icon}</span>
+                        <span className="block pt-2.5 text-[13px] font-semibold leading-tight text-navy">{a.title}</span>
+                        <span className="block flex-1 pt-1 text-[11px] leading-snug text-muted">{a.sub}</span>
+                        <button
+                          type="button"
+                          disabled={a.done}
+                          onClick={a.run}
+                          className={`mt-3 h-8 w-full rounded-full text-[11px] font-bold ${
+                            a.done
+                              ? "bg-canvas text-muted"
+                              : a.id === "unpaid"
+                                ? "bg-[#FEF3C7] text-[#B45309]"
+                                : "bg-[#14181F] text-white"
+                          }`}
+                        >
+                          {a.done && <Check size={11} strokeWidth={3} className="mr-1 inline" />}
+                          {a.action}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Wallet, reviews and settings are full pages now; contact stays a sheet */}
+              <div>
+                <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manage</p>
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  {[
+                    { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: "£25 credit · 320 pts · 2 rewards", run: () => router.push(`/app/clients/${clientId}/wallet`) },
+                    { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => router.push(`/app/clients/${clientId}/reviews`) },
+                    { icon: <Settings size={15} strokeWidth={1.75} />, t: "Settings & policies", s: "Booking rules, payments, marketing", run: () => router.push(`/app/clients/${clientId}/settings`) },
+                    { icon: <Phone size={15} strokeWidth={1.75} />, t: "Contact details", s: "(555) 234-5678 · sarah.j@email.com", run: () => { setNumberCopied(false); setContactOpen(true); } },
+                  ].map((r, i) => (
+                    <button key={r.t} type="button" onClick={r.run} className={`flex w-full items-center gap-3 px-4 py-4 text-left ${i > 0 ? "border-t border-border" : ""}`}>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-secondary">{r.icon}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-semibold text-navy">{r.t}</span>
+                        <span className="block truncate text-[11px] text-muted">{r.s}</span>
+                      </span>
+                      <ChevronRight size={14} className="shrink-0 text-muted" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -756,133 +732,6 @@ export default function ClientDetailPage() {
         </div>
       </Sheet>
 
-      {/* Wallet & loyalty */}
-      <Sheet open={walletOpen} onClose={() => setWalletOpen(false)} title="Wallet & loyalty" sub="Sarah Johnson">
-        <div className="flex items-center justify-between rounded-2xl bg-[#14181F] p-4 text-white">
-          <span>
-            <span className="block text-[22px] font-bold">£{walletBalance}</span>
-            <span className="block text-[11px] text-white/60">Wallet balance</span>
-          </span>
-          <span className="text-right">
-            <span className="block text-[22px] font-bold">320</span>
-            <span className="block text-[11px] text-white/60">Loyalty points</span>
-          </span>
-        </div>
-        <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Top up or reward</p>
-        <div className="flex gap-2">
-          {[5, 10, 25].map((v) => (
-            <button
-              key={v}
-              onClick={() => setTopup(v)}
-              className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                topup === v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-              }`}
-            >
-              +£{v}
-            </button>
-          ))}
-        </div>
-        <p className="pt-3 text-[12px] leading-snug text-muted">
-          Use credit to apologise for a mix-up, reward loyalty, or pre-load a package. Sarah sees it at checkout automatically.
-        </p>
-        <div className="pt-4">
-          <DarkButton
-            disabled={!topup}
-            onClick={() => {
-              if (topup) setWalletBalance((b) => b + topup);
-              setTopup(null);
-            }}
-          >
-            {topup ? `Add £${topup} credit` : "Pick an amount"}
-          </DarkButton>
-        </div>
-        <p className="pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Rewards</p>
-        {["Free blow dry · 400 pts", "10% off colour · 250 pts"].map((rw) => (
-          <p key={rw} className="flex items-center justify-between border-b border-border py-3 text-[13px] text-navy last:border-0">
-            {rw}
-            <span className="text-[12px] font-semibold text-secondary">Apply</span>
-          </p>
-        ))}
-      </Sheet>
-
-      {/* Client settings & policies */}
-      <Sheet open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Settings & policies" sub="Only applies to Sarah Johnson" full>
-        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Payment preferences</p>
-        <div className="flex gap-2">
-          {["Card", "Cash", "Finance"].map((p) => {
-            const on = payPrefs.includes(p);
-            return (
-              <button
-                key={p}
-                onClick={() => setPayPrefs((x) => (on ? x.filter((y) => y !== p) : [...x, p]))}
-                className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-        <p className="pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Marketing & notifications</p>
-        {[
-          { k: "email", label: "Email marketing" },
-          { k: "sms", label: "SMS reminders & marketing" },
-        ].map(({ k, label }) => {
-          const on = marketing[k as "email" | "sms"];
-          return (
-            <button
-              key={k}
-              onClick={() => setMarketing((m) => ({ ...m, [k]: !on }))}
-              className="flex w-full items-center justify-between border-b border-border py-3.5 text-left"
-            >
-              <span className="text-[14px] text-navy">{label}</span>
-              <span className={`relative h-7 w-12 rounded-full transition-colors ${on ? "bg-[#14181F]" : "bg-border"}`}>
-                <motion.span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow" animate={{ left: on ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 32 }} />
-              </span>
-            </button>
-          );
-        })}
-        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Booking preferences</p>
-        <div className="flex flex-wrap gap-2">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => {
-            const on = bookDays.includes(d);
-            return (
-              <button
-                key={d}
-                onClick={() => setBookDays((x) => (on ? x.filter((y) => y !== d) : [...x, d]))}
-                className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-                }`}
-              >
-                {d}
-              </button>
-            );
-          })}
-        </div>
-        <button onClick={() => setAfterOne((v) => !v)} className="flex w-full items-center justify-between py-3.5 text-left">
-          <span className="text-[14px] text-navy">Only show slots after 1 PM</span>
-          <span className={`relative h-7 w-12 rounded-full transition-colors ${afterOne ? "bg-[#14181F]" : "bg-border"}`}>
-            <motion.span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow" animate={{ left: afterOne ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 32 }} />
-          </span>
-        </button>
-        <p className="pb-2 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Cancellation policy</p>
-        <div className="flex gap-2 pb-4">
-          {["24h notice", "48h notice", "No fee"].map((p) => (
-            <button
-              key={p}
-              onClick={() => setPolicy(p)}
-              className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold ${
-                policy === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-        <DarkButton onClick={() => setSettingsOpen(false)}>Save preferences</DarkButton>
-      </Sheet>
-
       {/* Booking detail (past appointment) */}
       <Sheet
         open={bookingSel !== null}
@@ -981,97 +830,6 @@ export default function ClientDetailPage() {
             Save to record
           </DarkButton>
         </div>
-      </Sheet>
-
-      {/* Reviews */}
-      <Sheet open={reviewsOpen} onClose={() => setReviewsOpen(false)} title="Reviews" sub="Sarah Johnson · what she says about you" full>
-        <div className="flex items-center justify-between pt-1">
-          <p className="flex items-center gap-2 text-[15px] font-bold text-navy">
-            <Star size={15} className="fill-current" />
-            4.7 <span className="font-normal text-muted">(3 reviews)</span>
-          </p>
-          <button
-            onClick={() => { setReviewsOpen(false); setAskSent(false); setAskReview(true); }}
-            className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white"
-          >
-            Ask for a review
-          </button>
-        </div>
-        <div className="flex flex-col gap-3 pt-3">
-          {clientReviews.map((r) => (
-            <div key={r.id} className="rounded-2xl border border-border bg-white p-4">
-              <div className="flex items-center gap-2.5">
-                <Stars n={r.stars} />
-                <span className="text-[11px] text-muted">{r.date}</span>
-              </div>
-              <p className="pt-2 text-[14px] leading-snug text-navy">{r.text}</p>
-              <p className="pt-1.5 text-[12px] text-muted">{r.service}</p>
-              {replies[r.id] ? (
-                <div className="mt-3 rounded-xl bg-canvas p-3">
-                  <p className="text-[11px] font-semibold text-secondary">You replied</p>
-                  <p className="pt-1 text-[13px] text-navy">{replies[r.id]}</p>
-                </div>
-              ) : replyFor === r.id ? (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    autoFocus
-                    value={replyDraft}
-                    onChange={(e) => setReplyDraft(e.target.value)}
-                    placeholder="Write a public reply..."
-                    className="h-10 flex-1 rounded-full bg-canvas px-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
-                  />
-                  <button
-                    aria-label="Send reply"
-                    disabled={!replyDraft.trim()}
-                    onClick={() => {
-                      setReplies((x) => ({ ...x, [r.id]: replyDraft }));
-                      setReplyFor(null);
-                      setReplyDraft("");
-                    }}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white disabled:opacity-40"
-                  >
-                    <Send size={14} />
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => setReplyFor(r.id)} className="mt-2.5 text-[12px] font-semibold text-navy underline">
-                  Reply
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </Sheet>
-
-      {/* Ask for a review */}
-      <Sheet open={askReview} onClose={() => setAskReview(false)} title="Ask for a review" sub="Sent by SMS and in-app">
-        {askSent ? (
-          <div className="flex flex-col items-center pb-2 pt-4 text-center">
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white">
-              <Check size={26} strokeWidth={2.2} />
-            </motion.span>
-            <p className="pt-5 text-[16px] font-bold text-navy">Request sent</p>
-            <p className="pt-1 text-[13px] text-secondary">We&rsquo;ll nudge you if Sarah hasn&rsquo;t replied in a week.</p>
-            <div className="w-full pt-6">
-              <DarkButton onClick={() => setAskReview(false)}>Done</DarkButton>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="rounded-2xl bg-canvas p-4">
-              <p className="text-[11px] font-semibold text-muted">PREVIEW</p>
-              <p className="pt-2 text-[14px] leading-relaxed text-navy">
-                Hi Sarah! Thanks for visiting Salon Soho. If you have a minute, we&rsquo;d love a quick review of your Cut & Style — it really helps. ⭐
-              </p>
-            </div>
-            <div className="pt-5">
-              <DarkButton onClick={() => setAskSent(true)}>
-                <Send size={15} />
-                Send review request
-              </DarkButton>
-            </div>
-          </>
-        )}
       </Sheet>
 
       {/* Reschedule */}

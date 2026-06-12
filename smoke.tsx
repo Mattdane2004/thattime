@@ -20,6 +20,9 @@ import AlertsPage from "./src/app/app/alerts/page";
 import ImportDataPage from "./src/app/app/setup/import/page";
 import ClientsPage from "./src/app/app/clients/page";
 import ClientDetailPage from "./src/app/app/clients/[id]/page";
+import ClientWalletPage from "./src/app/app/clients/[id]/wallet/page";
+import ClientReviewsPage from "./src/app/app/clients/[id]/reviews/page";
+import ClientSettingsPage from "./src/app/app/clients/[id]/settings/page";
 import TeamPage from "./src/app/app/team/page";
 import TeamInvitePage from "./src/app/app/team/invite/page";
 import MessagesPage from "./src/app/app/messages/page";
@@ -71,6 +74,18 @@ renderContains("Clients", React.createElement(ClientsPage), [
 renderContains("ClientDetail", React.createElement(ClientDetailPage), [
   "Sarah Johnson", "Active", "Book", "Message", "Last Visit", "Total Bookings",
   "Allergies", "PPD", "Contact", "Reschedule",
+]);
+
+// 3b-ii) Client sub-pages: wallet, reviews, settings.
+renderContains("ClientWallet", React.createElement(ClientWalletPage), [
+  "Wallet &amp; loyalty", "Loyalty points", "Top up credit", "Rewards", "Add reward", "Recent activity",
+]);
+renderContains("ClientReviews", React.createElement(ClientReviewsPage), [
+  "Reviews", "4.7", "Ask for a review", "Reply",
+]);
+renderContains("ClientSettings", React.createElement(ClientSettingsPage), [
+  "Settings &amp; policies", "Require manual review", "Preferred days", "Cancellation policy",
+  "Require a deposit", "Block client", "Delete client",
 ]);
 
 // 3c) Services list.

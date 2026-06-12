@@ -4,19 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, UserPlus, ArrowUpDown, SlidersHorizontal, ChevronDown, Star,
+  Search, UserPlus, ArrowUpDown, ChevronDown, Star,
   MoreVertical, Upload, Merge, FileSpreadsheet, FileText, CheckSquare, Check,
-  Ban, Tag as TagIcon, Trash2, X,
+  Ban, Tag as TagIcon, Trash2,
 } from "lucide-react";
 import { AppHeader, Sheet, DarkButton, GhostButton } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { clientRows } from "@/lib/data/product";
 
 // Clients — searchable, sortable, filterable directory with import/export,
-// merge-duplicates and a multi-select mode for bulk block/tag/delete.
+// merge-duplicates and a multi-select mode for bulk actions. Bulk block
+// requires a reason, tagging picks from the shared tag set, and blocked
+// selections can be unblocked.
 
 const sortOptions = ["Recent booking", "Name A–Z", "Rating"];
-const filterTags = ["All", "Regular", "VIP", "Allergy", "Blocked", "Inactive"];
+const filterTags = ["All", "Regular", "VIP", "New", "Allergy", "Blocked", "Inactive"];
+const assignableTags = ["VIP", "Regular", "New", "Inactive"];
+const blockReasons = ["No-shows", "Repeated late cancellations", "Rude or abusive", "Payment issues", "Other"];
 
 function Tag({ label }: { label: string }) {
   const dark = label === "Allergy" || label === "Blocked";
@@ -40,7 +44,7 @@ export default function ClientsPage() {
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState(sortOptions[0]);
   const [filterTag, setFilterTag] = useState("All");
-  const [sheet, setSheet] = useState<null | "add" | "tools" | "import" | "merge" | "filter" | "sort">(null);
+  const [sheet, setSheet] = useState<null | "add" | "tools" | "import" | "merge" | "filter" | "sort" | "bulk-tag" | "bulk-block" | "bulk-delete">(null);
   const [imported, setImported] = useState<"idle" | "picked" | "done">("idle");
   const [merged, setMerged] = useState(false);
   const [exported, setExported] = useState<string | null>(null);
@@ -48,22 +52,49 @@ export default function ClientsPage() {
   // Multi-select mode for bulk actions.
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [bulkTags, setBulkTags] = useState<string[]>([]);
+  const [blockReason, setBlockReason] = useState<string | null>(null);
+  const [blockNote, setBlockNote] = useState("");
   const toggleSel = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const exitSelect = () => {
     setSelectMode(false);
     setSelected([]);
   };
-  const bulk = (action: "block" | "tag" | "delete") => {
+  // Pill shows Unblock when every selected client is already blocked.
+  const allBlocked =
+    selected.length > 0 &&
+    selected.every((id) => rows.find((r) => r.id === id)?.tags.includes("Blocked"));
+
+  const applyTags = () => {
     setRows((rs) =>
-      action === "delete"
-        ? rs.filter((r) => !selected.includes(r.id))
-        : rs.map((r) =>
-            selected.includes(r.id)
-              ? { ...r, tags: Array.from(new Set([...r.tags, action === "block" ? "Blocked" : "VIP"])) }
-              : r,
-          ),
+      rs.map((r) =>
+        selected.includes(r.id) ? { ...r, tags: Array.from(new Set([...r.tags, ...bulkTags])) } : r,
+      ),
     );
+    setSheet(null);
+    exitSelect();
+  };
+  const applyBlock = () => {
+    setRows((rs) =>
+      rs.map((r) =>
+        selected.includes(r.id) ? { ...r, tags: Array.from(new Set([...r.tags, "Blocked"])) } : r,
+      ),
+    );
+    setSheet(null);
+    exitSelect();
+  };
+  const applyUnblock = () => {
+    setRows((rs) =>
+      rs.map((r) =>
+        selected.includes(r.id) ? { ...r, tags: r.tags.filter((t) => t !== "Blocked") } : r,
+      ),
+    );
+    exitSelect();
+  };
+  const applyDelete = () => {
+    setRows((rs) => rs.filter((r) => !selected.includes(r.id)));
+    setSheet(null);
     exitSelect();
   };
 
@@ -105,25 +136,28 @@ export default function ClientsPage() {
             <MoreVertical size={16} strokeWidth={1.75} />
           </button>
         </div>
-        <div className="flex items-center gap-2 px-4 pb-3">
+        {/* Sort + inline filter chips: one tap to filter, no sheet detour */}
+        <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
           <button
             onClick={() => setSheet("sort")}
-            className="flex items-center gap-1.5 rounded-full bg-canvas px-3.5 py-2 text-[12px] font-medium text-navy"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3.5 py-2 text-[12px] font-medium text-navy"
           >
             <ArrowUpDown size={13} strokeWidth={1.75} />
             {sortBy}
             <ChevronDown size={12} className="text-muted" />
           </button>
-          <button
-            onClick={() => setSheet("filter")}
-            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-medium ${
-              filterTag !== "All" ? "bg-[#14181F] text-white" : "bg-canvas text-navy"
-            }`}
-          >
-            <SlidersHorizontal size={13} strokeWidth={1.75} />
-            {filterTag === "All" ? "Filter" : filterTag}
-            {filterTag !== "All" ? <X size={12} onClick={(e) => { e.stopPropagation(); setFilterTag("All"); }} /> : <ChevronDown size={12} className="text-muted" />}
-          </button>
+          <span className="h-5 w-px shrink-0 bg-border" />
+          {filterTags.map((t) => (
+            <button
+              key={t}
+              onClick={() => setFilterTag(t)}
+              className={`shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium ${
+                filterTag === t ? "bg-[#14181F] text-white" : "bg-canvas text-navy"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -208,9 +242,11 @@ export default function ClientsPage() {
             >
               <span className="text-[12px] font-semibold">{selected.length}</span>
               {[
-                { icon: <Ban size={14} />, label: "Block", run: () => bulk("block") },
-                { icon: <TagIcon size={14} />, label: "Tag VIP", run: () => bulk("tag") },
-                { icon: <Trash2 size={14} />, label: "Delete", run: () => bulk("delete") },
+                { icon: <TagIcon size={14} />, label: "Tag", run: () => { setBulkTags([]); setSheet("bulk-tag"); } },
+                allBlocked
+                  ? { icon: <Ban size={14} />, label: "Unblock", run: applyUnblock }
+                  : { icon: <Ban size={14} />, label: "Block", run: () => { setBlockReason(null); setBlockNote(""); setSheet("bulk-block"); } },
+                { icon: <Trash2 size={14} />, label: "Delete", run: () => setSheet("bulk-delete") },
               ].map((a) => (
                 <button
                   key={a.label}
@@ -378,25 +414,79 @@ export default function ClientsPage() {
         ))}
       </Sheet>
 
-      {/* Filter */}
-      <Sheet open={sheet === "filter"} onClose={() => setSheet(null)} title="Filter clients">
+      {/* Bulk: tag selected */}
+      <Sheet open={sheet === "bulk-tag"} onClose={() => setSheet(null)} title={`Tag ${selected.length} client${selected.length > 1 ? "s" : ""}`} sub="Tags show on the list and on each profile">
         <div className="flex flex-wrap gap-2 pt-1">
-          {filterTags.map((t) => (
+          {assignableTags.map((t) => {
+            const on = bulkTags.includes(t);
+            return (
+              <button
+                key={t}
+                onClick={() => setBulkTags((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
+                className={`rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                }`}
+              >
+                {t}
+              </button>
+            );
+          })}
+        </div>
+        <div className="pt-5">
+          <DarkButton disabled={bulkTags.length === 0} onClick={applyTags}>
+            {bulkTags.length ? `Apply ${bulkTags.join(" + ")}` : "Pick at least one tag"}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Bulk: block with a required reason */}
+      <Sheet open={sheet === "bulk-block"} onClose={() => setSheet(null)} title={`Block ${selected.length} client${selected.length > 1 ? "s" : ""}?`} sub="They won't be able to book until unblocked">
+        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Why are they being blocked?</p>
+        <div className="flex flex-wrap gap-2">
+          {blockReasons.map((r) => (
             <button
-              key={t}
-              onClick={() => {
-                setFilterTag(t);
-                setSheet(null);
-              }}
-              className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
-                filterTag === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              key={r}
+              onClick={() => setBlockReason(r)}
+              className={`rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors ${
+                blockReason === r ? "border-danger bg-danger text-white" : "border-border bg-white text-navy"
               }`}
             >
-              {t}
+              {r}
             </button>
           ))}
         </div>
-        <div className="h-4" />
+        {blockReason === "Other" && (
+          <input
+            autoFocus
+            value={blockNote}
+            onChange={(e) => setBlockNote(e.target.value)}
+            placeholder="Add a short note for the team..."
+            className="mt-3 h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        )}
+        <p className="pt-3 text-[12px] leading-snug text-muted">
+          The reason is kept on each profile so the whole team knows why. Blocking never notifies the client.
+        </p>
+        <div className="pt-4">
+          <DarkButton
+            disabled={!blockReason || (blockReason === "Other" && !blockNote.trim())}
+            onClick={applyBlock}
+          >
+            {blockReason ? `Block · ${blockReason === "Other" ? blockNote.trim() || "Other" : blockReason}` : "Pick a reason first"}
+          </DarkButton>
+          <GhostButton className="mt-3" onClick={() => setSheet(null)}>Keep them active</GhostButton>
+        </div>
+      </Sheet>
+
+      {/* Bulk: delete confirm */}
+      <Sheet open={sheet === "bulk-delete"} onClose={() => setSheet(null)} title={`Delete ${selected.length} client${selected.length > 1 ? "s" : ""}?`}>
+        <p className="pb-5 text-[14px] leading-relaxed text-secondary">
+          Their bookings, notes and documents will be removed after 30 days. This can be undone from Settings until then.
+        </p>
+        <DarkButton onClick={applyDelete}>Delete {selected.length} client{selected.length > 1 ? "s" : ""}</DarkButton>
+        <div className="pt-3">
+          <GhostButton onClick={() => setSheet(null)}>Keep</GhostButton>
+        </div>
       </Sheet>
     </div>
   );
