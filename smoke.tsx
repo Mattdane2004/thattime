@@ -73,7 +73,7 @@ renderContains("Clients", React.createElement(ClientsPage), [
 // 3b) Client profile detail (Overview tab renders by default).
 renderContains("ClientDetail", React.createElement(ClientDetailPage), [
   "Sarah Johnson", "Active", "Book", "Message", "Last Visit", "Total Bookings",
-  "Allergies", "PPD", "Contact", "Reschedule",
+  "Allergies", "PPD", "Contact", "Next appointment",
 ]);
 
 // 3b-ii) Client sub-pages: wallet, reviews, settings.

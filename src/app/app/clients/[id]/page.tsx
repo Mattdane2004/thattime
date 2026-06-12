@@ -9,11 +9,10 @@ import {
   MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
-  UserRound, Cake, Globe, UserPlus,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
-import { pastAppointments, clientForms } from "@/lib/data/product";
+import { pastAppointments, clientForms, staffMembers } from "@/lib/data/product";
 
 // Client detail, organised by job-to-be-done:
 //   Overview     — the dashboard: safety strip, next appointment, a
@@ -24,35 +23,27 @@ import { pastAppointments, clientForms } from "@/lib/data/product";
 // The 3-dot menu holds profile-level actions only (edit / VIP / merge /
 // block / delete).
 
-function NextAppointmentCard({ onReschedule, onCancel, moved }: { onReschedule: () => void; onCancel: () => void; moved: string | null }) {
+/** Compact next-appointment card — actions live behind the dots, not on the card. */
+function NextAppointmentCard({ onMenu, moved }: { onMenu: () => void; moved: string | null }) {
   return (
-    <div className="rounded-3xl bg-[#14181F] p-4 text-white">
-      <div className="flex items-center justify-between">
-        <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold">
-          {moved ? `Moved · ${moved}` : "Next appointment"}
-        </span>
-        <ChevronDown size={15} className="-rotate-90 text-white/50" />
-      </div>
-      <p className="pt-3 text-[18px] font-bold">Cut & Style</p>
-      <p className="pt-0.5 text-[13px] text-white/60">18 Mar 2026 · Emma S. · 60min · £85</p>
-      <div className="flex gap-2.5 pt-4">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onReschedule}
-          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-white/12 text-[13px] font-semibold"
+    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+      <div className="flex items-start justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Next appointment
+        </p>
+        <button
+          type="button"
+          aria-label="Appointment options"
+          onClick={onMenu}
+          className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-full text-navy hover:bg-canvas"
         >
-          <RotateCcw size={13} />
-          Reschedule
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onCancel}
-          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-white/12 text-[13px] font-semibold"
-        >
-          <X size={14} />
-          Cancel
-        </motion.button>
+          <MoreVertical size={15} strokeWidth={1.75} />
+        </button>
       </div>
+      <p className="text-[16px] font-bold text-navy">Cut & Style</p>
+      <p className="flex items-center gap-2 pt-1 text-[12px] text-muted">
+        {moved ? `Moved · ${moved}` : "18 Mar 2026"} · Emma S. · 60min · £85
+      </p>
     </div>
   );
 }
@@ -81,7 +72,27 @@ const severityTone: Record<Allergy["severity"], string> = {
   Fatal: "bg-danger text-white",
 };
 
-const reactionOptions = ["Itching", "Rash", "Swelling", "Dizziness", "Coughing", "Chills", "Breathing difficulty"];
+const reactionOptions = [
+  "Itching", "Rash or hives", "Swelling", "Redness", "Burning or stinging",
+  "Blistering", "Dry or flaky skin", "Dizziness", "Headache", "Nausea",
+  "Sneezing", "Watery eyes", "Coughing", "Wheezing", "Breathing difficulty",
+  "Anaphylaxis",
+];
+const severities = ["Mild", "Moderate", "Severe", "Fatal"] as const;
+
+interface PatchTest {
+  title: string;
+  date: string;
+  staff: string;
+  status: "Pending" | "Passed" | "Failed";
+  desc?: string;
+}
+
+const patchTone: Record<PatchTest["status"], string> = {
+  Passed: "bg-[#E8F6EE] text-[#157347]",
+  Pending: "bg-canvas text-muted",
+  Failed: "bg-danger text-white",
+};
 
 interface ClinicalNote {
   date: string;
@@ -102,9 +113,11 @@ export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
   const clientId = params?.id ?? "sarah";
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const setApptSheet = useAppStore((s) => s.setApptSheet);
   const [tab, setTab] = useState("Overview");
 
   // Next-appointment actions
+  const [nextApptMenu, setNextApptMenu] = useState(false);
   const [resched, setResched] = useState(false);
   const [cancel, setCancel] = useState(false);
   const [cancelled, setCancelled] = useState(false);
@@ -136,6 +149,7 @@ export default function ClientDetailPage() {
   const [alType, setAlType] = useState<Allergy["type"]>("Non-drug");
   const [alReaction, setAlReaction] = useState<string | null>(null);
   const [alSeverity, setAlSeverity] = useState<Allergy["severity"]>("Mild");
+  const [reactOpen, setReactOpen] = useState(false);
   const [expandedAllergy, setExpandedAllergy] = useState<string | null>(null);
 
   // Record: notes & images, patch tests
@@ -148,7 +162,20 @@ export default function ClientDetailPage() {
   const [noteDraft, setNoteDraft] = useState("");
   const [noteAppt, setNoteAppt] = useState<string | null>("General");
   const [notePhotos, setNotePhotos] = useState(0);
-  const [patchRecorded, setPatchRecorded] = useState(false);
+  const [noteDay, setNoteDay] = useState<number | null>(null);
+  const [notePickDate, setNotePickDate] = useState(false);
+
+  // Patch tests — a real record-new flow, not a one-tap stub
+  const [patchTests, setPatchTests] = useState<PatchTest[]>([
+    { title: "Colour patch test", date: "1 Mar 2026", staff: "Emma S.", status: "Passed", desc: "Valid for 6 months" },
+  ]);
+  const [ptOpen, setPtOpen] = useState(false);
+  const [ptTitle, setPtTitle] = useState("");
+  const [ptDay, setPtDay] = useState<number | null>(null);
+  const [ptPickDate, setPtPickDate] = useState(false);
+  const [ptStaff, setPtStaff] = useState<string | null>(null);
+  const [ptStatus, setPtStatus] = useState<PatchTest["status"]>("Pending");
+  const [ptDesc, setPtDesc] = useState("");
 
   // Appointments
   const [bookingSel, setBookingSel] = useState<(typeof pastAppointments)[number] | null>(null);
@@ -251,60 +278,45 @@ export default function ClientDetailPage() {
           transition={{ duration: 0.18 }}
           className="px-4 pt-4"
         >
-          {/* ════ OVERVIEW — a dashboard: who they are, what's next, where to go ════ */}
+          {/* ════ OVERVIEW — a dashboard: safety, what's next, the numbers, where to go ════ */}
           {tab === "Overview" && (
-            <div className="flex flex-col gap-4">
-              {/* One facts card: safety first, then the person, then the numbers */}
-              <div className="rounded-3xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <button
-                  type="button"
-                  onClick={() => setTab("Record")}
-                  className="flex w-full items-center gap-3 px-5 py-4 text-left"
-                >
-                  <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-bold text-navy">Allergies</span>
-                    <span className="block truncate pt-0.5 text-[12px] text-secondary">
-                      {allergies.length
-                        ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
-                        : "None recorded — tap to add"}
-                    </span>
+            <div className="flex flex-col gap-3">
+              {/* Allergies highlighted right at the top, one slim line */}
+              <button
+                type="button"
+                onClick={() => setTab("Record")}
+                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                  severe ? "border-danger/40" : "border-border"
+                }`}
+              >
+                <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-bold text-navy">Allergies</span>
+                  <span className="block truncate pt-0.5 text-[12px] text-secondary">
+                    {allergies.length
+                      ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
+                      : "None recorded — tap to add"}
                   </span>
-                  <ChevronRight size={14} className="shrink-0 text-muted" />
-                </button>
-                <div className="mx-5 border-t border-border" />
-                <div className="flex flex-col gap-3.5 px-5 py-4">
-                  {[
-                    [<UserRound key="p" size={15} strokeWidth={1.8} />, "She / her"],
-                    [<Cake key="b" size={15} strokeWidth={1.8} />, "14 July 1992"],
-                    [<Globe key="l" size={15} strokeWidth={1.8} />, "English (UK)"],
-                    [<UserPlus key="j" size={15} strokeWidth={1.8} />, "Client since 8 Mar 2025"],
-                  ].map(([icon, v], i) => (
-                    <p key={i} className="flex items-center gap-3 text-[14px] text-navy">
-                      <span className="text-secondary">{icon}</span>
-                      {v}
-                    </p>
-                  ))}
-                </div>
-                <div className="mx-5 border-t border-border" />
-                <div className="flex divide-x divide-border px-2 py-4">
-                  {[
-                    ["Last Visit", "3 Mar 2026"],
-                    ["Total Bookings", "24"],
-                    ["Total Sales", "£1,870"],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex-1 text-center">
-                      <p className="text-[11px] text-muted">{k}</p>
-                      <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                </span>
+                <ChevronRight size={14} className="shrink-0 text-muted" />
+              </button>
 
-              {/* What's next lives at the top of the dashboard */}
-              {!cancelled && (
-                <NextAppointmentCard moved={moved} onReschedule={() => setResched(true)} onCancel={() => setCancel(true)} />
-              )}
+              {/* What's next, right under safety */}
+              {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
+
+              {/* The numbers, one quiet row */}
+              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                {[
+                  ["Last Visit", "3 Mar 2026"],
+                  ["Total Bookings", "24"],
+                  ["Total Sales", "£1,870"],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex-1 text-center">
+                    <p className="text-[11px] text-muted">{k}</p>
+                    <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
+                  </div>
+                ))}
+              </div>
 
               {/* Needs attention: a glanceable horizontal rail, one card per item */}
               {attention.length > 0 && (
@@ -375,7 +387,7 @@ export default function ClientDetailPage() {
                   </button>
                 </div>
               ) : (
-                <NextAppointmentCard moved={moved} onReschedule={() => setResched(true)} onCancel={() => setCancel(true)} />
+                <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />
               )}
 
               <RecordHeading>History · {pastAppointments.length}</RecordHeading>
@@ -494,44 +506,38 @@ export default function ClientDetailPage() {
                 action={
                   <button
                     type="button"
-                    onClick={() => setPatchRecorded(true)}
-                    disabled={patchRecorded}
-                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${patchRecorded ? "bg-white text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]" : "bg-[#14181F] text-white"}`}
+                    onClick={() => {
+                      setPtTitle(""); setPtDay(null); setPtPickDate(false);
+                      setPtStaff(null); setPtStatus("Pending"); setPtDesc("");
+                      setPtOpen(true);
+                    }}
+                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
                   >
-                    {patchRecorded ? "Recorded" : "Record new"}
+                    Record new
                   </button>
                 }
               >
                 Patch tests
               </RecordHeading>
-              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
-                    <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
-                    Colour patch test
-                  </span>
-                  <span className="rounded-full bg-[#E8F6EE] px-2.5 py-1 text-[10px] font-semibold text-[#157347]">Passed</span>
-                </div>
-                <p className="pt-1 text-[12px] text-muted">1 Mar 2026 · valid for 6 months · Emma S.</p>
-              </div>
-              {patchRecorded && (
-                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+              {patchTests.map((pt, i) => (
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
                       <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
-                      Colour patch test
+                      {pt.title}
                     </span>
-                    <span className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-muted">Result pending</span>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${patchTone[pt.status]}`}>{pt.status}</span>
                   </div>
-                  <p className="pt-1 text-[12px] text-muted">Today · 4 Mar 2026 · check after 48h</p>
+                  <p className="pt-1 text-[12px] text-muted">{pt.date} · {pt.staff}</p>
+                  {pt.desc && <p className="pt-1.5 text-[13px] leading-snug text-navy">{pt.desc}</p>}
                 </div>
-              )}
+              ))}
 
               <RecordHeading
                 action={
                   <button
                     type="button"
-                    onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteOpen(true); }}
+                    onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteDay(null); setNotePickDate(false); setNoteOpen(true); }}
                     className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Add note
@@ -658,22 +664,16 @@ export default function ClientDetailPage() {
         </div>
       </Sheet>
 
-      {/* Add allergy */}
+      {/* Add allergy — free-text name, reaction picked from a full dropdown,
+          severity set on a slider */}
       <Sheet open={allergyOpen} onClose={() => setAllergyOpen(false)} title="Add an allergy" sub="Flagged on every booking and checkout" full>
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">What are they allergic to?</p>
         <input
           value={alName}
           onChange={(e) => setAlName(e.target.value)}
-          placeholder="e.g. PPD, nuts, latex, penicillin..."
+          placeholder="Name the allergy..."
           className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
         />
-        <div className="flex gap-2 pt-2">
-          {["PPD", "Nuts", "Latex", "Penicillin"].map((s) => (
-            <button key={s} onClick={() => setAlName(s)} className="rounded-full border border-border px-3 py-1.5 text-[12px] text-navy">
-              {s}
-            </button>
-          ))}
-        </div>
         <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</p>
         <div className="flex gap-2">
           {(["Drug", "Non-drug", "Note"] as const).map((t) => (
@@ -689,35 +689,73 @@ export default function ClientDetailPage() {
           ))}
         </div>
         <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Reaction</p>
-        <div className="flex flex-wrap gap-2">
-          {reactionOptions.map((rx) => (
-            <button
-              key={rx}
-              onClick={() => setAlReaction(rx)}
-              className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                alReaction === rx ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-              }`}
+        <button
+          type="button"
+          onClick={() => setReactOpen((o) => !o)}
+          className="flex h-12 w-full items-center justify-between rounded-xl bg-canvas px-4 text-left"
+        >
+          <span className={`text-[14px] ${alReaction ? "font-semibold text-navy" : "text-muted"}`}>
+            {alReaction ?? "Select a reaction"}
+          </span>
+          <motion.span animate={{ rotate: reactOpen ? 180 : 0 }} className="flex text-muted">
+            <ChevronDown size={15} strokeWidth={1.75} />
+          </motion.span>
+        </button>
+        <AnimatePresence initial={false}>
+          {reactOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              {rx}
-            </button>
-          ))}
+              <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-border">
+                {reactionOptions.map((rx) => (
+                  <button
+                    key={rx}
+                    type="button"
+                    onClick={() => {
+                      setAlReaction(rx);
+                      setReactOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-[14px] last:border-0 ${
+                      alReaction === rx ? "bg-canvas font-semibold text-navy" : "text-navy"
+                    }`}
+                  >
+                    {rx}
+                    {alReaction === rx && <Check size={14} strokeWidth={2.5} />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="flex items-baseline justify-between pb-1 pt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Severity</p>
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${severityTone[alSeverity]}`}>{alSeverity}</span>
         </div>
-        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Severity</p>
-        <div className="flex gap-2">
-          {(["Mild", "Moderate", "Severe", "Fatal"] as const).map((sv) => (
-            <button
+        <input
+          type="range"
+          min={0}
+          max={3}
+          step={1}
+          value={severities.indexOf(alSeverity)}
+          onChange={(e) => setAlSeverity(severities[Number(e.target.value)])}
+          aria-label="Severity"
+          className="w-full accent-[#14181F]"
+        />
+        <div className="flex justify-between pt-1">
+          {severities.map((sv) => (
+            <span
               key={sv}
-              onClick={() => setAlSeverity(sv)}
-              className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold ${
+              className={`text-[11px] ${
                 alSeverity === sv
-                  ? sv === "Fatal" || sv === "Severe"
-                    ? "border-danger bg-danger text-white"
-                    : "border-[#14181F] bg-[#14181F] text-white"
-                  : "border-border bg-white text-navy"
+                  ? sv === "Severe" || sv === "Fatal" ? "font-bold text-danger" : "font-bold text-navy"
+                  : "text-muted"
               }`}
             >
               {sv}
-            </button>
+            </span>
           ))}
         </div>
         <div className="pt-6">
@@ -734,6 +772,139 @@ export default function ClientDetailPage() {
             {alName.trim() ? `Save ${alName.trim()} · ${alSeverity}` : "Save allergy"}
           </DarkButton>
         </div>
+      </Sheet>
+
+      {/* Record a patch test — title, date, tester, status, notes */}
+      <Sheet open={ptOpen} onClose={() => setPtOpen(false)} title="Record a patch test" sub="Kept on Sarah's record with the result" full>
+        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">What was tested?</p>
+        <input
+          value={ptTitle}
+          onChange={(e) => setPtTitle(e.target.value)}
+          placeholder="e.g. Colour patch test, lash adhesive..."
+          className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Test date</p>
+        <div className="flex gap-2">
+          {["Today · 4 Mar", "Pick a date"].map((d, i) => {
+            const on = i === 0 ? !ptPickDate : ptPickDate;
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  setPtPickDate(i === 1);
+                  if (i === 0) setPtDay(null);
+                }}
+                className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
+                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                }`}
+              >
+                {i === 1 && ptDay ? `${ptDay} Mar 2026` : d}
+              </button>
+            );
+          })}
+        </div>
+        {ptPickDate && (
+          <div className="pt-3">
+            <MiniCalendar selected={ptDay} onSelect={setPtDay} />
+          </div>
+        )}
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Tested by</p>
+        <div className="flex flex-wrap gap-2">
+          {staffMembers.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setPtStaff(m)}
+              className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
+                ptStaff === m ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Status</p>
+        <div className="flex gap-2">
+          {(["Pending", "Passed", "Failed"] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setPtStatus(st)}
+              className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
+                ptStatus === st
+                  ? st === "Failed"
+                    ? "border-danger bg-danger text-white"
+                    : "border-[#14181F] bg-[#14181F] text-white"
+                  : "border-border bg-white text-navy"
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Notes</p>
+        <textarea
+          value={ptDesc}
+          onChange={(e) => setPtDesc(e.target.value)}
+          placeholder="Where it was applied, what to watch for, when to check..."
+          className="h-20 w-full resize-none rounded-xl bg-canvas p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <div className="pt-5">
+          <DarkButton
+            disabled={!ptTitle.trim() || !ptStaff}
+            onClick={() => {
+              setPatchTests((x) => [
+                {
+                  title: ptTitle.trim(),
+                  date: ptDay ? `${ptDay} Mar 2026` : "Today · 4 Mar 2026",
+                  staff: ptStaff ?? "",
+                  status: ptStatus,
+                  desc: ptDesc.trim() || undefined,
+                },
+                ...x,
+              ]);
+              setPtOpen(false);
+            }}
+          >
+            {ptTitle.trim() && ptStaff ? `Save · ${ptStatus.toLowerCase()}` : "Fill in the test first"}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Next appointment options */}
+      <Sheet open={nextApptMenu} onClose={() => setNextApptMenu(false)} title="Next appointment" sub="Cut & Style · 18 Mar 2026 · Emma S.">
+        <div className="flex flex-col pt-1">
+          {[
+            { icon: <RotateCcw size={16} strokeWidth={1.8} />, t: "Reschedule", run: () => setResched(true) },
+            {
+              icon: <CalendarPlus size={16} strokeWidth={1.8} />, t: "Open booking",
+              run: () => setApptSheet({
+                client: "Sarah Johnson", initials: "SJ", service: "Cut & Style",
+                staff: "Emma S.", time: "10:00 AM", duration: "60m", price: 85, status: "Confirmed",
+              }),
+            },
+          ].map((q) => (
+            <button
+              key={q.t}
+              type="button"
+              onClick={() => { setNextApptMenu(false); q.run(); }}
+              className="flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left text-[15px] font-medium text-navy"
+            >
+              <span className="text-secondary">{q.icon}</span>
+              {q.t}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => { setNextApptMenu(false); setCancel(true); }}
+            className="flex w-full items-center gap-3.5 py-3.5 text-left text-[15px] font-medium text-danger"
+          >
+            <X size={16} strokeWidth={2} />
+            Cancel appointment
+          </button>
+        </div>
+        <div className="h-2" />
       </Sheet>
 
       {/* Booking detail (past appointment) */}
@@ -801,6 +972,36 @@ export default function ClientDetailPage() {
             </button>
           ))}
         </div>
+        {noteAppt === "General" && (
+          <>
+            <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Date</p>
+            <div className="flex gap-2">
+              {["Today · 4 Mar", "Pick a date"].map((d, i) => {
+                const on = i === 0 ? !notePickDate : notePickDate;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setNotePickDate(i === 1);
+                      if (i === 0) setNoteDay(null);
+                    }}
+                    className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
+                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    }`}
+                  >
+                    {i === 1 && noteDay ? `${noteDay} Mar 2026` : d}
+                  </button>
+                );
+              })}
+            </div>
+            {notePickDate && (
+              <div className="pt-3">
+                <MiniCalendar selected={noteDay} onSelect={setNoteDay} />
+              </div>
+            )}
+          </>
+        )}
         <textarea
           value={noteDraft}
           onChange={(e) => setNoteDraft(e.target.value)}
@@ -821,7 +1022,7 @@ export default function ClientDetailPage() {
             onClick={() => {
               setNotes((n) => [
                 {
-                  date: "Today · 4 Mar 2026",
+                  date: noteDay ? `${noteDay} Mar 2026` : "Today · 4 Mar 2026",
                   appt: noteAppt === "General" ? null : noteAppt,
                   note: noteDraft.trim() || "Photos attached.",
                   imgs: notePhotos,
