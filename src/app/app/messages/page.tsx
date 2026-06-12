@@ -53,7 +53,7 @@ export default function MessagesPage() {
               type="button"
               onClick={() => setFilter(f)}
               className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium ${
-                filter === f ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+                filter === f ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
               }`}
             >
               {f}
@@ -99,7 +99,7 @@ export default function MessagesPage() {
                     {c.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                   </span>
                 )}
-                {c.unread > 0 && <span className="absolute left-0 top-0 h-2.5 w-2.5 rounded-full bg-[#14181F] ring-2 ring-white" />}
+                {c.unread > 0 && <span className="absolute left-0 top-0 h-2.5 w-2.5 rounded-full bg-fg-primary ring-2 ring-white" />}
               </span>
               <span className="min-w-0 flex-1 border-b border-border pb-4">
                 <span className="flex items-baseline justify-between">
@@ -111,7 +111,7 @@ export default function MessagesPage() {
                     {c.preview}
                   </span>
                   {c.unread > 0 && (
-                    <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#14181F] text-[10px] font-bold text-white">
+                    <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-fg-primary text-[10px] font-bold text-white">
                       {c.unread}
                     </span>
                   )}

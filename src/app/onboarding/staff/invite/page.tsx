@@ -55,7 +55,7 @@ export default function StaffInvitePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.06 }}
-            className="flex-1 rounded-2xl bg-[#ECECEE] px-3 py-3.5 text-center"
+            className="flex-1 rounded-2xl bg-[#F0E6DC] px-3 py-3.5 text-center"
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted">{c.k}</p>
             <p className="mt-1 whitespace-nowrap text-[13px] font-bold text-navy">{c.v}</p>
@@ -72,7 +72,7 @@ export default function StaffInvitePage() {
             transition={{ delay: 0.3 + i * 0.07 }}
             className="flex items-center gap-4"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ECECEE] text-navy">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F0E6DC] text-navy">
               {p.icon}
             </span>
             <span className="text-[14px] font-medium leading-snug text-navy">{p.text}</span>

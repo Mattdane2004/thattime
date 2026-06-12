@@ -47,7 +47,7 @@ function ServiceRow({
         animate={{ scale: selected ? 1 : 0.92 }}
         transition={{ type: "spring", stiffness: 480, damping: 28 }}
         className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-          selected ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-transparent"
+          selected ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-transparent"
         }`}
       >
         <Check size={14} strokeWidth={2.5} />
@@ -102,7 +102,7 @@ function CatalogRow({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: "spring", stiffness: 480, damping: 30 }}
-              className="flex h-9 items-center rounded-full bg-[#14181F] px-1 text-white"
+              className="flex h-9 items-center rounded-full bg-fg-primary px-1 text-white"
             >
               <motion.button
                 type="button"
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 280, damping: 16 }}
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-[#14181F] text-white"
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-fg-primary text-white"
           >
             <CheckCircle2 size={34} strokeWidth={1.6} />
           </motion.span>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={() => setTraits((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
                   className={`rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
-                    on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                   }`}
                 >
                   {t}
@@ -431,7 +431,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={() => store.setTip(t.pct)}
               className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-                active ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                active ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {t.label}
@@ -446,7 +446,7 @@ export default function CheckoutPage() {
             setTipSheet(true);
           }}
           className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-            store.tipCustom > 0 ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+            store.tipCustom > 0 ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
           }`}
         >
           {store.tipCustom > 0 ? fmt(store.tipCustom) : "Custom"}
@@ -601,7 +601,7 @@ export default function CheckoutPage() {
                   setAddSheet(null);
                 }}
                 className={`flex w-full items-center gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors ${
-                  applied ? "border-[#14181F]" : "border-border"
+                  applied ? "border-fg-primary" : "border-border"
                 }`}
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-navy">
@@ -615,7 +615,7 @@ export default function CheckoutPage() {
                 </span>
                 <span
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                    applied ? "border-[#14181F] bg-[#14181F] text-white" : "border-border text-transparent"
+                    applied ? "border-fg-primary bg-fg-primary text-white" : "border-border text-transparent"
                   }`}
                 >
                   <Check size={13} strokeWidth={3} />
@@ -663,7 +663,7 @@ export default function CheckoutPage() {
                   setTipCustomDraft(0);
                 }}
                 className={`flex flex-col items-center rounded-2xl border py-4 transition-colors ${
-                  active ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                  active ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                 }`}
               >
                 <span className="text-[17px] font-bold">{pct}%</span>
@@ -813,7 +813,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={() => setOtherAmount(c.v)}
               className={`rounded-full border px-3.5 py-2 text-[12px] font-semibold ${
-                otherAmount === c.v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                otherAmount === c.v ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {c.label}
@@ -862,7 +862,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={() => setCashAmount(c.v)}
               className={`rounded-full border px-3.5 py-2 text-[12px] font-semibold ${
-                cashAmount === c.v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                cashAmount === c.v ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {c.label}

@@ -44,15 +44,15 @@ const catOf = (svc?: string) => services.find((s) => s.name === svc)?.category ?
 function shadeClass(shade: GridBlock["shade"]) {
   switch (shade) {
     case "dark":
-      return "bg-[#14181F] text-white";
+      return "bg-fg-primary text-white";
     case "mid":
       return "bg-[#4A5468] text-white";
     case "muted":
       return "bg-canvas text-muted";
     case "outline":
-      return "border-2 border-[#14181F] bg-white text-navy";
+      return "border-2 border-fg-primary bg-white text-navy";
     default:
-      return "bg-[#ECEDEF] text-secondary";
+      return "bg-[#F0E6DC] text-secondary";
   }
 }
 
@@ -76,7 +76,7 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
               status: "Confirmed",
             })
           }
-          className="flex w-full items-center gap-3 rounded-2xl border border-[#14181F]/20 bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+          className="flex w-full items-center gap-3 rounded-2xl border border-fg-primary/20 bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
         >
           <span className="w-12 shrink-0">
             <span className="block text-[14px] font-bold text-navy">{fmtT(a.time ?? "", timeFmt)}</span>
@@ -102,7 +102,7 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
             );
           case "break":
             return (
-              <div key={row.id} className="flex items-center gap-3 rounded-2xl bg-[#ECEDEF] px-4 py-3">
+              <div key={row.id} className="flex items-center gap-3 rounded-2xl bg-[#F0E6DC] px-4 py-3">
                 <span className="text-[12px] font-medium text-muted">{row.time}</span>
                 <Coffee size={14} className="text-muted" strokeWidth={1.75} />
                 <span className="flex-1 text-[13px] font-medium text-secondary">{row.label}</span>
@@ -137,7 +137,7 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
                     status: row.past ? "Done" : "Confirmed",
                   })
                 }
-                className={`flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                className={`flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
                   row.past ? "opacity-50" : ""
                 }`}
               >
@@ -371,7 +371,7 @@ function ClassSheet({
 
       <div className="h-2 overflow-hidden rounded-full bg-canvas">
         <motion.div
-          className="h-full rounded-full bg-[#14181F]"
+          className="h-full rounded-full bg-fg-primary"
           initial={{ width: 0 }}
           animate={{ width: `${(booked / m.capacity) * 100}%` }}
           transition={{ duration: 0.6, ease: "easeOut" }}
@@ -392,7 +392,7 @@ function ClassSheet({
               {a.initials}
             </span>
           ))}
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#14181F] text-[9px] font-bold text-white">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-fg-primary text-[9px] font-bold text-white">
             +{attendees.length - 4}
           </span>
         </span>
@@ -431,7 +431,7 @@ function ClassSheet({
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setArrived((r) => ({ ...r, [a.id]: !r[a.id] }))}
                     className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
-                      arrived[a.id] ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                      arrived[a.id] ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                     }`}
                   >
                     {arrived[a.id] ? "Arrived" : "Mark arrived"}
@@ -587,7 +587,7 @@ function SettingsSheet({
               type="button"
               onClick={() => onTimeFmt(f)}
               className={`rounded-full px-4 py-1.5 text-[12px] font-semibold ${
-                timeFmt === f ? "bg-white text-navy shadow-[0_1px_3px_rgba(15,26,46,0.12)]" : "text-muted"
+                timeFmt === f ? "bg-white text-navy shadow-[0_1px_3px_rgba(8, 7, 6,0.12)]" : "text-muted"
               }`}
             >
               {f}
@@ -604,7 +604,7 @@ function SettingsSheet({
             type="button"
             onClick={() => onFilterCat(c)}
             className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
-              filterCat === c ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              filterCat === c ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
             }`}
           >
             {c}
@@ -619,7 +619,7 @@ function SettingsSheet({
             type="button"
             onClick={() => onCalDays(l.days)}
             className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-              calDays === l.days ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              calDays === l.days ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
             }`}
           >
             {l.label}
@@ -716,7 +716,7 @@ export default function SchedulePage() {
             <button
               type="button"
               onClick={() => setFilterCat("All")}
-              className="mx-4 mt-3 flex items-center gap-2 rounded-full border border-[#14181F] bg-[#14181F] px-3.5 py-1.5 text-[12px] font-semibold text-white"
+              className="mx-4 mt-3 flex items-center gap-2 rounded-full border border-fg-primary bg-fg-primary px-3.5 py-1.5 text-[12px] font-semibold text-white"
             >
               <SlidersHorizontal size={11} strokeWidth={2} />
               Showing {filterCat} only · clear
@@ -740,7 +740,7 @@ export default function SchedulePage() {
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
               whileTap={{ scale: 0.94 }}
               onClick={() => setDayIdx(TODAY_IDX)}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-[#14181F] px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_6px_20px_rgba(15,26,46,0.35)]"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-fg-primary px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_6px_20px_rgba(8, 7, 6,0.35)]"
             >
               <CalendarDays size={13} strokeWidth={2} />
               Back to today

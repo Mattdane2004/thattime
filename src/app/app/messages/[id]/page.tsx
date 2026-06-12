@@ -131,7 +131,7 @@ export default function ConversationPage() {
           if (b.kind === "business")
             return (
               <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
-                <div className="max-w-[78%] rounded-2xl rounded-br-md bg-[#14181F] px-4 py-3 text-white">
+                <div className="max-w-[78%] rounded-2xl rounded-br-md bg-fg-primary px-4 py-3 text-white">
                   <p className="text-[14px] leading-snug">{b.text}</p>
                   <p className="pt-1.5 text-[10px] text-white/50">{b.meta}</p>
                 </div>
@@ -140,7 +140,7 @@ export default function ConversationPage() {
           if (b.kind === "action")
             return (
               <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end">
-                <div className="max-w-[78%] rounded-2xl rounded-br-md bg-[#14181F] px-4 py-3 text-white">
+                <div className="max-w-[78%] rounded-2xl rounded-br-md bg-fg-primary px-4 py-3 text-white">
                   <p className="text-[14px] font-medium leading-snug">{b.text}</p>
                   <button
                     type="button"
@@ -217,7 +217,7 @@ export default function ConversationPage() {
             aria-label="Send"
             onClick={() => send(draft)}
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              draft.trim() ? "bg-[#14181F] text-white" : "bg-canvas text-muted"
+              draft.trim() ? "bg-fg-primary text-white" : "bg-canvas text-muted"
             }`}
           >
             <Send size={15} strokeWidth={1.75} />

@@ -150,7 +150,7 @@ export function AppointmentSheetHost() {
                         status === "No-show"
                           ? "bg-danger text-white"
                           : status === "In progress"
-                            ? "bg-[#14181F] text-white"
+                            ? "bg-fg-primary text-white"
                             : status === "Done"
                               ? "bg-[#E8F6EE] text-[#157347]"
                               : "bg-canvas text-navy"
@@ -168,7 +168,7 @@ export function AppointmentSheetHost() {
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="absolute inset-x-0 top-[50px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(15,26,46,0.12)]"
+                    className="absolute inset-x-0 top-[50px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(8, 7, 6,0.12)]"
                   >
                     {statusChips.map((c) => (
                       <button
@@ -212,7 +212,7 @@ export function AppointmentSheetHost() {
                         onClick={() => setReminded(true)}
                         disabled={reminded}
                         className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold ${
-                          reminded ? "bg-white text-muted" : "bg-[#14181F] text-white"
+                          reminded ? "bg-white text-muted" : "bg-fg-primary text-white"
                         }`}
                       >
                         {reminded ? <Check size={11} strokeWidth={2.5} /> : <Bell size={11} strokeWidth={2} />}
@@ -407,7 +407,7 @@ export function AppointmentSheetHost() {
                     type="button"
                     onClick={() => setSvcCat(c)}
                     className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                      svcCat === c ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+                      svcCat === c ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
                     }`}
                   >
                     {c}

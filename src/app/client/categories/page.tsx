@@ -56,7 +56,7 @@ export default function ClientCategoriesPage() {
               transition={{ delay: 0.03 * i }}
               whileTap={{ scale: 0.94 }}
               onClick={() => toggleClientCategory(c.id)}
-              className={`rounded-lg p-1 transition-colors ${selected ? "bg-coral" : "bg-[#F0F0F0]"}`}
+              className={`rounded-lg p-1 transition-colors ${selected ? "bg-coral" : "bg-[#F0E6DC]"}`}
             >
               <span className="relative block h-[100px] w-full overflow-hidden rounded-[5px]">
                 <Image src={c.img} alt={c.label} fill sizes="110px" className="object-cover" />

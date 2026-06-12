@@ -13,7 +13,7 @@ export function MobileFrame({ children }: { children: ReactNode }) {
   const reset = useOnboarding2((state) => state.reset);
 
   return (
-    <main className="flex min-h-screen w-full items-start justify-center bg-gradient-to-b from-canvas to-[#EBEBED] sm:items-center sm:px-4 sm:py-8">
+    <main className="flex min-h-screen w-full items-start justify-center bg-gradient-to-b from-canvas to-[#F0E6DC] sm:items-center sm:px-4 sm:py-8">
       <section className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-canvas text-navy sm:h-[756px] sm:w-[378px] sm:rounded-[28px] sm:border sm:border-white/70 sm:shadow-phone">
         <button
           type="button"

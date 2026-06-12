@@ -21,7 +21,7 @@ function NeedsAttentionList() {
   return (
     <div className="space-y-3 px-4">
       {needsAttention.map((item) => (
-        <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+        <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
           <div className="min-w-0">
             <div className="text-[14px] font-semibold text-navy">{item.title}</div>
             <div className="mt-0.5 truncate text-[12px] text-muted">{item.detail}</div>
@@ -106,7 +106,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="mx-4 mt-4 grid grid-cols-3 rounded-2xl bg-white px-2 py-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+      <div className="mx-4 mt-4 grid grid-cols-3 rounded-2xl bg-white px-2 py-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
         {staffStats.map((stat, i) => (
           <div key={stat.label} className={`text-center ${i > 0 ? "border-l border-border" : ""}`}>
             <div className="text-[11px] text-muted">{stat.label}</div>
@@ -135,7 +135,7 @@ export default function HomePage() {
         >
           Team Today
         </SectionLabel>
-        <div className="mx-4 overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+        <div className="mx-4 overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
           {teamToday.members.map((member, i) => (
             <div key={member.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-semibold text-muted">
@@ -161,7 +161,7 @@ export default function HomePage() {
       <div className="pt-6">
         <SectionLabel>Your Shifts</SectionLabel>
         <div className="space-y-3 px-4">
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
             <div className="flex items-center justify-between px-4 pb-1 pt-4">
               <span className="text-[15px] font-bold text-navy">Upcoming Shifts</span>
               <Link href="/app/schedule" className="text-[12px] font-medium text-muted">
@@ -170,7 +170,7 @@ export default function HomePage() {
             </div>
             {upcomingShifts.map((shift) => (
               <div key={shift.id} className="flex items-center gap-3 px-4 py-3">
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${shift.badge ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"}`}>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${shift.badge ? "bg-fg-primary text-white" : "bg-canvas text-secondary"}`}>
                   <CalendarDays size={16} strokeWidth={1.75} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -178,7 +178,7 @@ export default function HomePage() {
                   <div className="mt-0.5 text-[12px] text-muted">{shift.detail}</div>
                 </div>
                 {shift.badge && (
-                  <span className="shrink-0 rounded-full bg-[#14181F] px-2.5 py-1 text-[11px] font-semibold text-white">
+                  <span className="shrink-0 rounded-full bg-fg-primary px-2.5 py-1 text-[11px] font-semibold text-white">
                     {shift.badge}
                   </span>
                 )}
@@ -186,7 +186,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
             <div className="flex items-center justify-between px-4 pb-1 pt-4">
               <span className="text-[15px] font-bold text-navy">Time Off</span>
               <button
@@ -299,7 +299,7 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute inset-x-0 top-[52px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(15,26,46,0.12)]"
+                  className="absolute inset-x-0 top-[52px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(8, 7, 6,0.12)]"
                 >
                   {["Annual Leave", "Sick Leave", "Other"].map((t) => (
                     <button
@@ -376,7 +376,7 @@ export default function HomePage() {
                           type="button"
                           onClick={() => setTotDayParts((p) => ({ ...p, [d]: opt }))}
                           className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
-                            part === opt ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-secondary"
+                            part === opt ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-secondary"
                           }`}
                         >
                           {opt}

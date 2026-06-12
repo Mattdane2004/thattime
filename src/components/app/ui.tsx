@@ -66,7 +66,7 @@ export function Segmented({
             {active && (
               <motion.span
                 layoutId={`seg-${options.join("-")}`}
-                className="absolute inset-0 rounded-full bg-white shadow-[0_1px_4px_rgba(15,26,46,0.1)]"
+                className="absolute inset-0 rounded-full bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.1)]"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
@@ -157,7 +157,7 @@ export function DarkButton({
       onClick={disabled ? undefined : onClick}
       aria-disabled={disabled}
       className={`flex h-12 w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-colors ${
-        disabled ? "bg-canvas text-muted" : "bg-[#14181F] text-white"
+        disabled ? "bg-canvas text-muted" : "bg-fg-primary text-white"
       } ${className}`}
     >
       {children}
@@ -288,9 +288,9 @@ export function MiniCalendar({
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] transition-colors ${
                   selected === d || (range && (d === range.start || d === range.end))
-                    ? "bg-[#14181F] font-semibold text-white"
+                    ? "bg-fg-primary font-semibold text-white"
                     : range && range.start && range.end && d > range.start && d < range.end
-                      ? "bg-[#E4E5E9] font-medium text-navy"
+                      ? "bg-[#E5DDD4] font-medium text-navy"
                       : d === 4 && mIdx === TODAY_MONTH
                         ? "border border-border text-navy"
                         : "text-navy"
@@ -350,7 +350,7 @@ export function TimeChips({
             onClick={() => onSelect(t)}
             className={`rounded-full border px-4 py-2.5 text-[14px] font-medium transition-colors ${
               active
-                ? "border-[#14181F] bg-[#14181F] text-white"
+                ? "border-fg-primary bg-fg-primary text-white"
                 : free
                   ? "border-border bg-white text-navy"
                   : "border-border bg-white text-muted line-through"

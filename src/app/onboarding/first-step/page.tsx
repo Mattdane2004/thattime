@@ -57,7 +57,7 @@ export default function FirstStepPage() {
             transition={{ delay: 0.1 + i * 0.06, type: "spring", stiffness: 260, damping: 26 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => router.push(o.href)}
-            className="flex items-center gap-4 rounded-2xl bg-white p-5 text-left shadow-[0_2px_10px_rgba(15,26,46,0.05)]"
+            className="flex items-center gap-4 rounded-2xl bg-white p-5 text-left shadow-[0_2px_10px_rgba(8, 7, 6,0.05)]"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FFF1EC] text-coral">
               {o.icon}

@@ -83,8 +83,8 @@ const config: Config = {
         ...tokens.borderRadius, // Figma Radius scale (none/xs/sm/md/lg/xl/2xl/3xl/full)
       },
       boxShadow: {
-        phone: "0 28px 80px rgba(15, 26, 46, 0.18)",
-        card: "0 12px 32px rgba(15, 26, 46, 0.08)",
+        phone: "0 28px 80px rgba(8, 7, 6, 0.18)",
+        card: "0 12px 32px rgba(8, 7, 6, 0.08)",
         ...tokens.boxShadow, // Figma Shadows (2xs→2xl), themed via tokens.css
       },
       // Figma type scale (heading-1..4, large/regular/small/mini/caption).

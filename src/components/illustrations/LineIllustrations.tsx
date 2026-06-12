@@ -3,7 +3,7 @@ export function WelcomeIllustration() {
     <svg viewBox="0 0 180 150" fill="none" aria-hidden="true" className="h-full w-full">
       <path
         d="M39 106c9 15 29 23 50 21 27-2 49-18 54-42 4-19-6-41-25-51-25-13-58-1-74 20-12 16-14 35-5 52Z"
-        stroke="#0F1A2E"
+        stroke="#080706"
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -15,7 +15,7 @@ export function WelcomeIllustration() {
       />
       <path
         d="M139 43c8-8 14-9 19-4M28 37c-7-5-13-5-18 0M134 118c8 3 14 1 18-5"
-        stroke="#0F1A2E"
+        stroke="#080706"
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -26,10 +26,10 @@ export function WelcomeIllustration() {
 export function ClockIllustration() {
   return (
     <svg viewBox="0 0 210 210" fill="none" aria-hidden="true" className="h-full w-full">
-      <circle cx="105" cy="106" r="61" stroke="#0F1A2E" strokeWidth="4" />
+      <circle cx="105" cy="106" r="61" stroke="#080706" strokeWidth="4" />
       <path
         d="M105 69v39l27 18M75 27l-18 18M135 27l18 18"
-        stroke="#0F1A2E"
+        stroke="#080706"
         strokeWidth="4"
         strokeLinecap="round"
       />
@@ -86,7 +86,7 @@ export function ShopIllustration() {
     <svg viewBox="0 0 190 150" fill="none" aria-hidden="true" className="h-full w-full">
       <path
         d="M35 61h120v61H35V61ZM47 61l8-31h80l8 31"
-        stroke="#0F1A2E"
+        stroke="#080706"
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -99,7 +99,7 @@ export function ShopIllustration() {
       />
       <path
         d="M65 122V89h25v33M106 91h28v20h-28zM24 122h142"
-        stroke="#0F1A2E"
+        stroke="#080706"
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"

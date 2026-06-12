@@ -39,10 +39,15 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
      separates (Light primary `#080706` → secondary `#3A3632` → muted `#807B75` → disable
      `#E5DDD4`; Dark mirrored) and **shadows white→black**. Legacy `muted`/`secondary` now
      point at the corrected semantic tokens. Delete entries when Figma is fixed at source.
+   - **Arbitrary-hex navy purged** (`scripts/migrate-navy.mjs`, 173 edits / 27 files):
+     `#14181F`/`#0F1A2E` cool "ink" → `fg-primary` token (classes) or `#080706` (inline/
+     SVG); `rgba(15,26,46,…)` navy shadows → warm `rgba(8,7,6,…)` (incl. tailwind.config
+     phone/card); cool chrome greys → warm ramp. Category palette left intact. Gate green.
    - **Still pending:** (a) **brand ACCENT hex** — `brand`/`coral` still cyan/coral
-     placeholder; (b) **~30 files use arbitrary hex** (`bg-[#14181F]` ×108 etc.) the
-     central repoint can't reach → manual migration (touches Matt's flows);
-     (c) Mobile/Tablet type HELD.
+     placeholder; (b) status tints (`#FEF3C7`/`#B45309`…) still literal — tokenise later;
+     (c) **componentisation NOT started** — screens are still bespoke inline Tailwind, do
+     NOT compose from `ui/`; 3 component folders not consolidated (Phase-2); (d) Mobile/
+     Tablet type HELD. Figma round-trip deferred until after steps 1–4 (Austin's call).
 2. **Phase-2 consolidation** — de-dupe the 3 component folders into `ui/` (with Matt).
 3. **Phase-2 migration** — swap screens' inline Tailwind onto `ui/` components.
 

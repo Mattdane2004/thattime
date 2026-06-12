@@ -34,7 +34,7 @@ function Stars({ n }: { n: number }) {
 
 function NextAppointmentCard({ onReschedule, onCancel, moved }: { onReschedule: () => void; onCancel: () => void; moved: string | null }) {
   return (
-    <div className="rounded-3xl bg-[#14181F] p-4 text-white">
+    <div className="rounded-3xl bg-fg-primary p-4 text-white">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold">
           {moved ? `Moved · ${moved}` : "Next appointment"}
@@ -240,7 +240,7 @@ export default function ClientDetailPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-[20px] font-bold text-navy">Sarah Johnson</h1>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
+              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-fg-primary text-white"}`}>
                 {blocked ? "Blocked" : "Active"}
               </span>
             </div>
@@ -309,7 +309,7 @@ export default function ClientDetailPage() {
               <button
                 type="button"
                 onClick={() => setTab("Record")}
-                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
                   severe ? "border-danger/40" : "border-border"
                 }`}
               >
@@ -327,7 +327,7 @@ export default function ClientDetailPage() {
 
               {/* One card for everything that needs an action, not a card per concern */}
               {attention.length > 0 && (
-                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <p className="px-4 pb-1 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
                     Needs attention
                   </p>
@@ -347,7 +347,7 @@ export default function ClientDetailPage() {
                             ? "bg-canvas text-muted"
                             : a.id === "unpaid"
                               ? "bg-[#FEF3C7] text-[#B45309]"
-                              : "bg-[#14181F] text-white"
+                              : "bg-fg-primary text-white"
                         }`}
                       >
                         {a.done && <Check size={11} strokeWidth={3} className="mr-1 inline" />}
@@ -363,7 +363,7 @@ export default function ClientDetailPage() {
               )}
 
               {/* Everything else is one tap away, not eight cards deep */}
-              <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+              <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                 {[
                   { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: `£${walletBalance} credit · 320 pts · 2 rewards`, run: () => setWalletOpen(true) },
                   { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => setReviewsOpen(true) },
@@ -388,9 +388,9 @@ export default function ClientDetailPage() {
             <div className="flex flex-col gap-3">
               <RecordHeading>Upcoming</RecordHeading>
               {cancelled ? (
-                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="text-[13px] text-muted">No upcoming appointments.</span>
-                  <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white">
+                  <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-fg-primary px-3.5 py-2 text-[12px] font-semibold text-white">
                     Book
                   </button>
                 </div>
@@ -404,10 +404,10 @@ export default function ClientDetailPage() {
                   <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
                   <input
                     placeholder="Search service, date, staff..."
-                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
+                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
                   />
                 </div>
-                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <SlidersHorizontal size={13} strokeWidth={1.75} />
                   All
                   <ChevronDown size={12} className="text-muted" />
@@ -416,7 +416,7 @@ export default function ClientDetailPage() {
               {pastAppointments.map((p) => {
                 const isUnpaid = p.id === "p3";
                 return (
-                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                     <div className="flex items-center justify-between">
                       <p className="text-[15px] font-semibold text-navy">{p.name}</p>
                       <span className="flex gap-1.5">
@@ -459,7 +459,7 @@ export default function ClientDetailPage() {
                       setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild");
                       setAllergyOpen(true);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                   >
                     <Plus size={14} strokeWidth={2} />
                   </button>
@@ -468,7 +468,7 @@ export default function ClientDetailPage() {
                 Allergies
               </RecordHeading>
               {allergies.length === 0 && (
-                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]">No known allergies.</p>
+                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">No known allergies.</p>
               )}
               {allergies.map((al) => {
                 const expandedNow = expandedAllergy === al.name;
@@ -477,7 +477,7 @@ export default function ClientDetailPage() {
                     key={al.name}
                     type="button"
                     onClick={() => setExpandedAllergy(expandedNow ? null : al.name)}
-                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                   >
                     <span className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
@@ -516,7 +516,7 @@ export default function ClientDetailPage() {
                     type="button"
                     onClick={() => setPatchRecorded(true)}
                     disabled={patchRecorded}
-                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${patchRecorded ? "bg-white text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]" : "bg-[#14181F] text-white"}`}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${patchRecorded ? "bg-white text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]" : "bg-fg-primary text-white"}`}
                   >
                     {patchRecorded ? "Recorded" : "Record new"}
                   </button>
@@ -524,7 +524,7 @@ export default function ClientDetailPage() {
               >
                 Patch tests
               </RecordHeading>
-              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+              <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
                     <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
@@ -535,7 +535,7 @@ export default function ClientDetailPage() {
                 <p className="pt-1 text-[12px] text-muted">1 Mar 2026 · valid for 6 months · Emma S.</p>
               </div>
               {patchRecorded && (
-                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
                       <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
@@ -552,7 +552,7 @@ export default function ClientDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteOpen(true); }}
-                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                    className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Add note
                   </button>
@@ -561,7 +561,7 @@ export default function ClientDetailPage() {
                 Notes & images
               </RecordHeading>
               {notes.map((n, i) => (
-                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
                       <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
@@ -588,7 +588,7 @@ export default function ClientDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setFormPick(null); setFormOpen(true); }}
-                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                    className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Send form
                   </button>
@@ -604,7 +604,7 @@ export default function ClientDetailPage() {
                 </span>
               </div>
               {clientForms.map((f) => (
-                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                     <FileText size={17} strokeWidth={1.6} />
                   </span>
@@ -701,7 +701,7 @@ export default function ClientDetailPage() {
               key={t}
               onClick={() => setAlType(t)}
               className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                alType === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                alType === t ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {t}
@@ -715,7 +715,7 @@ export default function ClientDetailPage() {
               key={rx}
               onClick={() => setAlReaction(rx)}
               className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                alReaction === rx ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                alReaction === rx ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {rx}
@@ -732,7 +732,7 @@ export default function ClientDetailPage() {
                 alSeverity === sv
                   ? sv === "Fatal" || sv === "Severe"
                     ? "border-danger bg-danger text-white"
-                    : "border-[#14181F] bg-[#14181F] text-white"
+                    : "border-fg-primary bg-fg-primary text-white"
                   : "border-border bg-white text-navy"
               }`}
             >
@@ -758,7 +758,7 @@ export default function ClientDetailPage() {
 
       {/* Wallet & loyalty */}
       <Sheet open={walletOpen} onClose={() => setWalletOpen(false)} title="Wallet & loyalty" sub="Sarah Johnson">
-        <div className="flex items-center justify-between rounded-2xl bg-[#14181F] p-4 text-white">
+        <div className="flex items-center justify-between rounded-2xl bg-fg-primary p-4 text-white">
           <span>
             <span className="block text-[22px] font-bold">£{walletBalance}</span>
             <span className="block text-[11px] text-white/60">Wallet balance</span>
@@ -775,7 +775,7 @@ export default function ClientDetailPage() {
               key={v}
               onClick={() => setTopup(v)}
               className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                topup === v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                topup === v ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               +£{v}
@@ -816,7 +816,7 @@ export default function ClientDetailPage() {
                 key={p}
                 onClick={() => setPayPrefs((x) => (on ? x.filter((y) => y !== p) : [...x, p]))}
                 className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                  on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                 }`}
               >
                 {p}
@@ -837,7 +837,7 @@ export default function ClientDetailPage() {
               className="flex w-full items-center justify-between border-b border-border py-3.5 text-left"
             >
               <span className="text-[14px] text-navy">{label}</span>
-              <span className={`relative h-7 w-12 rounded-full transition-colors ${on ? "bg-[#14181F]" : "bg-border"}`}>
+              <span className={`relative h-7 w-12 rounded-full transition-colors ${on ? "bg-fg-primary" : "bg-border"}`}>
                 <motion.span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow" animate={{ left: on ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 32 }} />
               </span>
             </button>
@@ -852,7 +852,7 @@ export default function ClientDetailPage() {
                 key={d}
                 onClick={() => setBookDays((x) => (on ? x.filter((y) => y !== d) : [...x, d]))}
                 className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                  on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                 }`}
               >
                 {d}
@@ -862,7 +862,7 @@ export default function ClientDetailPage() {
         </div>
         <button onClick={() => setAfterOne((v) => !v)} className="flex w-full items-center justify-between py-3.5 text-left">
           <span className="text-[14px] text-navy">Only show slots after 1 PM</span>
-          <span className={`relative h-7 w-12 rounded-full transition-colors ${afterOne ? "bg-[#14181F]" : "bg-border"}`}>
+          <span className={`relative h-7 w-12 rounded-full transition-colors ${afterOne ? "bg-fg-primary" : "bg-border"}`}>
             <motion.span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow" animate={{ left: afterOne ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 32 }} />
           </span>
         </button>
@@ -873,7 +873,7 @@ export default function ClientDetailPage() {
               key={p}
               onClick={() => setPolicy(p)}
               className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold ${
-                policy === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                policy === p ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {p}
@@ -941,7 +941,7 @@ export default function ClientDetailPage() {
               key={o}
               onClick={() => setNoteAppt(o)}
               className={`rounded-full border px-3.5 py-2 text-[12px] font-medium ${
-                noteAppt === o ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                noteAppt === o ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {o}
@@ -992,7 +992,7 @@ export default function ClientDetailPage() {
           </p>
           <button
             onClick={() => { setReviewsOpen(false); setAskSent(false); setAskReview(true); }}
-            className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white"
+            className="rounded-full bg-fg-primary px-3.5 py-2 text-[12px] font-semibold text-white"
           >
             Ask for a review
           </button>
@@ -1028,7 +1028,7 @@ export default function ClientDetailPage() {
                       setReplyFor(null);
                       setReplyDraft("");
                     }}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white disabled:opacity-40"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-fg-primary text-white disabled:opacity-40"
                   >
                     <Send size={14} />
                   </button>
@@ -1047,7 +1047,7 @@ export default function ClientDetailPage() {
       <Sheet open={askReview} onClose={() => setAskReview(false)} title="Ask for a review" sub="Sent by SMS and in-app">
         {askSent ? (
           <div className="flex flex-col items-center pb-2 pt-4 text-center">
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white">
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white">
               <Check size={26} strokeWidth={2.2} />
             </motion.span>
             <p className="pt-5 text-[16px] font-bold text-navy">Request sent</p>
@@ -1169,7 +1169,7 @@ export default function ClientDetailPage() {
               ) : (
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full border transition-colors ${
-                    formPick === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                    formPick === t ? "border-fg-primary bg-fg-primary text-white" : "border-border"
                   }`}
                 >
                   {formPick === t && <Check size={11} strokeWidth={3} />}

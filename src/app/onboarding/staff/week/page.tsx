@@ -56,12 +56,12 @@ export default function StaffWeekPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 + i * 0.05 }}
               className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 ${
-                off ? "bg-[#ECECEE]" : "bg-white shadow-[0_1px_6px_rgba(15,26,46,0.06)]"
+                off ? "bg-[#F0E6DC]" : "bg-white shadow-[0_1px_6px_rgba(8, 7, 6,0.06)]"
               }`}
             >
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-bold ${
-                  off ? "bg-[#DCDCE0] text-white" : "bg-coral text-white"
+                  off ? "bg-[#E5DDD4] text-white" : "bg-coral text-white"
                 }`}
               >
                 {d.day[0]}

@@ -190,7 +190,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
                 type="button"
                 onClick={() => setCat(c)}
                 className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                  cat === c ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+                  cat === c ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
                 }`}
               >
                 {c}
@@ -237,7 +237,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             onClick={() => { setClient("New client"); setStep(2); }}
             className="flex items-center gap-3 rounded-xl py-2.5 text-left"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-fg-primary text-white">
               <Plus size={18} strokeWidth={2} />
             </span>
             <span className="text-[15px] font-semibold text-navy">New client</span>
@@ -283,7 +283,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
                 type="button"
                 onClick={() => setStaff(m)}
                 className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                  staff === m ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                  staff === m ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
                 }`}
               >
                 {m}
@@ -345,7 +345,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 18 }}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white"
           >
             <CheckCircle2 size={28} strokeWidth={1.6} />
           </motion.span>
@@ -409,7 +409,7 @@ function NewClassSheet({ open, onClose }: { open: boolean; onClose: () => void }
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 18 }}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white"
           >
             <CheckCircle2 size={28} strokeWidth={1.6} />
           </motion.span>
@@ -459,7 +459,7 @@ function NewClassSheet({ open, onClose }: { open: boolean; onClose: () => void }
                 type="button"
                 onClick={() => setStaff(m)}
                 className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                  staff === m ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                  staff === m ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
                 }`}
               >
                 {m}
@@ -511,7 +511,7 @@ function NewClientSheet({ open, onClose }: { open: boolean; onClose: () => void 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 18 }}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white"
           >
             <Check size={26} strokeWidth={2.2} />
           </motion.span>
@@ -564,7 +564,7 @@ function NewClientSheet({ open, onClose }: { open: boolean; onClose: () => void 
                     type="button"
                     onClick={() => setSource(s)}
                     className={`rounded-full px-4 py-2 text-[13px] font-medium ${
-                      source === s ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                      source === s ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
                     }`}
                   >
                     {s}
@@ -664,7 +664,7 @@ function BlockTimeSheet({ open, onClose }: { open: boolean; onClose: () => void 
                 type="button"
                 onClick={() => setTeam((t) => (on ? t.filter((x) => x !== m) : [...t, m]))}
                 className={`rounded-full px-4 py-2 text-[13px] font-medium ${
-                  on ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                  on ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
                 }`}
               >
                 {m}
@@ -727,7 +727,7 @@ function BlockTimeSheet({ open, onClose }: { open: boolean; onClose: () => void 
               type="button"
               onClick={() => setPaid(p === "Paid")}
               className={`rounded-full px-5 py-2 text-[13px] font-medium ${
-                (p === "Paid") === paid ? "bg-[#14181F] text-white" : "border border-border bg-white text-navy"
+                (p === "Paid") === paid ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
               }`}
             >
               {p}

@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
  * animated nodes, so Tailwind translate utilities can't be used there).
  */
 export function PhotoCarousel({ images }: { images?: [string, string, string] }) {
-  const tile = "relative overflow-hidden rounded-[40px] bg-[#9b9b9b] h-full w-full";
+  const tile = "relative overflow-hidden rounded-[40px] bg-[#807B75] h-full w-full";
   return (
     <div className="relative h-[290px] w-full overflow-hidden">
       <div className="absolute right-[calc(50%+146px)] top-1/2 h-[190px] w-[190px] -translate-y-1/2">

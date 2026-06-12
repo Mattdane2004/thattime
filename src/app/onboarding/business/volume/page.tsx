@@ -45,7 +45,7 @@ export default function VolumePage() {
             whileTap={{ scale: 0.88 }}
             aria-label="Fewer bookings"
             onClick={() => set("weeklyBookings", clamp(weeklyBookings - 1))}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ECECEE] text-[18px] text-navy"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F0E6DC] text-[18px] text-navy"
           >
             −
           </motion.button>
@@ -63,7 +63,7 @@ export default function VolumePage() {
             whileTap={{ scale: 0.88 }}
             aria-label="More bookings"
             onClick={() => set("weeklyBookings", clamp(weeklyBookings + 1))}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ECECEE] text-[18px] text-navy"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F0E6DC] text-[18px] text-navy"
           >
             +
           </motion.button>

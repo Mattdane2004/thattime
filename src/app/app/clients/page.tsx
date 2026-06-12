@@ -23,7 +23,7 @@ function Tag({ label }: { label: string }) {
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        dark ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+        dark ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
       }`}
     >
       {label}
@@ -91,7 +91,7 @@ export default function ClientsPage() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setSheet("add")}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-[#14181F] px-4 text-[13px] font-semibold text-white"
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-fg-primary px-4 text-[13px] font-semibold text-white"
           >
             <UserPlus size={15} strokeWidth={1.8} />
             Add
@@ -117,7 +117,7 @@ export default function ClientsPage() {
           <button
             onClick={() => setSheet("filter")}
             className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-medium ${
-              filterTag !== "All" ? "bg-[#14181F] text-white" : "bg-canvas text-navy"
+              filterTag !== "All" ? "bg-fg-primary text-white" : "bg-canvas text-navy"
             }`}
           >
             <SlidersHorizontal size={13} strokeWidth={1.75} />
@@ -154,14 +154,14 @@ export default function ClientsPage() {
               <button
                 type="button"
                 onClick={() => (selectMode ? toggleSel(c.id) : router.push(`/app/clients/${c.id}`))}
-                className={`flex w-full items-center gap-3.5 rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                className={`flex w-full items-center gap-3.5 rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
                   blocked && !selectMode ? "opacity-55" : ""
-                } ${isSel ? "ring-2 ring-[#14181F]" : ""}`}
+                } ${isSel ? "ring-2 ring-fg-primary" : ""}`}
               >
                 {selectMode && (
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                      isSel ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                      isSel ? "border-fg-primary bg-fg-primary text-white" : "border-border"
                     }`}
                   >
                     {isSel && <Check size={13} strokeWidth={3} />}
@@ -204,7 +204,7 @@ export default function ClientsPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              className="pointer-events-auto flex items-center gap-2 rounded-full bg-[#14181F] p-1.5 pl-4 text-white shadow-[0_6px_20px_rgba(15,26,46,0.35)]"
+              className="pointer-events-auto flex items-center gap-2 rounded-full bg-fg-primary p-1.5 pl-4 text-white shadow-[0_6px_20px_rgba(8, 7, 6,0.35)]"
             >
               <span className="text-[12px] font-semibold">{selected.length}</span>
               {[
@@ -280,7 +280,7 @@ export default function ClientsPage() {
       <Sheet open={sheet === "import"} onClose={() => setSheet(null)} title="Import clients" sub="Names, numbers, emails and notes come across">
         {imported === "done" ? (
           <div className="flex flex-col items-center pb-2 pt-4 text-center">
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white">
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white">
               <Check size={26} strokeWidth={2.2} />
             </motion.span>
             <p className="pt-5 text-[16px] font-bold text-navy">38 clients imported</p>
@@ -295,7 +295,7 @@ export default function ClientsPage() {
               type="button"
               onClick={() => setImported("picked")}
               className={`flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-8 ${
-                imported === "picked" ? "border-[#14181F] bg-canvas" : "border-border bg-white"
+                imported === "picked" ? "border-fg-primary bg-canvas" : "border-border bg-white"
               }`}
             >
               <Upload size={22} strokeWidth={1.5} className="text-secondary" />
@@ -324,7 +324,7 @@ export default function ClientsPage() {
       <Sheet open={sheet === "merge"} onClose={() => setSheet(null)} title="Merge duplicates" sub="We look for matching names, numbers and emails">
         {merged ? (
           <div className="flex flex-col items-center pb-2 pt-4 text-center">
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white">
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white">
               <Merge size={24} strokeWidth={1.8} />
             </motion.span>
             <p className="pt-5 text-[16px] font-bold text-navy">1 pair merged</p>
@@ -389,7 +389,7 @@ export default function ClientsPage() {
                 setSheet(null);
               }}
               className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
-                filterTag === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                filterTag === t ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {t}

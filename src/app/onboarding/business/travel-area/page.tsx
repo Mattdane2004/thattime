@@ -51,7 +51,7 @@ export default function TravelAreaPage() {
           </span>
         </div>
 
-        <div className="relative mt-2 h-[176px] overflow-hidden rounded-2xl border border-border bg-[#EEF2F6]">
+        <div className="relative mt-2 h-[176px] overflow-hidden rounded-2xl border border-border bg-[#F7F0E8]">
           <Image src="/onboarding/map-streets.png" alt="Map" fill sizes="340px" priority className="scale-110 object-cover" />
           <motion.div
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/30 ring-1 ring-coral/50"
@@ -60,7 +60,7 @@ export default function TravelAreaPage() {
           />
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 22s-8-6.2-8-12.6A8 8 0 0 1 12 1.5a8 8 0 0 1 8 7.9C20 15.8 12 22 12 22Z" fill="#0F1A2E" />
+              <path d="M12 22s-8-6.2-8-12.6A8 8 0 0 1 12 1.5a8 8 0 0 1 8 7.9C20 15.8 12 22 12 22Z" fill="#080706" />
               <circle cx="12" cy="9.4" r="3" fill="white" />
             </svg>
           </div>

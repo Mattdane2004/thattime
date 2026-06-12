@@ -128,7 +128,7 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
               whileTap={{ scale: 0.94 }}
               onClick={() => setCopied(true)}
               className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-colors ${
-                copied ? "bg-canvas text-secondary" : "bg-[#14181F] text-white"
+                copied ? "bg-canvas text-secondary" : "bg-fg-primary text-white"
               }`}
             >
               {copied ? <Check size={12} strokeWidth={2.5} /> : <Copy size={12} strokeWidth={2} />}
@@ -164,7 +164,7 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
 
   return (
     <>
-      <motion.div layout className="rounded-3xl bg-[#14181F] p-4 text-white">
+      <motion.div layout className="rounded-3xl bg-fg-primary p-4 text-white">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-[15px] font-bold">
             <Clock size={15} strokeWidth={1.75} />
@@ -330,7 +330,7 @@ export function UpNextSection() {
               whileTap={{ scale: 0.95 }}
               onClick={() => (breakActive ? setBreakEnded(true) : setBreakActive(true))}
               className={`flex h-8 items-center gap-1 rounded-full px-3.5 text-[12px] font-bold ${
-                breakActive ? "border border-border bg-white text-navy" : "bg-[#14181F] text-white"
+                breakActive ? "border border-border bg-white text-navy" : "bg-fg-primary text-white"
               }`}
             >
               {breakActive ? "End" : <><Play size={11} /> Start</>}

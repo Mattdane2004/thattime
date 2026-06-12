@@ -66,7 +66,7 @@ export default function AddressConfirmPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.06 }}
-          className="relative h-[170px] overflow-hidden rounded-3xl border border-border bg-[#EEF2F6]"
+          className="relative h-[170px] overflow-hidden rounded-3xl border border-border bg-[#F7F0E8]"
         >
           <Image src="/onboarding/map-streets.png" alt="Map" fill sizes="340px" priority className="scale-110 object-cover" />
           {travels && (
@@ -84,7 +84,7 @@ export default function AddressConfirmPage() {
             className="absolute left-1/2 top-1/2 -ml-[18px] -mt-[30px] cursor-grab active:cursor-grabbing"
           >
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 22s-8-6.2-8-12.6A8 8 0 0 1 12 1.5a8 8 0 0 1 8 7.9C20 15.8 12 22 12 22Z" fill="#0F1A2E" />
+              <path d="M12 22s-8-6.2-8-12.6A8 8 0 0 1 12 1.5a8 8 0 0 1 8 7.9C20 15.8 12 22 12 22Z" fill="#080706" />
               <circle cx="12" cy="9.4" r="3" fill="white" />
             </svg>
           </motion.div>

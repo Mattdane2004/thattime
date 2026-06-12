@@ -30,7 +30,7 @@ export default function StaffProfilePage() {
             whileTap={{ scale: 0.94 }}
             onClick={() => setPhotoAdded((p) => !p)}
             className={`flex h-[100px] w-[100px] items-center justify-center rounded-full text-3xl transition-colors ${
-              photoAdded ? "bg-coral text-white" : "bg-[#ECECEE] text-secondary"
+              photoAdded ? "bg-coral text-white" : "bg-[#F0E6DC] text-secondary"
             }`}
             aria-label="Add profile photo"
           >

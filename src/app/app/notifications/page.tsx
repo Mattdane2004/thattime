@@ -89,7 +89,7 @@ export default function NotificationsPage() {
             type="button"
             onClick={() => setFilter(f)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium ${
-              filter === f ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+              filter === f ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
             }`}
           >
             {f}
@@ -115,7 +115,7 @@ export default function NotificationsPage() {
                     layout
                     exit={{ opacity: 0, height: 0, marginBottom: -10 }}
                     transition={{ duration: 0.3 }}
-                    className="overflow-hidden rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                    className="overflow-hidden rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                   >
                     <div className="flex items-start gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
@@ -131,7 +131,7 @@ export default function NotificationsPage() {
                         <motion.div key="btns" exit={{ opacity: 0 }} className="flex gap-2.5 pt-3.5">
                           <button
                             onClick={() => resolveRequest(n.id, "accepted")}
-                            className="h-10 flex-1 rounded-full bg-[#14181F] text-[13px] font-semibold text-white"
+                            className="h-10 flex-1 rounded-full bg-fg-primary text-[13px] font-semibold text-white"
                           >
                             Accept
                           </button>
@@ -159,7 +159,7 @@ export default function NotificationsPage() {
 
               if (n.kind === "promo")
                 return (
-                  <div key={n.id} className="rounded-2xl bg-[#14181F] p-4 text-white">
+                  <div key={n.id} className="rounded-2xl bg-fg-primary p-4 text-white">
                     <div className="flex items-start gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
                         <Sparkles size={17} strokeWidth={1.6} />
@@ -179,7 +179,7 @@ export default function NotificationsPage() {
               if (n.kind === "favourite")
                 return (
                   <SwipeRow key={n.id} onDelete={() => setDeleted((d) => ({ ...d, [n.id]: true }))}>
-                    <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                    <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-secondary">
                         <Star size={16} strokeWidth={1.75} />
                       </span>
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
 
               if (n.kind === "blog")
                 return (
-                  <div key={n.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <div key={n.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                       <BookOpen size={17} strokeWidth={1.6} />
                     </span>
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
                 );
 
               return (
-                <div key={n.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={n.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
                     {"who" in n ? n.who : "TT"}
                     <TypeBadge kind={n.kind} />

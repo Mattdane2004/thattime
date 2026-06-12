@@ -30,7 +30,7 @@ export function PrimaryButton({
           ? tone === "orange"
             ? "bg-coral text-white"
             : "bg-[#111] text-white"
-          : "bg-[#8E8E93] text-white/90"
+          : "bg-[#807B75] text-white/90"
       }`}
     >
       {loading ? (
