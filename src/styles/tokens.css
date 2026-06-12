@@ -394,9 +394,9 @@
   --colours-border-border-4: var(--colours-grey-400);
   --colours-border-border-5: var(--colours-grey-500);
   --colours-text-primary: var(--colours-grey-950);
-  --colours-text-secondary: var(--colours-grey-800);
-  --colours-text-tertiary: var(--colours-grey-700);
-  --colours-text-disable: var(--colours-grey-300);
+  --colours-text-secondary: var(--colours-grey-700);
+  --colours-text-tertiary: var(--colours-grey-500);
+  --colours-text-disable: var(--colours-grey-400);
   --colours-text-inverse-primary: var(--colours-grey-50);
   --colours-text-inverse-secondary: var(--colours-grey-100);
   --colours-text-inverse-tertiary: var(--colours-grey-200);
@@ -413,9 +413,9 @@
   --colours-surface-level-5: var(--colours-grey-300);
   --colours-surface-level-6: var(--colours-grey-400);
   --colours-surface-level-7: var(--colours-grey-500);
-  --shadow-2xs: 0px 1px 0px 0px rgba(255, 255, 255, 0.05);
-  --shadow-xs: 0px 1px 2px 0px rgba(255, 255, 255, 0.05);
-  --shadow-sm: 0px 1px 3px 0px rgba(255, 255, 255, 0.1);
+  --shadow-2xs: 0px 1px 0px 0px rgba(0, 0, 0, 0.05);
+  --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
   --shadow-m: 0px 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-l: 0px 10px 15px -3px rgba(0, 0, 0, 1);
   --shadow-xl: 0px 20px 25px -5px rgba(0, 0, 0, 0.1);
@@ -449,8 +449,8 @@
   --colours-border-border-4: var(--colours-grey-600);
   --colours-border-border-5: var(--colours-grey-500);
   --colours-text-primary: var(--colours-grey-50);
-  --colours-text-secondary: var(--colours-grey-100);
-  --colours-text-tertiary: var(--colours-grey-200);
+  --colours-text-secondary: var(--colours-grey-300);
+  --colours-text-tertiary: var(--colours-grey-500);
   --colours-text-disable: var(--colours-grey-700);
   --colours-text-inverse-primary: var(--colours-grey-950);
   --colours-text-inverse-secondary: var(--colours-grey-900);
@@ -470,7 +470,7 @@
   --colours-surface-level-7: var(--colours-grey-500);
   --shadow-2xs: 0px 1px 0px 0px rgba(0, 0, 0, 0.05);
   --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0px 1px 3px 0px rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
   --shadow-m: 0px 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-l: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0px 20px 25px -5px rgba(0, 0, 0, 0.1);

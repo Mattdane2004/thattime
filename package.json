@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "tokens": "node scripts/build-tokens.mjs",
+    "tokens": "node scripts/correct-tokens.mjs && node scripts/build-tokens.mjs",
     "smoke": "TSX_TSCONFIG_PATH=tsconfig.smoke.json npx --yes tsx smoke.tsx"
   },
   "dependencies": {

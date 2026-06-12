@@ -34,11 +34,15 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
      `border`/`muted`/`secondary`/`success`/`warning`/`danger`) **repointed at the warm
      tokens** via the channel wrapper `v()`. ~2,003 named-class usages now token-driven +
      dark-mode-ready, zero per-file edits, `/opacity` modifiers intact.
+   - **Figma semantic values were wrong for use → corrected** in `scripts/correct-tokens.mjs`
+     (re-runnable, chained into `npm run tokens`, survives re-export): text hierarchy now
+     separates (Light primary `#080706` → secondary `#3A3632` → muted `#807B75` → disable
+     `#E5DDD4`; Dark mirrored) and **shadows white→black**. Legacy `muted`/`secondary` now
+     point at the corrected semantic tokens. Delete entries when Figma is fixed at source.
    - **Still pending:** (a) **brand ACCENT hex** — `brand`/`coral` still cyan/coral
      placeholder; (b) **~30 files use arbitrary hex** (`bg-[#14181F]` ×108 etc.) the
-     central repoint can't reach → manual migration (touches Matt's flows); (c) `muted`/
-     `secondary` mapped to grey-500/600, NOT Figma Text/tertiary-secondary (which are
-     near-black #3A3632/#1B1815) — **confirm with Austin**; (d) Mobile/Tablet type HELD.
+     central repoint can't reach → manual migration (touches Matt's flows);
+     (c) Mobile/Tablet type HELD.
 2. **Phase-2 consolidation** — de-dupe the 3 component folders into `ui/` (with Matt).
 3. **Phase-2 migration** — swap screens' inline Tailwind onto `ui/` components.
 

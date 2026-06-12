@@ -35,8 +35,8 @@ const config: Config = {
         foreground: "var(--foreground)", // body text (set in globals → warm black)
         navy: v("--colours-text-primary"), // warm near-black #080706 (text + black CTAs)
         canvas: v("--colours-surface-level-3"), // warm app background #FDF6EE
-        muted: v("--colours-grey-500"), // muted mid-grey #807B75 — see note below
-        secondary: v("--colours-grey-600"), // secondary text #5C5753 — see note below
+        muted: v("--colours-text-tertiary"), // corrected: #807B75 muted mid-grey
+        secondary: v("--colours-text-secondary"), // corrected: #3A3632
         success: v("--colours-text-success"),
         warning: v("--colours-text-warning"),
         danger: v("--colours-text-error"),
