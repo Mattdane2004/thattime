@@ -24,14 +24,21 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
   into `ui/` is the **Phase-2 consolidation** — coordinate with Matt.
 
 ## Remaining before "done"
-1. **Tokens** — ✅ *pipeline landed* (`scripts/build-tokens.mjs` → `src/styles/tokens.css`
-   + `tokens.tailwind.ts`, wired into globals + tailwind). Resolver mirrors the Figma
-   collections 1:1 (Primitives / Style / Responsiveness) as kebab CSS vars and
-   **preserves alias chains** so swapping placeholder primitive hexes propagates.
-   Added *additively* — existing `navy`/`coral`/`surface` unchanged. **Still pending:**
-   (a) real brand hexes from Austin → drop into `Tokens/Mode 1`, re-run `npm run tokens`;
-   (b) the `navy`→`brand` component remap pass once hexes land;
-   (c) Mobile/Tablet type scale (HELD — undecided; only layout vars vary per breakpoint).
+1. **Tokens** — ✅ *pipeline + warm-palette + app-wide repoint landed.*
+   - `scripts/build-tokens.mjs` → `src/styles/tokens.css` (channel pattern: `--x: r g b`,
+     shadcn-style, so opacity modifiers work) + `tokens.tailwind.ts`. Mirrors the Figma
+     collections 1:1; **preserves alias chains** so primitive swaps propagate.
+   - **Warm Neutrals/Black ramp** dropped into the `grey` primitives (real brand neutral,
+     not placeholder): grey-950 `#080706` … 50 `#FFFFFF`. Drives text/surface/border/CTAs.
+   - **App-wide swap done centrally:** legacy Tailwind keys (`navy`/`canvas`/`surface`/
+     `border`/`muted`/`secondary`/`success`/`warning`/`danger`) **repointed at the warm
+     tokens** via the channel wrapper `v()`. ~2,003 named-class usages now token-driven +
+     dark-mode-ready, zero per-file edits, `/opacity` modifiers intact.
+   - **Still pending:** (a) **brand ACCENT hex** — `brand`/`coral` still cyan/coral
+     placeholder; (b) **~30 files use arbitrary hex** (`bg-[#14181F]` ×108 etc.) the
+     central repoint can't reach → manual migration (touches Matt's flows); (c) `muted`/
+     `secondary` mapped to grey-500/600, NOT Figma Text/tertiary-secondary (which are
+     near-black #3A3632/#1B1815) — **confirm with Austin**; (d) Mobile/Tablet type HELD.
 2. **Phase-2 consolidation** — de-dupe the 3 component folders into `ui/` (with Matt).
 3. **Phase-2 migration** — swap screens' inline Tailwind onto `ui/` components.
 

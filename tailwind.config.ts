@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 import { tokens } from "./src/styles/tokens.tailwind";
 
+// channel-pattern colour from a token var (so opacity modifiers like bg-navy/40 work)
+const v = (name: string) => `rgb(var(${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -12,14 +15,11 @@ const config: Config = {
     extend: {
       colors: {
         // ── Figma design tokens (generated; themed via CSS vars in tokens.css) ──
-        // Added additively — existing brand colours below are unchanged until the
-        // navy→brand remap pass (pending real primitive hexes from Figma).
         fg: tokens.colors.fg, // Figma "Text" group → utilities read `text-fg-primary`
-        brand: tokens.colors.brand,
+        brand: tokens.colors.brand, // accent — cyan PLACEHOLDER until brand-accent hex lands
         input: tokens.colors.input,
-        // surface/border: keep existing scalar as DEFAULT, add the token scale
-        surface: { ...tokens.colors.surface, DEFAULT: "#FFFFFF" },
-        border: { ...tokens.colors.border, DEFAULT: "#E5E5E8" },
+        surface: { ...tokens.colors.surface, DEFAULT: v("--colours-surface-level-1") },
+        border: tokens.colors.border, // DEFAULT already = --colours-border-border
         // primitive hue scales (escape hatch)
         grey: tokens.colors.grey, amber: tokens.colors.amber, blue: tokens.colors.blue,
         cyan: tokens.colors.cyan, emerald: tokens.colors.emerald, fuchsia: tokens.colors.fuchsia,
@@ -28,20 +28,21 @@ const config: Config = {
         slate: tokens.colors.slate, sky: tokens.colors.sky, stone: tokens.colors.stone,
         teal: tokens.colors.teal, indigo: tokens.colors.indigo, violet: tokens.colors.violet,
         yellow: tokens.colors.yellow,
-        // ── Brand / surface (canonical, from the onboarding system) ──
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        navy: "#0F1A2E", // primary brand / text
-        canvas: "#F5F5F7", // app background
-        // (surface/border defined above as DEFAULT + token scale)
-        muted: "#9CA3AF", // tertiary text
-        secondary: "#6B7280", // secondary text
-        success: "#10B981",
-        warning: "#F59E0B",
-        danger: "#EF4444",
-        // ── New onboarding identity (Figma "🔴 Onbaording" flow) ──
+        // ── Legacy brand keys — REPOINTED at the warm Neutrals tokens (app-wide swap).
+        // Existing classes (bg-navy / text-muted / bg-canvas …) now render from tokens,
+        // theme with .dark, and keep their /opacity modifiers via the channel pattern.
+        background: "var(--background)", // body bg (set in globals → warm canvas)
+        foreground: "var(--foreground)", // body text (set in globals → warm black)
+        navy: v("--colours-text-primary"), // warm near-black #080706 (text + black CTAs)
+        canvas: v("--colours-surface-level-3"), // warm app background #FDF6EE
+        muted: v("--colours-grey-500"), // muted mid-grey #807B75 — see note below
+        secondary: v("--colours-grey-600"), // secondary text #5C5753 — see note below
+        success: v("--colours-text-success"),
+        warning: v("--colours-text-warning"),
+        danger: v("--colours-text-error"),
+        // ── Onboarding identity — already warm; accent (coral) held until brand hex ──
         ink: "#1C1814", // warm near-black (headlines, black CTAs)
-        coral: "#FF6641", // brand accent (logo colon, stats, selection)
+        coral: "#FF6641", // brand accent — HELD (literal) until brand-accent hex lands
         cream: "#F5F3EF", // value-reveal / marketing surfaces
         fog: "#F4F4F6", // form-screen canvas
         // ── Service-category palette (product data colours) ──

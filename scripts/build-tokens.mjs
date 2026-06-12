@@ -52,12 +52,26 @@ const WEIGHTS = { thin: 100, extralight: 200, light: 300, regular: 400, normal: 
 // ── value renderers ──────────────────────────────────────────────────────────
 const alias = (tok) => tok?.$extensions?.["com.figma.aliasData"]?.targetVariableName;
 
+const channels = (v) => (v.components || []).map((c) => Math.round(c * 255)).join(" ");
+
+// CSS-var declaration value. Solids emit "r g b" channels (shadcn pattern) so
+// Tailwind can apply <alpha-value> (enables bg-navy/40 etc.); aliases pass
+// through (channels chain through var()). Alpha is dropped here — the only
+// alpha-bearing tokens (Alpha-*) are consumed as literal colours via fullColor().
 function colorValue(tok) {
   const a = alias(tok);
   if (a) return aliasToVar(a);
   const v = tok.$value;
   if (typeof v === "string") return v;
-  if (v?.hex && (v.alpha ?? 1) === 1) return v.hex.toUpperCase();
+  return channels(v);
+}
+
+// Literal rgba() — for places that need a real colour string (shadows). Resolves
+// an alias down to its primitive to recover the baked alpha.
+function fullColor(tok, primRoot) {
+  const a = alias(tok);
+  const t = a ? a.split("/").reduce((o, k) => o?.[k.trim()], primRoot) : tok;
+  const v = (t || tok).$value;
   const [r, g, b] = (v.components || []).map((c) => Math.round(c * 255));
   return `rgba(${r}, ${g}, ${b}, ${+(v.alpha ?? 1).toFixed(3)})`;
 }
@@ -101,13 +115,13 @@ function emit(node, path, out, fileRoot) {
 const block = (lines) => lines.map(({ name, css }) => `  ${name}: ${css};`).join("\n");
 
 // ── composed box-shadows (Figma decomposes into x/y/blur/spread/color) ───────
-function shadows(styleFile) {
+function shadows(styleFile, primRoot) {
   const s = styleFile.Shadows || {};
   return Object.keys(s).map((name) => {
     const g = s[name];
     const part = (kk) => Object.keys(g).find((x) => x.startsWith(kk)); // tolerate "color 2"
     const px = (kk) => `${g[part(kk)]?.$value ?? 0}px`;
-    const col = colorValue(g[part("color")] ?? { $value: { hex: "#000000", alpha: 0 } });
+    const col = fullColor(g[part("color")] ?? { $value: { components: [0, 0, 0], alpha: 0 } }, primRoot);
     return { name: `--shadow-${kebab(name)}`, css: `${px("x")} ${px("y")} ${px("blur")} ${px("spread")} ${col}` };
   });
 }
@@ -144,13 +158,13 @@ ${block(resp)}
 
   /* ============ STYLE — collection "Style", mode Light ============ */
 ${block(lightSem)}
-${block(shadows(light))}
+${block(shadows(light, primitives))}
 }
 
 .dark {
   /* ============ STYLE — collection "Style", mode Dark ============ */
 ${block(darkSem)}
-${block(shadows(dark))}
+${block(shadows(dark, primitives))}
 }
 
 /* Responsive layout overrides — only side-margin & grid-gutter differ per breakpoint.
@@ -170,23 +184,27 @@ ${respOverride(mobile).map(({ name, css }) => `    ${name}: ${css};`).join("\n")
 // ── tailwind partial — ergonomic utilities pointing at the faithful vars ──────
 // (CSS vars stay the source of truth + round-trip contract; this is convenience.)
 const ref = (path) => `var(${varName(path)})`;
-const group = (root, prefix) =>
-  Object.fromEntries(Object.keys(root).map((k) => [kebab(k), ref([...prefix, k])]));
+// colour helper — channel pattern so Tailwind opacity modifiers (bg-x/40) work.
+const c = (path) => `rgb(var(${varName(path)}) / <alpha-value>)`;
+const cgroup = (root, prefix) =>
+  Object.fromEntries(Object.keys(root).map((k) => [kebab(k), c([...prefix, k])]));
 
 const radiusKeys = desktop.Radius;
 const tw = {
   colors: {
     // semantic (themed) — Figma "Text" group exposed as `fg` to avoid `text-text-*`
-    fg: group(light.Colours.Text, ["Colours", "Text"]),
-    surface: Object.fromEntries(Object.keys(light.Colours.Surface).map((k) => [k.replace("level-", ""), ref(["Colours", "Surface", k])])),
-    border: { DEFAULT: ref(["Colours", "Border", "border"]), ...group(light.Colours.Border, ["Colours", "Border"]) },
-    brand: { DEFAULT: ref(["Colours", "Brand", "brand-primary"]), primary: ref(["Colours", "Brand", "brand-primary"]), secondary: ref(["Colours", "Brand", "brand-secondary"]), tertiary: ref(["Colours", "Brand", "brand-tertiary"]) },
-    input: ref(["Colours", "Input", "input"]),
+    fg: cgroup(light.Colours.Text, ["Colours", "Text"]),
+    surface: Object.fromEntries(Object.keys(light.Colours.Surface).map((k) => [k.replace("level-", ""), c(["Colours", "Surface", k])])),
+    border: { DEFAULT: c(["Colours", "Border", "border"]), ...cgroup(light.Colours.Border, ["Colours", "Border"]) },
+    brand: { DEFAULT: c(["Colours", "Brand", "brand-primary"]), primary: c(["Colours", "Brand", "brand-primary"]), secondary: c(["Colours", "Brand", "brand-secondary"]), tertiary: c(["Colours", "Brand", "brand-tertiary"]) },
+    input: c(["Colours", "Input", "input"]),
+    // NOTE: button Ghost/Outline states alias Alpha-* tokens (baked alpha); they
+    // don't fit the channel pattern, so Button styles those states directly.
     // primitive hue scales (escape hatch)
-    ...Object.fromEntries(Object.keys(primitives.Colours).map((hue) => [kebab(hue), group(primitives.Colours[hue], ["Colours", hue])])),
+    ...Object.fromEntries(Object.keys(primitives.Colours).map((hue) => [kebab(hue), cgroup(primitives.Colours[hue], ["Colours", hue])])),
   },
   borderRadius: Object.fromEntries(Object.keys(radiusKeys).map((k) => [k.replace("rounded-", "").replace("rounded", "DEFAULT") || "DEFAULT", ref(["Radius", k])])),
-  boxShadow: Object.fromEntries(shadows(light).map((s) => [s.name.replace("--shadow-", ""), `var(${s.name})`])),
+  boxShadow: Object.fromEntries(shadows(light, primitives).map((s) => [s.name.replace("--shadow-", ""), `var(${s.name})`])),
   fontSize: Object.fromEntries(
     Object.keys(desktop.Text).filter((k) => desktop.Text[k]?.["font-size"]).map((k) => [
       kebab(k),
