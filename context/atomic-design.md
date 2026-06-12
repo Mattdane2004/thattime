@@ -12,12 +12,21 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
   Select) — real a11y; added per component as built.
 - forwardRef + focus-visible rings + aria on every component.
 
-## Progress
-- **Wave 1 — atoms ✅** `Button, Input, Textarea, Label, Badge, Avatar, Chip,
-  Spinner, Separator` (`src/components/ui/atoms/`, barrel `@/components/ui`).
-- **Wave 2 — molecules (next):** Field, Card, ListRow, SegmentedControl, EmptyState, StatTile.
-- **Wave 3 — interactive + organisms:** Switch/Checkbox/RadioGroup, BottomSheet/
-  Dialog, Tabs, Toast (Radix) · ScreenHeader, AppTabBar, AppFrame, OnboardingChrome.
+## Progress (all on `rollout`, gate-green; barrel `@/components/ui`)
+- **Wave 1 — atoms ✅** Button, Input, Textarea, Label, Badge, Avatar, Chip,
+  Spinner, Separator, Switch, Checkbox.
+- **Wave 2 — molecules ✅** Card, Field, ListRow, SegmentedControl, EmptyState, StatTile.
+- **Wave 3 — Radix primitives ✅** RadioGroup, Tabs, Dialog, Sheet (bottom),
+  Toast (`<Toaster/>` + `toast()`).
+- **Organisms — NOT duplicated.** ScreenHeader/AppTabBar/AppFrame already live in
+  `src/components/app/`, and OnboardingChrome in `onboarding2/`. Folding those
+  (+ Matt's `app/ui.tsx` primitives that overlap ours: Sheet/Segmented/StatusPill)
+  into `ui/` is the **Phase-2 consolidation** — coordinate with Matt.
+
+## Remaining before "done"
+1. **Tokens** — wire Austin's Figma shadcn JSON → remap component token classes.
+2. **Phase-2 consolidation** — de-dupe the 3 component folders into `ui/` (with Matt).
+3. **Phase-2 migration** — swap screens' inline Tailwind onto `ui/` components.
 
 ## Direction (decided)
 
