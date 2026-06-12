@@ -41,6 +41,8 @@ function configFor(path: string): ChromeConfig {
     [/^\/client\/categories/, { header: "full", bg: "#FFFFFF" }],
     [/^\/client\/finding/, { header: "status", bg: "#FFFFFF" }],
     [/^\/client\/home/, { header: "none", bg: "#F5F3EF" }],
+    [/^\/client\/business/, { header: "none", bg: "#FFFFFF" }],
+    [/^\/client\/book\/confirmed/, { header: "status", bg: "#F5F3EF" }],
   ];
   for (const [re, cfg] of rules) if (re.test(path)) return cfg;
   return { header: "full", bg: "#F4F4F6" };
