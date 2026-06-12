@@ -186,6 +186,16 @@ export const threeDayGrid: { day: string; date: string; blocks: GridBlock[] }[] 
   },
 ];
 
+// Safety/admin notes surfaced prominently on the appointment sheet.
+export const clientNotes: Record<string, { allergies?: string[]; formNote?: string }> = {
+  "Sarah Johnson": {
+    allergies: ["Sensitive scalp", "PPD allergy"],
+    formNote: "Consultation form not completed",
+  },
+  "Jessica Brown": { allergies: ["Nut oils"] },
+  "Emily Davis": { formNote: "Aftercare form not sent" },
+};
+
 // Templates for scheduling a class from the calendar.
 export const classTemplates = [
   { id: "colour-mc", emoji: "🎨", name: "Colour Masterclass", sub: "90m · £65 per seat · 8 seats" },

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Coffee, CalendarCog, SlidersHorizontal,
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
+  CalendarDays,
 } from "lucide-react";
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/app/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
@@ -577,13 +578,14 @@ const dayLabels = [
   "Thursday 5 March",
   "Friday 6 March",
 ];
+const TODAY_IDX = 1; // the schedule demo's "today" — Tuesday 3 March
 
 export default function SchedulePage() {
   const [view, setView] = useState("My Day");
   const [classOpen, setClassOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [classCancelled, setClassCancelled] = useState(false);
-  const [dayIdx, setDayIdx] = useState(1);
+  const [dayIdx, setDayIdx] = useState(TODAY_IDX);
   const [calDays, setCalDays] = useState(3);
 
   return (
@@ -645,6 +647,27 @@ export default function SchedulePage() {
           {view === "Calendar" && <CalendarGridView days={calDays} />}
           {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} />}
         </motion.div>
+      </AnimatePresence>
+
+      {/* Floating "back to today" pill — appears once you step off today */}
+      <AnimatePresence>
+        {dayIdx !== TODAY_IDX && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-[78px] z-40 flex justify-center">
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 14, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 14, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              whileTap={{ scale: 0.94 }}
+              onClick={() => setDayIdx(TODAY_IDX)}
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-[#14181F] px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_6px_20px_rgba(15,26,46,0.35)]"
+            >
+              <CalendarDays size={13} strokeWidth={2} />
+              Back to today
+            </motion.button>
+          </div>
+        )}
       </AnimatePresence>
 
       <ClassSheet

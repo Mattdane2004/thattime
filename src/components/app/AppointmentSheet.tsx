@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Scissors, Banknote, MapPin, MessageSquare, RotateCcw, X,
   AlertTriangle, FileText, ChevronLeft, ChevronRight, CheckCircle2, Play, CreditCard,
+  Bell, Check,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
+import { clientNotes } from "@/lib/data/product";
 
 /**
  * Appointment details bottom sheet — opened from any appointment card, agenda
@@ -24,6 +26,7 @@ export function AppointmentSheetHost() {
   const [localMoved, setLocalMoved] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const [reminded, setReminded] = useState(false);
 
   const open = apptSheet !== null;
   useEffect(() => {
@@ -32,6 +35,7 @@ export function AppointmentSheetHost() {
       setLocalMoved(null);
       setDay(null);
       setTime(null);
+      setReminded(false);
     }
   }, [open]);
 
@@ -49,6 +53,7 @@ export function AppointmentSheetHost() {
 
   const firstName = a.client.split(" ")[0];
   const slug = firstName.toLowerCase();
+  const notes = clientNotes[a.client];
 
   const liveAction =
     a.live && apptStatus === "upcoming"
@@ -93,17 +98,39 @@ export function AppointmentSheetHost() {
               <div className="flex items-center gap-2 pb-3">
                 <StatusPill tone={status === "In progress" ? "dark" : "light"}>{status}</StatusPill>
                 {moved && <StatusPill tone="amber">Moved · {moved}</StatusPill>}
-                {a.tags?.includes("Allergy") && (
-                  <span className="flex items-center gap-1 rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">
-                    <AlertTriangle size={10} /> Allergy
-                  </span>
-                )}
-                {a.tags?.includes("Form") && (
-                  <span className="flex items-center gap-1 rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">
-                    <FileText size={10} /> Form
-                  </span>
-                )}
               </div>
+
+              {/* Safety + admin callouts — visible at a glance, never buried */}
+              {(notes?.allergies || notes?.formNote) && (
+                <div className="flex flex-col gap-2 pb-3">
+                  {notes.allergies && (
+                    <div className="flex items-start gap-2.5 rounded-xl bg-[#FEF3C7] px-3.5 py-2.5">
+                      <AlertTriangle size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-[#B45309]" />
+                      <p className="text-[12px] font-medium leading-snug text-[#92400E]">
+                        <span className="font-bold">Allergies — </span>
+                        {notes.allergies.join(" · ")}
+                      </p>
+                    </div>
+                  )}
+                  {notes.formNote && (
+                    <div className="flex items-center gap-2.5 rounded-xl bg-canvas px-3.5 py-2">
+                      <FileText size={14} strokeWidth={1.75} className="shrink-0 text-secondary" />
+                      <p className="flex-1 text-[12px] font-medium text-secondary">{notes.formNote}</p>
+                      <button
+                        type="button"
+                        onClick={() => setReminded(true)}
+                        disabled={reminded}
+                        className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold ${
+                          reminded ? "bg-white text-muted" : "bg-[#14181F] text-white"
+                        }`}
+                      >
+                        {reminded ? <Check size={11} strokeWidth={2.5} /> : <Bell size={11} strokeWidth={2} />}
+                        {reminded ? "Sent" : "Remind"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="overflow-hidden rounded-2xl bg-canvas">
                 {[
