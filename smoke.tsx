@@ -44,7 +44,7 @@ import PickTimePage from "./src/app/client/book/time/page";
 import ReviewBookingPage from "./src/app/client/book/review/page";
 import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -246,6 +246,14 @@ check("Avatar shows initials", h(React.createElement(Avatar, { initials: "SJ" })
 check("Chip selected uses navy + aria-pressed", (() => { const s = h(React.createElement(Chip, { selected: true, children: "VIP" })); return s.includes("bg-navy") && s.includes('aria-pressed="true"'); })());
 check("Spinner has status role", h(React.createElement(Spinner, {})).includes('role="status"'));
 check("Separator renders hairline", h(React.createElement(Separator, {})).includes("bg-border"));
+
+// 10) UI molecules.
+check("Card default has border + surface", h(React.createElement(Card, { children: "x" })).includes("border-border"));
+check("Field shows label + error", (() => { const s = h(React.createElement(Field, { label: "Email", error: "Required", children: React.createElement(Input, {}) })); return s.includes("Email") && s.includes("Required"); })());
+check("ListRow shows title + subtitle", (() => { const s = h(React.createElement(ListRow, { title: "Services", subtitle: "Classes, bundles" })); return s.includes("Services") && s.includes("Classes"); })());
+check("SegmentedControl marks active tab", (() => { const s = h(React.createElement(SegmentedControl, { value: "a", onValueChange: () => {}, options: [{ value: "a", label: "Business" }, { value: "b", label: "Profile" }] })); return s.includes("Business") && s.includes('aria-selected="true"'); })());
+check("EmptyState shows title + desc", h(React.createElement(EmptyState, { title: "No clients", description: "Add one" })).includes("No clients"));
+check("StatTile shows label + value", (() => { const s = h(React.createElement(StatTile, { label: "Revenue", value: "£349" })); return s.includes("Revenue") && s.includes("£349"); })());
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
