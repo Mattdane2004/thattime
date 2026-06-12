@@ -306,29 +306,38 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
 /** "Up Next" section wrapper with the schedule link (Home). */
 export function UpNextSection() {
   const router = useRouter();
-  const { breakActive, setBreakActive } = useAppStore();
+  const { breakActive, setBreakActive, breakEnded, setBreakEnded } = useAppStore();
   return (
     <div className="mx-4 rounded-3xl border border-border bg-white p-4">
       <p className="text-[16px] font-bold text-navy">Up Next</p>
       <p className="pb-3 pt-0.5 text-[12px] text-muted">Gap</p>
       <UpNextCard />
 
-      <div className="mt-3 flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3">
-        <Pause size={15} className="text-secondary" strokeWidth={1.75} />
-        <div className="flex-1">
-          <p className="text-[13px] font-semibold text-navy">Lunch Break</p>
-          <p className="text-[11px] text-muted">{breakActive ? "10:00 – 11:00 · 34 Min" : "12:00 – 13:00 · 60m"}</p>
-        </div>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setBreakActive(!breakActive)}
-          className={`flex h-8 items-center gap-1 rounded-full px-3.5 text-[12px] font-bold ${
-            breakActive ? "border border-border bg-white text-navy" : "bg-[#14181F] text-white"
-          }`}
-        >
-          {breakActive ? "End" : <><Play size={11} /> Start</>}
-        </motion.button>
-      </div>
+      {/* Ending the break swipes the card away and collapses the section */}
+      <AnimatePresence initial={false}>
+        {!breakEnded && (
+          <motion.div
+            exit={{ x: 140, opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ x: { duration: 0.28, ease: "easeIn" }, opacity: { duration: 0.22 }, height: { duration: 0.25, delay: 0.18 } }}
+            className="mt-3 flex items-center gap-3 overflow-hidden rounded-2xl bg-canvas px-4 py-3"
+          >
+            <Pause size={15} className="text-secondary" strokeWidth={1.75} />
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-navy">Lunch Break</p>
+              <p className="text-[11px] text-muted">{breakActive ? "10:00 – 11:00 · 34 Min" : "12:00 – 13:00 · 60m"}</p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => (breakActive ? setBreakEnded(true) : setBreakActive(true))}
+              className={`flex h-8 items-center gap-1 rounded-full px-3.5 text-[12px] font-bold ${
+                breakActive ? "border border-border bg-white text-navy" : "bg-[#14181F] text-white"
+              }`}
+            >
+              {breakActive ? "End" : <><Play size={11} /> Start</>}
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <button
         type="button"

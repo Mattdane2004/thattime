@@ -157,6 +157,7 @@ export default function CheckoutPage() {
   const [paidScreen, setPaidScreen] = useState(false);
   const [receiptSent, setReceiptSent] = useState(false);
   const [rate, setRate] = useState(false);
+  const [followUp, setFollowUp] = useState(false);
   const [stars, setStars] = useState(0);
   const [traits, setTraits] = useState<string[]>([]);
 
@@ -274,13 +275,44 @@ export default function CheckoutPage() {
             />
           </div>
           <div className="pt-4">
-            <DarkButton onClick={finishVisit}>Submit Rating</DarkButton>
+            <DarkButton
+              onClick={() => {
+                setRate(false);
+                setFollowUp(true);
+              }}
+            >
+              Submit Rating
+            </DarkButton>
             <button
               type="button"
               onClick={finishVisit}
               className="mt-3 w-full text-center text-[14px] font-semibold text-secondary"
             >
               Skip
+            </button>
+          </div>
+        </Sheet>
+
+        {/* Post-visit follow-up: thank them + nudge for a review */}
+        <Sheet open={followUp} onClose={finishVisit} title="Send a follow-up?" sub={`${clientName} just left`}>
+          <div className="rounded-2xl bg-canvas p-4">
+            <p className="text-[11px] font-semibold text-muted">PREVIEW</p>
+            <p className="pt-2 text-[14px] leading-relaxed text-navy">
+              Thanks for coming in today, {clientName.split(" ")[0]}! Hope you love it. If you have a
+              minute, we&rsquo;d really appreciate a quick review ⭐
+            </p>
+          </div>
+          <div className="pt-5">
+            <DarkButton onClick={finishVisit}>
+              <Mail size={15} />
+              Send & finish
+            </DarkButton>
+            <button
+              type="button"
+              onClick={finishVisit}
+              className="mt-3 w-full text-center text-[14px] font-semibold text-secondary"
+            >
+              Not this time
             </button>
           </div>
         </Sheet>

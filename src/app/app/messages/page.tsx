@@ -9,7 +9,8 @@ import { conversations } from "@/lib/data/product";
 
 // Messages — conversation list with unread/group/business filters.
 
-const FILTERS = ["All", "Unread 3", "Group 2", "Business 0"];
+const FILTERS = ["All", "Unread", "Clients", "Team & business"];
+const isBiz = (c: { kind: string }) => c.kind !== "client";
 
 export default function MessagesPage() {
   const [filter, setFilter] = useState("All");
@@ -17,11 +18,20 @@ export default function MessagesPage() {
 
   const visible = conversations.filter((c) => {
     if (!c.name.toLowerCase().includes(query.toLowerCase())) return false;
-    if (filter.startsWith("Unread")) return c.unread > 0;
-    if (filter.startsWith("Group")) return c.kind === "group";
-    if (filter.startsWith("Business")) return c.kind === "business";
+    if (filter === "Unread") return c.unread > 0;
+    if (filter === "Clients") return !isBiz(c);
+    if (filter === "Team & business") return isBiz(c);
     return true;
   });
+
+  // Client chats and internal/business chats are kept visually separate.
+  const sections: { label: string | null; items: typeof visible }[] =
+    filter === "All" || filter === "Unread"
+      ? [
+          { label: "Clients", items: visible.filter((c) => !isBiz(c)) },
+          { label: "Team & business", items: visible.filter(isBiz) },
+        ].filter((s) => s.items.length > 0)
+      : [{ label: null, items: visible }];
 
   return (
     <div className="min-h-full bg-white pb-6">
@@ -52,8 +62,14 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="flex flex-col">
-        {visible.map((c, i) => (
+      {sections.map((section) => (
+      <div key={section.label ?? "list"} className="flex flex-col">
+        {section.label && (
+          <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+            {section.label}
+          </p>
+        )}
+        {section.items.map((c, i) => (
           <motion.div
             key={c.id}
             initial={{ opacity: 0, y: 6 }}
@@ -105,6 +121,7 @@ export default function MessagesPage() {
           </motion.div>
         ))}
       </div>
+      ))}
     </div>
   );
 }

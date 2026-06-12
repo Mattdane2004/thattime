@@ -11,7 +11,7 @@ import {
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/app/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
 import { useAppStore } from "@/lib/store/appStore";
-import { myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, type GridBlock } from "@/lib/data/product";
+import { myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, services, serviceCategories, type GridBlock } from "@/lib/data/product";
 
 // Schedule — My Day agenda, 3-day calendar grid, and team columns, with the
 // class sheet (attendee check-in) and calendar settings (jump-to-date).
@@ -29,6 +29,18 @@ const spanLabel = (span: number) => {
 };
 const isBreakBlock = (name: string) => name.includes("Break");
 
+// Time formatting honours the 12h/24h setting everywhere on this page.
+const to12 = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  if (Number.isNaN(h)) return t;
+  const ap = h >= 12 ? "PM" : "AM";
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m ?? 0).padStart(2, "0")} ${ap}`;
+};
+const fmtT = (t: string | undefined, fmt: string) => (!t ? "" : fmt === "12h" ? to12(t) : t);
+const fmtHour = (h: number, fmt: string) =>
+  fmt === "12h" ? (h < 12 ? `${h} AM` : `${h === 12 ? 12 : h - 12} PM`) : `${String(h).padStart(2, "0")}:00`;
+const catOf = (svc?: string) => services.find((s) => s.name === svc)?.category ?? "Other";
+
 function shadeClass(shade: GridBlock["shade"]) {
   switch (shade) {
     case "dark":
@@ -44,11 +56,41 @@ function shadeClass(shade: GridBlock["shade"]) {
   }
 }
 
-function MyDayView() {
+function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
+  const customAppts = useAppStore((s) => s.customAppts);
   return (
     <div className="flex flex-col gap-2.5 px-4 pb-6 pt-4">
+      {customAppts.map((a) => (
+        <button
+          key={a.id}
+          type="button"
+          onClick={() =>
+            setApptSheet({
+              client: a.client,
+              initials: initialsOf(a.client),
+              service: a.service,
+              staff: a.staff,
+              time: a.time ?? "TBC",
+              duration: a.day ? `${a.day} Mar` : "today",
+              status: "Confirmed",
+            })
+          }
+          className="flex w-full items-center gap-3 rounded-2xl border border-[#14181F]/20 bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+        >
+          <span className="w-12 shrink-0">
+            <span className="block text-[14px] font-bold text-navy">{fmtT(a.time ?? "", timeFmt)}</span>
+            <span className="block text-[11px] text-muted">{a.day ? `${a.day} Mar` : "today"}</span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold text-navy">{a.client}</span>
+            <span className="block truncate text-[12px] text-muted">{a.service}</span>
+          </span>
+          <StatusPill tone="amber">New</StatusPill>
+        </button>
+      ))}
       {myDayAgenda.map((row) => {
+        if (row.kind === "appt" && filterCat !== "All" && catOf(row.service) !== filterCat) return null;
         switch (row.kind) {
           case "now":
             return (
@@ -100,8 +142,8 @@ function MyDayView() {
                 }`}
               >
                 <span className="w-12 shrink-0">
-                  <span className="block text-[14px] font-bold text-navy">{row.time}</span>
-                  <span className="block text-[11px] text-muted">{row.end}</span>
+                  <span className="block text-[14px] font-bold text-navy">{fmtT(row.time, timeFmt)}</span>
+                  <span className="block text-[11px] text-muted">{fmtT(row.end, timeFmt)}</span>
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14px] font-semibold text-navy">{row.client}</span>
@@ -116,7 +158,7 @@ function MyDayView() {
   );
 }
 
-function CalendarGridView({ days }: { days: number }) {
+function CalendarGridView({ days, filterCat, timeFmt }: { days: number; filterCat: string; timeFmt: string }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
   const visibleDays = threeDayGrid.slice(0, days);
@@ -133,7 +175,7 @@ function CalendarGridView({ days }: { days: number }) {
         <div className="relative" style={{ height: HOURS.length * HOUR_PX }}>
           {HOURS.map((h, i) => (
             <span key={h} className="absolute -translate-y-1/2 text-[10px] text-muted" style={{ top: i * HOUR_PX + 8 }}>
-              {h <= 12 ? `${h} AM` : `${h - 12} PM`}
+              {fmtHour(h, timeFmt)}
             </span>
           ))}
         </div>
@@ -151,7 +193,9 @@ function CalendarGridView({ days }: { days: number }) {
             {HOURS.map((_, i) => (
               <span key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR_PX + 8 }} />
             ))}
-            {d.blocks.map((b, i) => (
+            {d.blocks.map((b, i) => {
+              if (!isBreakBlock(b.name) && filterCat !== "All" && catOf(b.service) !== filterCat) return null;
+              return (
               <motion.button
                 key={i}
                 type="button"
@@ -180,7 +224,8 @@ function CalendarGridView({ days }: { days: number }) {
                 </p>
                 {b.service && <p className="truncate text-[10px] opacity-75">{b.service}</p>}
               </motion.button>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>
@@ -188,7 +233,7 @@ function CalendarGridView({ days }: { days: number }) {
   );
 }
 
-function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; classCancelled: boolean }) {
+function TeamView({ onOpenClass, classCancelled, timeFmt }: { onOpenClass: () => void; classCancelled: boolean; timeFmt: string }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
   return (
@@ -207,7 +252,7 @@ function TeamView({ onOpenClass, classCancelled }: { onOpenClass: () => void; cl
         <div className="relative" style={{ height: 8 * HOUR_PX }}>
           {[9, 10, 11, 12, 13, 14, 15, 16].map((h, i) => (
             <span key={h} className="absolute -translate-y-1/2 text-[10px] text-muted" style={{ top: i * HOUR_PX + 8 }}>
-              {String(h).padStart(2, "0")}:00
+              {fmtHour(h, timeFmt)}
             </span>
           ))}
         </div>
@@ -508,13 +553,20 @@ function SettingsSheet({
   onClose,
   calDays,
   onCalDays,
+  timeFmt,
+  onTimeFmt,
+  filterCat,
+  onFilterCat,
 }: {
   open: boolean;
   onClose: () => void;
   calDays: number;
   onCalDays: (n: number) => void;
+  timeFmt: "12h" | "24h";
+  onTimeFmt: (f: "12h" | "24h") => void;
+  filterCat: string;
+  onFilterCat: (c: string) => void;
 }) {
-  const [fmt, setFmt] = useState<"12h" | "24h">("12h");
   const dots: Record<number, "g" | "a" | "r"> = {
     1: "r", 2: "g", 3: "a", 5: "g", 6: "g", 7: "r", 8: "a", 9: "g", 10: "g", 11: "g",
     12: "a", 13: "r", 14: "a", 15: "a", 16: "r", 17: "g", 18: "r", 19: "r", 20: "r",
@@ -524,25 +576,40 @@ function SettingsSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Calendar Settings">
       <div className="flex items-center justify-between pb-4">
-        <button className="flex items-center gap-2 rounded-full bg-canvas px-4 py-2.5 text-[13px] font-medium text-navy">
+        <span className="flex items-center gap-2 text-[13px] font-medium text-navy">
           <SlidersHorizontal size={14} strokeWidth={1.75} />
-          Filter
-          <ChevronDown size={13} className="text-muted" />
-        </button>
+          Time format
+        </span>
         <div className="flex rounded-full bg-canvas p-1">
           {(["12h", "24h"] as const).map((f) => (
             <button
               key={f}
               type="button"
-              onClick={() => setFmt(f)}
+              onClick={() => onTimeFmt(f)}
               className={`rounded-full px-4 py-1.5 text-[12px] font-semibold ${
-                fmt === f ? "bg-white text-navy shadow-[0_1px_3px_rgba(15,26,46,0.12)]" : "text-muted"
+                timeFmt === f ? "bg-white text-navy shadow-[0_1px_3px_rgba(15,26,46,0.12)]" : "text-muted"
               }`}
             >
               {f}
             </button>
           ))}
         </div>
+      </div>
+
+      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Filter appointments</p>
+      <div className="flex flex-wrap gap-2 pb-5">
+        {serviceCategories.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onFilterCat(c)}
+            className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
+              filterCat === c ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+            }`}
+          >
+            {c}
+          </button>
+        ))}
       </div>
       <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Calendar layout</p>
       <div className="flex gap-2 pb-5">
@@ -587,6 +654,8 @@ export default function SchedulePage() {
   const [classCancelled, setClassCancelled] = useState(false);
   const [dayIdx, setDayIdx] = useState(TODAY_IDX);
   const [calDays, setCalDays] = useState(3);
+  const [timeFmt, setTimeFmt] = useState<"12h" | "24h">("24h");
+  const [filterCat, setFilterCat] = useState("All");
 
   return (
     <div className="flex min-h-full flex-col bg-fog">
@@ -643,9 +712,19 @@ export default function SchedulePage() {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.18 }}
         >
-          {view === "My Day" && <MyDayView />}
-          {view === "Calendar" && <CalendarGridView days={calDays} />}
-          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} />}
+          {filterCat !== "All" && (
+            <button
+              type="button"
+              onClick={() => setFilterCat("All")}
+              className="mx-4 mt-3 flex items-center gap-2 rounded-full border border-[#14181F] bg-[#14181F] px-3.5 py-1.5 text-[12px] font-semibold text-white"
+            >
+              <SlidersHorizontal size={11} strokeWidth={2} />
+              Showing {filterCat} only · clear
+            </button>
+          )}
+          {view === "My Day" && <MyDayView filterCat={filterCat} timeFmt={timeFmt} />}
+          {view === "Calendar" && <CalendarGridView days={calDays} filterCat={filterCat} timeFmt={timeFmt} />}
+          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} timeFmt={timeFmt} />}
         </motion.div>
       </AnimatePresence>
 
@@ -685,6 +764,10 @@ export default function SchedulePage() {
           setView("Calendar");
           setSettingsOpen(false);
         }}
+        timeFmt={timeFmt}
+        onTimeFmt={setTimeFmt}
+        filterCat={filterCat}
+        onFilterCat={setFilterCat}
       />
     </div>
   );

@@ -8,6 +8,7 @@ import {
   Clock, X, RotateCcw, Plus, Send, CalendarPlus, PoundSterling,
 } from "lucide-react";
 import { Sheet, DarkButton, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { useAppStore } from "@/lib/store/appStore";
 import { conversations } from "@/lib/data/product";
 
 // Conversation thread — pinned appointment card, SMS bubbles, inline
@@ -237,6 +238,7 @@ export default function ConversationPage() {
               type="button"
               onClick={() => {
                 setActions(false);
+                if (a.title === "Add New Appointment") useAppStore.getState().setQuickAction("appointment");
                 if (a.title === "Reschedule") setResched(true);
                 if (a.title === "Log Payment") router.push("/app/checkout");
               }}

@@ -64,9 +64,15 @@ type AppState = {
   apptSheet: ApptSheetData | null;
   setApptSheet: (a: ApptSheetData | null) => void;
 
-  // Break card.
+  // Break card: idle → active → ended (ended slides away and stays gone).
   breakActive: boolean;
   setBreakActive: (v: boolean) => void;
+  breakEnded: boolean;
+  setBreakEnded: (v: boolean) => void;
+
+  // Appointments created through quick-add — they appear on the calendar.
+  customAppts: { id: string; client: string; service: string; staff: string; day: number | null; time: string | null }[];
+  addCustomAppt: (a: { client: string; service: string; staff: string; day: number | null; time: string | null }) => void;
 
   // Quick actions overlay (owned by the tab bar layout).
   quickAction: QuickAction;
@@ -123,6 +129,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   breakActive: false,
   setBreakActive: (v) => set({ breakActive: v }),
+  breakEnded: false,
+  setBreakEnded: (v) => set({ breakEnded: v }),
+
+  customAppts: [],
+  addCustomAppt: (a) => set({ customAppts: [...get().customAppts, { ...a, id: uid() }] }),
 
   quickAction: null,
   setQuickAction: (q) => set({ quickAction: q }),

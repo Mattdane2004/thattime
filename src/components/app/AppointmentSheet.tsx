@@ -6,11 +6,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Scissors, Banknote, MapPin, MessageSquare, RotateCcw, X,
   AlertTriangle, FileText, ChevronLeft, ChevronRight, CheckCircle2, Play, CreditCard,
-  Bell, Check,
+  Bell, Check, Pencil, Plus,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
-import { useAppStore } from "@/lib/store/appStore";
-import { clientNotes } from "@/lib/data/product";
+import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
+import { clientNotes, services } from "@/lib/data/product";
+
+const statusChips: { label: string; live?: ApptStatus }[] = [
+  { label: "Upcoming", live: "upcoming" },
+  { label: "Arrived", live: "arrived" },
+  { label: "In progress", live: "in-progress" },
+  { label: "Done", live: "done" },
+  { label: "No-show" },
+];
 
 /**
  * Appointment details bottom sheet — opened from any appointment card, agenda
@@ -22,11 +30,14 @@ export function AppointmentSheetHost() {
   const {
     apptSheet, setApptSheet, apptStatus, setApptStatus, movedTo, setMovedTo,
   } = useAppStore();
-  const [view, setView] = useState<"details" | "reschedule" | "cancel">("details");
+  const [view, setView] = useState<"details" | "reschedule" | "cancel" | "edit">("details");
   const [localMoved, setLocalMoved] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [reminded, setReminded] = useState(false);
+  const [localStatus, setLocalStatus] = useState<string | null>(null);
+  const [svcOverride, setSvcOverride] = useState<string | null>(null);
+  const [extras, setExtras] = useState<string[]>([]);
 
   const open = apptSheet !== null;
   useEffect(() => {
@@ -36,6 +47,9 @@ export function AppointmentSheetHost() {
       setDay(null);
       setTime(null);
       setReminded(false);
+      setLocalStatus(null);
+      setSvcOverride(null);
+      setExtras([]);
     }
   }, [open]);
 
@@ -45,11 +59,17 @@ export function AppointmentSheetHost() {
 
   const moved = a.live ? movedTo : localMoved;
   const status = a.live
-    ? apptStatus === "upcoming" ? "Confirmed"
+    ? apptStatus === "upcoming" ? "Upcoming"
       : apptStatus === "arrived" ? "Arrived"
       : apptStatus === "in-progress" ? "In progress"
       : "Done"
-    : a.status ?? "Confirmed";
+    : localStatus ?? (a.status === "Confirmed" ? "Upcoming" : a.status ?? "Upcoming");
+
+  // Edited booking: service can be swapped and extras added on the fly.
+  const svcName = svcOverride ?? a.service;
+  const priceOf = (name: string) => services.find((s) => s.name === name)?.price ?? 0;
+  const basePrice = svcOverride ? priceOf(svcOverride) : a.price ?? priceOf(a.service);
+  const totalPrice = basePrice + extras.reduce((sum, e) => sum + priceOf(e), 0);
 
   const firstName = a.client.split(" ")[0];
   const slug = firstName.toLowerCase();
@@ -79,7 +99,7 @@ export function AppointmentSheetHost() {
         ) : (
           <button type="button" onClick={() => setView("details")} className="flex items-center gap-1 text-navy">
             <ChevronLeft size={18} strokeWidth={2} />
-            {view === "reschedule" ? "Reschedule" : "Cancel appointment"}
+            {view === "reschedule" ? "Reschedule" : view === "edit" ? "Edit booking" : "Cancel appointment"}
           </button>
         )
       }
@@ -95,10 +115,36 @@ export function AppointmentSheetHost() {
         >
           {view === "details" && (
             <>
-              <div className="flex items-center gap-2 pb-3">
-                <StatusPill tone={status === "In progress" ? "dark" : "light"}>{status}</StatusPill>
-                {moved && <StatusPill tone="amber">Moved · {moved}</StatusPill>}
+              {/* Status is editable inline — fail-safe for early arrivals etc. */}
+              <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-3 [scrollbar-width:none]">
+                {statusChips.map((c) => {
+                  const active = status === c.label;
+                  return (
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={() => {
+                        if (a.live && c.live) setApptStatus(c.live);
+                        setLocalStatus(c.label);
+                      }}
+                      className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                        active
+                          ? c.label === "No-show"
+                            ? "border-danger bg-danger text-white"
+                            : "border-[#14181F] bg-[#14181F] text-white"
+                          : "border-border bg-white text-secondary"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
               </div>
+              {moved && (
+                <div className="pb-3">
+                  <StatusPill tone="amber">Moved · {moved}</StatusPill>
+                </div>
+              )}
 
               {/* Safety + admin callouts — visible at a glance, never buried */}
               {(notes?.allergies || notes?.formNote) && (
@@ -135,8 +181,12 @@ export function AppointmentSheetHost() {
               <div className="overflow-hidden rounded-2xl bg-canvas">
                 {[
                   { icon: <Clock size={15} strokeWidth={1.75} />, main: moved ?? `Today · ${a.time}`, sub: a.duration },
-                  { icon: <Scissors size={15} strokeWidth={1.75} />, main: a.service, sub: `with ${a.staff}` },
-                  ...(a.price ? [{ icon: <Banknote size={15} strokeWidth={1.75} />, main: `£${a.price}`, sub: "Pay at checkout" }] : []),
+                  {
+                    icon: <Scissors size={15} strokeWidth={1.75} />,
+                    main: extras.length > 0 ? `${svcName} + ${extras.length} more` : svcName,
+                    sub: `with ${a.staff}`,
+                  },
+                  ...(totalPrice > 0 ? [{ icon: <Banknote size={15} strokeWidth={1.75} />, main: `£${totalPrice}`, sub: "Pay at checkout" }] : []),
                   { icon: <MapPin size={15} strokeWidth={1.75} />, main: "Salon Soho", sub: "Main floor" },
                 ].map((row, i) => (
                   <div key={i} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
@@ -170,8 +220,20 @@ export function AppointmentSheetHost() {
 
               <button
                 type="button"
-                onClick={() => { close(); router.push(`/app/clients/${slug}`); }}
+                onClick={() => setView("edit")}
                 className="mt-3 flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3.5 text-[14px] font-semibold text-navy"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Pencil size={14} strokeWidth={1.75} className="text-secondary" />
+                  Edit booking
+                </span>
+                <ChevronRight size={15} className="text-muted" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { close(); router.push(`/app/clients/${slug}`); }}
+                className="mt-2.5 flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3.5 text-[14px] font-semibold text-navy"
               >
                 View client profile
                 <ChevronRight size={15} className="text-muted" />
@@ -210,6 +272,57 @@ export function AppointmentSheetHost() {
                   }}
                 >
                   {day && time ? `Confirm · Sat ${day} Mar, ${time}` : "Confirm new time"}
+                </DarkButton>
+              </div>
+            </>
+          )}
+
+          {view === "edit" && (
+            <>
+              <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Service</p>
+              <div className="overflow-hidden rounded-2xl border border-border">
+                {services.map((s, i) => {
+                  const active = svcName === s.name;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setSvcOverride(s.name)}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left ${i > 0 ? "border-t border-border" : ""} ${active ? "bg-canvas" : ""}`}
+                    >
+                      <span className={`text-[14px] ${active ? "font-bold" : "font-medium"} text-navy`}>{s.name}</span>
+                      <span className="flex items-center gap-2 text-[13px] text-secondary">
+                        £{s.price}
+                        {active && <Check size={14} strokeWidth={2.5} className="text-navy" />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Add to this booking</p>
+              <div className="flex flex-wrap gap-2">
+                {services
+                  .filter((s) => s.name !== svcName)
+                  .map((s) => {
+                    const on = extras.includes(s.name);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setExtras((x) => (on ? x.filter((e) => e !== s.name) : [...x, s.name]))}
+                        className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors ${
+                          on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                        }`}
+                      >
+                        {on ? <Check size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2} />}
+                        {s.name}
+                      </button>
+                    );
+                  })}
+              </div>
+              <div className="pt-5">
+                <DarkButton onClick={() => setView("details")}>
+                  Save changes · £{totalPrice}
                 </DarkButton>
               </div>
             </>

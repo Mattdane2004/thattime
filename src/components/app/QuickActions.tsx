@@ -321,7 +321,20 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             ))}
           </div>
           <div className="pt-5">
-            <DarkButton onClick={() => setStep(4)}>Add Appointment</DarkButton>
+            <DarkButton
+              onClick={() => {
+                useAppStore.getState().addCustomAppt({
+                  client: client ?? "Walk-in",
+                  service: service?.name ?? "Appointment",
+                  staff,
+                  day,
+                  time,
+                });
+                setStep(4);
+              }}
+            >
+              Add Appointment
+            </DarkButton>
           </div>
         </>
       )}

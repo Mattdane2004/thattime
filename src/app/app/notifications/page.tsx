@@ -48,11 +48,25 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
   );
 }
 
+// Which filter tab each notification kind belongs to.
+const kindCat = (k: string) =>
+  ["booking", "cancel", "reschedule"].includes(k) ? "Appointments"
+  : k === "request" ? "Messages"
+  : k === "review" ? "Reviews"
+  : k === "favourite" ? "Favourites"
+  : "Other";
+
 export default function NotificationsPage() {
   const router = useRouter();
   const [filter, setFilter] = useState("All");
   const [requestState, setRequestState] = useState<"pending" | "accepted" | "declined">("pending");
   const [deleted, setDeleted] = useState<Record<string, boolean>>({});
+
+  // Accept/decline lingers for a moment, then the card folds away.
+  const resolveRequest = (id: string, state: "accepted" | "declined") => {
+    setRequestState(state);
+    setTimeout(() => setDeleted((d) => ({ ...d, [id]: true })), 2600);
+  };
 
   return (
     <div className="min-h-full bg-fog pb-6">
@@ -83,16 +97,26 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      {notificationGroups.map((group) => (
+      {notificationGroups.map((group) => {
+        const visible = group.items.filter(
+          (n) => !deleted[n.id] && (filter === "All" || kindCat(n.kind) === filter),
+        );
+        if (visible.length === 0) return null;
+        return (
         <div key={group.label}>
           <p className="px-4 pb-2 pt-5 text-[15px] font-bold text-navy">{group.label}</p>
           <div className="flex flex-col gap-2.5 px-4">
-            {group.items.map((n) => {
-              if (deleted[n.id]) return null;
-
+            <AnimatePresence initial={false}>
+            {visible.map((n) => {
               if (n.kind === "request")
                 return (
-                  <div key={n.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <motion.div
+                    key={n.id}
+                    layout
+                    exit={{ opacity: 0, height: 0, marginBottom: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                  >
                     <div className="flex items-start gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
                         {n.who}
@@ -106,13 +130,13 @@ export default function NotificationsPage() {
                       {requestState === "pending" ? (
                         <motion.div key="btns" exit={{ opacity: 0 }} className="flex gap-2.5 pt-3.5">
                           <button
-                            onClick={() => setRequestState("accepted")}
+                            onClick={() => resolveRequest(n.id, "accepted")}
                             className="h-10 flex-1 rounded-full bg-[#14181F] text-[13px] font-semibold text-white"
                           >
                             Accept
                           </button>
                           <button
-                            onClick={() => setRequestState("declined")}
+                            onClick={() => resolveRequest(n.id, "declined")}
                             className="h-10 flex-1 rounded-full border border-border text-[13px] font-semibold text-navy"
                           >
                             Decline
@@ -123,13 +147,14 @@ export default function NotificationsPage() {
                           key="done"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="pt-3 text-[12px] font-medium text-muted"
+                          className="flex items-center gap-1.5 pt-3 text-[12px] font-semibold text-navy"
                         >
+                          <Check size={13} strokeWidth={2.5} />
                           {requestState === "accepted" ? "Accepted — they can now message you." : "Declined."}
                         </motion.p>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </motion.div>
                 );
 
               if (n.kind === "promo")
@@ -176,7 +201,7 @@ export default function NotificationsPage() {
                     <div>
                       <p className="text-[12px] text-muted">{n.title}</p>
                       <p className="pt-0.5 text-[14px] font-medium leading-snug text-navy">{n.body}</p>
-                      {"meta" in n && n.meta && <p className="pt-1 text-[11px] text-muted">{n.meta}</p>}
+                      {"meta" in n && n.meta ? <p className="pt-1 text-[11px] text-muted">{String(n.meta)}</p> : null}
                     </div>
                   </div>
                 );
@@ -194,9 +219,11 @@ export default function NotificationsPage() {
                 </div>
               );
             })}
+            </AnimatePresence>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
