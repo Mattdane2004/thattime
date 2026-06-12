@@ -569,28 +569,54 @@ export default function CheckoutPage() {
         </div>
       </Sheet>
 
-      <Sheet open={addSheet === "discount"} onClose={() => setAddSheet(null)} title="Add discount" sub={`Subtotal ${fmt(totals.subtotal)}`}>
-        {[
-          { label: "10% off", pct: 10, flat: 0 },
-          { label: "20% off", pct: 20, flat: 0 },
-          { label: "£5 off", pct: 0, flat: 5 },
-          { label: "£10 off", pct: 0, flat: 10 },
-        ].map((d) => (
-          <button
-            key={d.label}
-            type="button"
-            onClick={() => {
-              store.setDiscount(d.pct, d.flat);
-              setAddSheet(null);
-            }}
-            className="flex w-full items-center justify-between border-b border-border py-4 text-left last:border-0"
-          >
-            <span className="text-[15px] font-semibold text-navy">{d.label}</span>
-            <span className="text-[14px] font-medium text-secondary">
-              −{d.pct ? fmt((totals.subtotal * d.pct) / 100) : fmt(d.flat)}
-            </span>
-          </button>
-        ))}
+      <Sheet open={addSheet === "discount"} onClose={() => setAddSheet(null)} title="Add discount" sub="Tap one to apply it to this bill">
+        <div className="flex flex-col gap-2.5 pt-1">
+          {[
+            { label: "10% off", pct: 10, flat: 0 },
+            { label: "20% off", pct: 20, flat: 0 },
+            { label: "£5 off", pct: 0, flat: 5 },
+            { label: "£10 off", pct: 0, flat: 10 },
+          ].map((d) => {
+            const applied =
+              (d.pct > 0 && store.discountPct === d.pct) || (d.flat > 0 && store.discountFlat === d.flat);
+            const amount = d.pct ? (totals.subtotal * d.pct) / 100 : d.flat;
+            return (
+              <motion.button
+                key={d.label}
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  store.setDiscount(applied ? 0 : d.pct, applied ? 0 : d.flat);
+                  setAddSheet(null);
+                }}
+                className={`flex w-full items-center gap-3.5 rounded-2xl border bg-white p-4 text-left transition-colors ${
+                  applied ? "border-[#14181F]" : "border-border"
+                }`}
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-navy">
+                  <Percent size={16} strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-navy">{d.label}</span>
+                  <span className="block text-[12px] text-muted">
+                    Takes −{fmt(amount)} off the {fmt(totals.subtotal)} bill
+                  </span>
+                </span>
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    applied ? "border-[#14181F] bg-[#14181F] text-white" : "border-border text-transparent"
+                  }`}
+                >
+                  <Check size={13} strokeWidth={3} />
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <p className="pt-3 text-center text-[12px] text-muted">
+          {totals.discount > 0 ? "Tap the applied discount again to remove it." : "Discounts apply to the whole bill, before tip."}
+        </p>
+        <div className="h-2" />
       </Sheet>
 
       {/* Customer-facing tip sheet — hand the phone over */}
