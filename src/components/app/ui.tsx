@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, X } from "lucide-react";
 
-/** Tab-page header: bold title + date, bell (→ notifications), avatar. */
+/** Tab-page header: bold title + date, bell (→ notifications), avatar (→ hub). */
 export function AppHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-between px-4 pb-3 pt-4">

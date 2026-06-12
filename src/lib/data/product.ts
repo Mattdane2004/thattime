@@ -1,16 +1,40 @@
-// Demo data for the mid-fi product screens (Figma node 11990-94642).
+// Screen demo data for the mid-fi product screens (Figma node 11990-94642) —
+// "what's happening today": agenda rows, calendar grids, Up Next queue,
+// conversations, notifications, client rows/forms/reviews.
+//
+// The sellable catalogue is NOT defined here: lib/data/offers.ts is canonical
+// ("what we sell"); `services`/`serviceCategories` below are thin views of it
+// shaped for the booking pickers. Add or edit offers in offers.ts.
 
-export const services = [
-  { id: "cut-style", name: "Cut & Style", duration: "60m", category: "Cuts", price: 85 },
-  { id: "cut-colour", name: "Cut & Colour", duration: "90m", category: "Colour", price: 140 },
-  { id: "blow-dry", name: "Blow Dry & Style", duration: "60m", category: "Styling", price: 55 },
-  { id: "colour-treatment", name: "Colour Treatment", duration: "120m", category: "Colour", price: 180 },
-  { id: "haircut", name: "Haircut", duration: "45m", category: "Cuts", price: 65 },
-  { id: "cut-beard", name: "Cut & Beard", duration: "60m", category: "Barber", price: 95 },
+import { demoOffers } from "./offers";
+
+export interface ScreenService {
+  id: string;
+  name: string;
+  duration: string;
+  category: string;
+  price: number;
+}
+
+// Booking pickers show published, bookable (duration-bearing) services only.
+export const services: ScreenService[] = demoOffers
+  .filter((o) => o.type === "service" && o.status === "published" && o.durationMin)
+  .map((o) => ({
+    id: o.id,
+    name: o.name,
+    duration: `${o.durationMin}m`,
+    category: o.category,
+    price: Number(o.price),
+  }));
+
+export const serviceCategories = [
+  "All",
+  ...Array.from(new Set(services.map((s) => s.category))),
 ];
 
-export const serviceCategories = ["All", "Cuts", "Colour", "Styling", "Barber"];
-
+// Retail list for the checkout add-product sheet. Austin folds this into
+// lib/data/products.ts (the offer add-on catalogue) later — see
+// docs/data-dedupe-proposal.md.
 export const products = [
   { id: "shampoo", name: "Repair Shampoo", size: "250ml", price: 12 },
   { id: "conditioner", name: "Repair Conditioner", size: "250ml", price: 14 },
