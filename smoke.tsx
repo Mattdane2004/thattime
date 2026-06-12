@@ -7,7 +7,13 @@ import HubPage from "./src/app/app/hub/page";
 import ServicesPage from "./src/app/app/services/page";
 import MarketingPage from "./src/app/app/marketing/page";
 import OfferDashboardPage from "./src/app/app/services/[id]/page";
-import B2CPage from "./src/app/app/b2c/page";
+import ConsumerHomePage from "./src/app/c/home/page";
+import ConsumerExplorePage from "./src/app/c/explore/page";
+import ConsumerSalonPage from "./src/app/c/salon/[id]/page";
+import ConsumerBookingsPage from "./src/app/c/bookings/page";
+import ConsumerInboxPage from "./src/app/c/inbox/page";
+import ConsumerProfilePage from "./src/app/c/profile/page";
+import ConsumerSettingsPage from "./src/app/c/settings/page";
 import ProductsModulePage from "./src/app/app/services/[id]/products/page";
 import ServicePreviewPage from "./src/app/app/services/[id]/preview/page";
 import PhotosModulePage from "./src/app/app/services/[id]/photos/page";
@@ -28,7 +34,15 @@ import TeamInvitePage from "./src/app/app/team/invite/page";
 import MessagesPage from "./src/app/app/messages/page";
 import ConversationPage from "./src/app/app/messages/[id]/page";
 import SchedulePage from "./src/app/app/schedule/page";
-import TypeSelectorPage from "./src/app/new/page";
+import WizardIntroPage from "./src/app/new/page";
+import TypeSelectorPage from "./src/app/new/type/page";
+import ClassPricingPage from "./src/app/new/class-pricing/page";
+import TeamMemberPage from "./src/app/app/team/[id]/page";
+import MemberSchedulePage from "./src/app/app/team/[id]/schedule/page";
+import MemberPermissionsPage from "./src/app/app/team/[id]/permissions/page";
+import MemberPayPage from "./src/app/app/team/[id]/pay/page";
+import PayRunPage from "./src/app/app/team/pay/[runId]/page";
+import OfferSettingsPage from "./src/app/app/services/[id]/settings/page";
 import BasicsPage from "./src/app/new/basics/page";
 import LocationsPage from "./src/app/new/locations/page";
 import StaffPage from "./src/app/new/staff/page";
@@ -40,12 +54,6 @@ import BundleServicesPage from "./src/app/new/bundle-services/page";
 import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
-import ClientBusinessPage from "./src/app/client/business/page";
-import ChooseServicesPage from "./src/app/client/book/page";
-import ChooseProfessionalPage from "./src/app/client/book/professional/page";
-import PickTimePage from "./src/app/client/book/time/page";
-import ReviewBookingPage from "./src/app/client/book/review/page";
-import BookingConfirmedPage from "./src/app/client/book/confirmed/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 
 let failures = 0;
@@ -66,9 +74,9 @@ renderContains("Home", React.createElement(HomePage), [
   "Check In", "Lunch Break",
 ]);
 
-// 2) Ported Hub.
+// 2) Hub "Menu" (Figma 11988:90748).
 renderContains("Hub", React.createElement(HubPage), [
-  "Hub", "Operations", "Switch to client view", "Business setup", "Services", "Team", "Marketing",
+  "Menu", "This week", "Revenue", "View analytics", "Operations", "Offerings", "Team", "Marketing", "Setup",
 ]);
 
 // 3) Ported Clients directory.
@@ -94,9 +102,9 @@ renderContains("ClientSettings", React.createElement(ClientSettingsPage), [
   "Require a deposit", "Block client", "Delete client",
 ]);
 
-// 3c) Services list.
+// 3c) Offerings list.
 renderContains("Services", React.createElement(ServicesPage), [
-  "Services", "Classic haircut", "New", "Active",
+  "Offerings", "Everything you offer", "Classic haircut", "New", "Hair",
 ]);
 
 // 3d) Marketing hub.
@@ -104,15 +112,15 @@ renderContains("Marketing", React.createElement(MarketingPage), [
   "Marketing", "Engage", "Campaigns", "Automations", "Rewards", "Discount codes",
 ]);
 
-// 3e) Offer dashboard.
+// 3e) Offer dashboard ("Edit Service").
 renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }), [
-  "Classic haircut", "Price", "Duration", "Manage", "Variants", "Settings",
+  "Classic haircut", "Edit service", "Advanced", "Variants", "Settings", "Unpublish", "Preview",
+]);
+renderContains("OfferSettings", React.createElement(OfferSettingsPage, { params: { id: "svc_classic_haircut" } }), [
+  "Online booking", "Who can book", "Lead time", "cancellation window", "Delete permanently",
 ]);
 
-// 3f) B2C client view.
-renderContains("B2C", React.createElement(B2CPage), [
-  "Client view", "Coming soon", "That Time for clients", "Switch back to business",
-]);
+// 3f) Hub → B2C switcher lands on the consumer app (covered in section 8).
 
 // 3g) Setup guide.
 renderContains("SetupGuide", React.createElement(SetupGuidePage), [
@@ -145,7 +153,7 @@ renderContains("Variants", React.createElement(VariantsModulePage, { params: { i
 
 // 3k) Team invite.
 renderContains("TeamInvite", React.createElement(TeamInvitePage), [
-  "Add team member", "Who are you adding", "Employee", "Freelancer", "Send invite",
+  "Add team member", "Who are you adding", "Employee", "Freelancer", "Workspace access", "Send invite",
 ]);
 
 // 3l) Alerts feed + Import data.
@@ -161,9 +169,24 @@ renderContains("Related", React.createElement(RelatedModulePage, { params: { id:
   "Related", "suggested at checkout", "Beard trim",
 ]);
 
-// 4) Ported Team roster.
+// 4) Team section (Members tab default).
 renderContains("Team", React.createElement(TeamPage), [
-  "Team", "members", "Alex Morgan", "Manager", "Instructor", "Needs setup",
+  "Team", "Members", "Shifts", "Pay", "Alex Morgan", "Manager", "Instructor", "Needs setup",
+]);
+renderContains("TeamMember", React.createElement(TeamMemberPage, { params: { id: "s2" } }), [
+  "Priya Shah", "Takes bookings", "Schedule", "Permissions", "Pay", "Archive member",
+]);
+renderContains("TeamSchedule", React.createElement(MemberSchedulePage, { params: { id: "s2" } }), [
+  "schedule", "Working hours", "Time off", "Mon",
+]);
+renderContains("TeamPermissions", React.createElement(MemberPermissionsPage, { params: { id: "s2" } }), [
+  "Access level", "Basic", "Medium", "Fine-tune", "Calendar", "Reports",
+]);
+renderContains("TeamPay", React.createElement(MemberPayPage, { params: { id: "s2" } }), [
+  "pay", "Employment type", "Hourly rate", "commission", "tips",
+]);
+renderContains("PayRun", React.createElement(PayRunPage, { params: { runId: "run_jun_1" } }), [
+  "Pay run", "Jun 2026", "Wages", "Commission", "Tips", "Complete pay run",
 ]);
 
 // 5) Ported Messages.
@@ -181,21 +204,24 @@ renderContains("Schedule", React.createElement(SchedulePage), [
   "Schedule", "Tuesday 3 March", "Lisa Anderson", "Now", "End of shift",
 ]);
 
-// 7) Service wizard entry + basics.
+// 7) Service wizard: intro + type + steps.
+renderContains("Wizard/intro", React.createElement(WizardIntroPage), [
+  "Set up your service", "Get started", "Watch a quick tutorial",
+]);
 renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
   "What are you adding", "Service", "Class", "Bundle", "Subscription",
 ]);
 renderContains("Wizard/basics", React.createElement(BasicsPage), [
-  "The basics", "Name", "Category", "Continue", "Hair",
+  "The basics", "Name", "Category", "Description", "Next", "Hair",
 ]);
 renderContains("Wizard/locations", React.createElement(LocationsPage), [
-  "Where is it offered", "Salon Soho", "Continue",
+  "Where is it offered", "All locations", "Salon Soho", "Next",
 ]);
 renderContains("Wizard/staff", React.createElement(StaffPage), [
-  "Who can deliver", "Alex Morgan", "Continue",
+  "Who can deliver", "Alex Morgan", "Search team",
 ]);
 renderContains("Wizard/sub-type", React.createElement(SubscriptionTypePage), [
-  "Subscription type", "Service frequency", "Store credit", "Membership", "Continue",
+  "Subscription type", "Service frequency", "Store credit", "Membership", "Next",
 ]);
 renderContains("Wizard/sub-benefits", React.createElement(SubscriptionBenefitsPage), [
   "What do members get", "Included sessions", "Member discount", "Access pass",
@@ -204,39 +230,45 @@ renderContains("Wizard/sub-billing", React.createElement(SubscriptionBillingPage
   "Billing", "Billing period", "Joining fee", "Create subscription",
 ]);
 renderContains("Wizard/bundle-services", React.createElement(BundleServicesPage), [
-  "Build the bundle", "Fixed bundle", "Flexible package", "Services",
+  "Included services", "Fixed bundle", "Flexible package", "Services",
 ]);
 renderContains("Wizard/bundle-pricing", React.createElement(BundlePricingPage), [
   "Bundle price", "Fixed price", "Package discount", "Create bundle",
 ]);
 renderContains("Wizard/class-participants", React.createElement(ClassParticipantsPage), [
-  "Who can attend", "Seat-based", "Private group", "Continue",
+  "Attendees", "Public group", "Private booking", "Group size", "Auto-cancel",
 ]);
 renderContains("Wizard/class-schedule", React.createElement(ClassSchedulePage), [
-  "When is it", "Date", "Starts", "Ends",
+  "Select dates", "Single day", "Multi day", "Starts", "Ends", "Repeats",
+]);
+renderContains("Wizard/class-pricing", React.createElement(ClassPricingPage), [
+  "Price", "Deposit", "Create class",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Require a deposit", "Create service",
 ]);
 
-// 8) Client booking flow (B2C — business profile → services → professional → time → review).
-renderContains("Client/business", React.createElement(ClientBusinessPage), [
-  "Salon Soho", "Greek Street", "Services", "The team", "About", "Reviews", "Book now",
+// 8) Consumer app (/c — social-first B2C marketplace).
+renderContains("C/home", React.createElement(ConsumerHomePage), [
+  "thattime", "Your story", "Luna Hair Studio", "Book",
 ]);
-renderContains("Client/book", React.createElement(ChooseServicesPage), [
-  "Choose services", "Classic haircut", "Select a service",
+renderContains("C/explore", React.createElement(ConsumerExplorePage), [
+  "Search", "Nearby", "For you",
 ]);
-renderContains("Client/book/professional", React.createElement(ChooseProfessionalPage), [
-  "Choose a professional", "Any professional", "Alex Morgan", "Continue",
+renderContains("C/salon", React.createElement(ConsumerSalonPage, { params: { id: "village-barbers" } }), [
+  "Village Barbers", "@villagebarbers", "followers", "Message",
 ]);
-renderContains("Client/book/time", React.createElement(PickTimePage), [
-  "Pick a time", "Morning", "Afternoon", "Evening", "09:00",
+renderContains("C/bookings", React.createElement(ConsumerBookingsPage), [
+  "Bookings", "Upcoming", "Past", "Skin fade",
 ]);
-renderContains("Client/book/review", React.createElement(ReviewBookingPage), [
-  "Review and confirm", "Salon Soho", "Total", "Pay at the venue", "Confirm booking",
+renderContains("C/inbox", React.createElement(ConsumerInboxPage), [
+  "Inbox", "Village Barbers", "Paws &amp; Paths",
 ]);
-renderContains("Client/book/confirmed", React.createElement(BookingConfirmedPage), [
-  "Booking confirmed", "Add to calendar", "Done",
+renderContains("C/profile", React.createElement(ConsumerProfilePage), [
+  "Emma Carter", "Followers", "Edit profile",
+]);
+renderContains("C/settings", React.createElement(ConsumerSettingsPage), [
+  "Settings", "Payment methods", "Notifications", "Log out",
 ]);
 
 // 9) Shared category tokens.
