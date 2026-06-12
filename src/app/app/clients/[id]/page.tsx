@@ -9,6 +9,7 @@ import {
   MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
+  UserRound, Cake, Globe, UserPlus,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore } from "@/lib/store/appStore";
@@ -189,75 +190,50 @@ export default function ClientDetailPage() {
 
   return (
     <div className="min-h-full bg-fog pb-6">
-      {/* ── Header: identity, primary actions, stats — generous spacing ── */}
-      <div className="bg-white px-5 pb-6">
+      {/* ── Header: identity front and centre, actions on one clean row ── */}
+      <div className="bg-white px-5 pb-7">
         <div className="-mx-1 flex items-center justify-between pt-4">
           <button type="button" aria-label="Back" onClick={() => router.back()} className="p-1 text-navy">
             <ChevronLeft size={22} strokeWidth={2} />
           </button>
-          <button
-            type="button"
-            aria-label="Client actions"
-            onClick={() => setActionsOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy"
-          >
-            <MoreVertical size={16} strokeWidth={1.75} />
-          </button>
         </div>
 
-        <div className="flex items-center gap-4 pt-4">
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-canvas text-[20px] font-semibold text-muted">
+        <div className="flex flex-col items-center pt-1 text-center">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-canvas text-[24px] font-semibold text-muted">
             SJ
           </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <h1 className="truncate text-[22px] font-bold text-navy">Sarah Johnson</h1>
-              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
-                {blocked ? "Blocked" : "Active"}
-              </span>
-            </div>
-            <span className="mt-1.5 flex items-center gap-2 text-[13px] font-medium text-navy">
-              <span className="flex items-center gap-1"><Star size={13} className="fill-current" /> 4.8</span>
-              {tags.map((t) => (
-                <span key={t} className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">{t}</span>
-              ))}
+          <div className="flex items-center gap-2.5 pt-4">
+            <h1 className="text-[24px] font-bold tracking-tight text-navy">Sarah Johnson</h1>
+            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
+              {blocked ? "Blocked" : "Active"}
             </span>
           </div>
+          <p className="pt-1.5 text-[14px] text-secondary">(555) 234-5678 · sarah.j@email.com</p>
+          <span className="flex items-center gap-2 pt-2.5 text-[13px] font-medium text-navy">
+            <span className="flex items-center gap-1"><Star size={13} className="fill-current" /> 4.8</span>
+            {tags.map((t) => (
+              <span key={t} className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">{t}</span>
+            ))}
+          </span>
         </div>
 
+        {/* Secondary actions hide behind the dots; two calls to action stay */}
         <div className="flex gap-2.5 pt-6">
-          <DarkButton className="!h-11 flex-[1.2] !text-[14px]" onClick={() => setQuickAction("appointment")}>
-            <CalendarPlus size={15} />
-            Book
-          </DarkButton>
-          <GhostButton className="!h-11 flex-1 !text-[14px]" onClick={() => router.push("/app/messages/sarah")}>
+          <GhostButton
+            className="!h-12 !w-12 shrink-0"
+            ariaLabel="Client actions"
+            onClick={() => setActionsOpen(true)}
+          >
+            <MoreVertical size={17} strokeWidth={1.75} />
+          </GhostButton>
+          <GhostButton className="!h-12 flex-1 !text-[14px]" onClick={() => router.push("/app/messages/sarah")}>
             <MessageSquare size={15} />
             Message
           </GhostButton>
-          <GhostButton
-            className="!h-11 !w-12 shrink-0"
-            ariaLabel="Contact options"
-            onClick={() => {
-              setNumberCopied(false);
-              setContactOpen(true);
-            }}
-          >
-            <Phone size={15} />
-          </GhostButton>
-        </div>
-
-        {/* Stats breathe on their own line — no boxes */}
-        <div className="flex divide-x divide-border pt-6">
-          {[
-            ["Last Visit", "3 Mar 2026"],
-            ["Total Bookings", "24"],
-            ["Total Sales", "£1,870"],
-          ].map(([k, v]) => (
-            <div key={k} className="flex-1 text-center first:pl-0 last:pr-0">
-              <p className="text-[11px] text-muted">{k}</p>
-              <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
-            </div>
-          ))}
+          <DarkButton className="!h-12 flex-1 !text-[14px]" onClick={() => setQuickAction("appointment")}>
+            <CalendarPlus size={15} />
+            Book now
+          </DarkButton>
         </div>
       </div>
 
@@ -275,28 +251,55 @@ export default function ClientDetailPage() {
           transition={{ duration: 0.18 }}
           className="px-4 pt-4"
         >
-          {/* ════ OVERVIEW — a dashboard: what's next, what needs doing, where to go ════ */}
+          {/* ════ OVERVIEW — a dashboard: who they are, what's next, where to go ════ */}
           {tab === "Overview" && (
             <div className="flex flex-col gap-4">
-              {/* Safety first: one slim line, taps through to the record */}
-              <button
-                type="button"
-                onClick={() => setTab("Record")}
-                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
-                  severe ? "border-danger/40" : "border-border"
-                }`}
-              >
-                <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-bold text-navy">Allergies</span>
-                  <span className="block truncate pt-0.5 text-[12px] text-secondary">
-                    {allergies.length
-                      ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
-                      : "None recorded — tap to add"}
+              {/* One facts card: safety first, then the person, then the numbers */}
+              <div className="rounded-3xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <button
+                  type="button"
+                  onClick={() => setTab("Record")}
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left"
+                >
+                  <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-bold text-navy">Allergies</span>
+                    <span className="block truncate pt-0.5 text-[12px] text-secondary">
+                      {allergies.length
+                        ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
+                        : "None recorded — tap to add"}
+                    </span>
                   </span>
-                </span>
-                <ChevronRight size={14} className="shrink-0 text-muted" />
-              </button>
+                  <ChevronRight size={14} className="shrink-0 text-muted" />
+                </button>
+                <div className="mx-5 border-t border-border" />
+                <div className="flex flex-col gap-3.5 px-5 py-4">
+                  {[
+                    [<UserRound key="p" size={15} strokeWidth={1.8} />, "She / her"],
+                    [<Cake key="b" size={15} strokeWidth={1.8} />, "14 July 1992"],
+                    [<Globe key="l" size={15} strokeWidth={1.8} />, "English (UK)"],
+                    [<UserPlus key="j" size={15} strokeWidth={1.8} />, "Client since 8 Mar 2025"],
+                  ].map(([icon, v], i) => (
+                    <p key={i} className="flex items-center gap-3 text-[14px] text-navy">
+                      <span className="text-secondary">{icon}</span>
+                      {v}
+                    </p>
+                  ))}
+                </div>
+                <div className="mx-5 border-t border-border" />
+                <div className="flex divide-x divide-border px-2 py-4">
+                  {[
+                    ["Last Visit", "3 Mar 2026"],
+                    ["Total Bookings", "24"],
+                    ["Total Sales", "£1,870"],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex-1 text-center">
+                      <p className="text-[11px] text-muted">{k}</p>
+                      <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* What's next lives at the top of the dashboard */}
               {!cancelled && (
