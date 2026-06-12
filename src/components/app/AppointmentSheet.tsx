@@ -6,11 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Scissors, Banknote, MapPin, MessageSquare, RotateCcw, X,
   AlertTriangle, FileText, ChevronLeft, ChevronRight, CheckCircle2, Play, CreditCard,
-  Bell, Check, Pencil, Plus,
+  Bell, Check, Pencil, Plus, Search,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
 import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
-import { clientNotes, services } from "@/lib/data/product";
+import { clientNotes, services, serviceCategories } from "@/lib/data/product";
 
 const statusChips: { label: string; live?: ApptStatus }[] = [
   { label: "Upcoming", live: "upcoming" },
@@ -38,6 +38,10 @@ export function AppointmentSheetHost() {
   const [localStatus, setLocalStatus] = useState<string | null>(null);
   const [svcOverride, setSvcOverride] = useState<string | null>(null);
   const [extras, setExtras] = useState<string[]>([]);
+  // Edit view: null = booked-services list, otherwise the full-catalogue picker.
+  const [pick, setPick] = useState<null | "change" | "add">(null);
+  const [svcQuery, setSvcQuery] = useState("");
+  const [svcCat, setSvcCat] = useState("All");
 
   const open = apptSheet !== null;
   useEffect(() => {
@@ -50,6 +54,9 @@ export function AppointmentSheetHost() {
       setLocalStatus(null);
       setSvcOverride(null);
       setExtras([]);
+      setPick(null);
+      setSvcQuery("");
+      setSvcCat("All");
     }
   }, [open]);
 
@@ -97,9 +104,21 @@ export function AppointmentSheetHost() {
             {a.client}
           </span>
         ) : (
-          <button type="button" onClick={() => setView("details")} className="flex items-center gap-1 text-navy">
+          <button
+            type="button"
+            onClick={() => (view === "edit" && pick ? setPick(null) : setView("details"))}
+            className="flex items-center gap-1 text-navy"
+          >
             <ChevronLeft size={18} strokeWidth={2} />
-            {view === "reschedule" ? "Reschedule" : view === "edit" ? "Edit booking" : "Cancel appointment"}
+            {view === "reschedule"
+              ? "Reschedule"
+              : view === "edit"
+                ? pick === "change"
+                  ? "Change service"
+                  : pick === "add"
+                    ? "Add a service"
+                    : "Edit booking"
+                : "Cancel appointment"}
           </button>
         )
       }
@@ -277,53 +296,135 @@ export function AppointmentSheetHost() {
             </>
           )}
 
-          {view === "edit" && (
+          {view === "edit" && pick === null && (
             <>
-              <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Service</p>
+              <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Booked services</p>
               <div className="overflow-hidden rounded-2xl border border-border">
-                {services.map((s, i) => {
-                  const active = svcName === s.name;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setSvcOverride(s.name)}
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left ${i > 0 ? "border-t border-border" : ""} ${active ? "bg-canvas" : ""}`}
-                    >
-                      <span className={`text-[14px] ${active ? "font-bold" : "font-medium"} text-navy`}>{s.name}</span>
-                      <span className="flex items-center gap-2 text-[13px] text-secondary">
-                        £{s.price}
-                        {active && <Check size={14} strokeWidth={2.5} className="text-navy" />}
+                <div className="flex items-center gap-3 px-4 py-3.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-navy">
+                    <Scissors size={15} strokeWidth={1.6} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-semibold text-navy">{svcName}</span>
+                    <span className="block text-[12px] text-muted">
+                      {services.find((s) => s.name === svcName)?.duration ?? a.duration} · £{basePrice}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setSvcQuery(""); setSvcCat("All"); setPick("change"); }}
+                    className="shrink-0 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-semibold text-navy"
+                  >
+                    Change
+                  </button>
+                </div>
+                {extras.map((e) => (
+                  <div key={e} className="flex items-center gap-3 border-t border-border px-4 py-3.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-navy">
+                      <Plus size={15} strokeWidth={1.6} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-semibold text-navy">{e}</span>
+                      <span className="block text-[12px] text-muted">
+                        {services.find((s) => s.name === e)?.duration} · £{priceOf(e)} · added
                       </span>
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${e}`}
+                      onClick={() => setExtras((x) => x.filter((y) => y !== e))}
+                      className="p-1.5 text-muted"
+                    >
+                      <X size={15} strokeWidth={2} />
                     </button>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
-              <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Add to this booking</p>
-              <div className="flex flex-wrap gap-2">
+
+              <button
+                type="button"
+                onClick={() => { setSvcQuery(""); setSvcCat("All"); setPick("add"); }}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3.5 text-[14px] font-semibold text-navy"
+              >
+                <Plus size={15} strokeWidth={2} />
+                Add another service
+              </button>
+
+              <div className="mt-4 flex items-center justify-between rounded-2xl bg-canvas px-4 py-3">
+                <span className="text-[13px] text-secondary">
+                  {1 + extras.length} service{extras.length > 0 ? "s" : ""}
+                </span>
+                <span className="text-[15px] font-bold text-navy">£{totalPrice}</span>
+              </div>
+              <div className="pt-4">
+                <DarkButton onClick={() => setView("details")}>Save changes</DarkButton>
+              </div>
+            </>
+          )}
+
+          {view === "edit" && pick !== null && (
+            <>
+              <div className="relative pb-3">
+                <Search size={15} strokeWidth={1.75} className="absolute left-4 top-[22px] -translate-y-1/2 text-muted" />
+                <input
+                  autoFocus
+                  value={svcQuery}
+                  onChange={(e) => setSvcQuery(e.target.value)}
+                  placeholder="Search your services..."
+                  className="h-11 w-full rounded-xl bg-canvas pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+                />
+              </div>
+              <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-3 [scrollbar-width:none]">
+                {serviceCategories.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSvcCat(c)}
+                    className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
+                      svcCat === c ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-col">
                 {services
-                  .filter((s) => s.name !== svcName)
+                  .filter((s) => svcCat === "All" || s.category === svcCat)
+                  .filter((s) => s.name.toLowerCase().includes(svcQuery.toLowerCase()))
                   .map((s) => {
-                    const on = extras.includes(s.name);
+                    const isCurrent = pick === "change" && s.name === svcName;
+                    const alreadyAdded = pick === "add" && (extras.includes(s.name) || s.name === svcName);
                     return (
                       <button
                         key={s.id}
                         type="button"
-                        onClick={() => setExtras((x) => (on ? x.filter((e) => e !== s.name) : [...x, s.name]))}
-                        className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors ${
-                          on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
-                        }`}
+                        disabled={alreadyAdded}
+                        onClick={() => {
+                          if (pick === "change") {
+                            setSvcOverride(s.name);
+                            setExtras((x) => x.filter((e) => e !== s.name));
+                          } else {
+                            setExtras((x) => [...x, s.name]);
+                          }
+                          setPick(null);
+                        }}
+                        className="flex items-center justify-between border-b border-border py-4 text-left last:border-0 disabled:opacity-40"
                       >
-                        {on ? <Check size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2} />}
-                        {s.name}
+                        <span>
+                          <span className="block text-[15px] font-semibold text-navy">{s.name}</span>
+                          <span className="mt-0.5 block text-[12px] text-muted">
+                            {s.duration} · {s.category}
+                            {alreadyAdded ? " · already on this booking" : ""}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
+                          £{s.price}
+                          {isCurrent ? <Check size={15} strokeWidth={2.5} /> : <ChevronRight size={15} className="text-muted" />}
+                        </span>
                       </button>
                     );
                   })}
-              </div>
-              <div className="pt-5">
-                <DarkButton onClick={() => setView("details")}>
-                  Save changes · £{totalPrice}
-                </DarkButton>
               </div>
             </>
           )}

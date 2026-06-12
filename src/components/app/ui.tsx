@@ -209,15 +209,21 @@ const calendarMonths = [
 ] as const;
 const TODAY_MONTH = 2; // March
 
-/** Month calendar used by reschedule / new appointment / block time — pageable. */
+/**
+ * Month calendar used by reschedule / new appointment / block time — pageable.
+ * Pass `range` for multi-day selection (time off): endpoints render dark,
+ * days in between get a light fill.
+ */
 export function MiniCalendar({
   selected,
   onSelect,
   dots,
+  range,
 }: {
   selected: number | null;
   onSelect: (d: number) => void;
   dots?: Record<number, "g" | "a" | "r">;
+  range?: { start: number | null; end: number | null };
 }) {
   const [mIdx, setMIdx] = useState(TODAY_MONTH);
   const month = calendarMonths[mIdx];
@@ -277,11 +283,13 @@ export function MiniCalendar({
             >
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] transition-colors ${
-                  selected === d
+                  selected === d || (range && (d === range.start || d === range.end))
                     ? "bg-[#14181F] font-semibold text-white"
-                    : d === 4 && mIdx === TODAY_MONTH
-                      ? "border border-border text-navy"
-                      : "text-navy"
+                    : range && range.start && range.end && d > range.start && d < range.end
+                      ? "bg-[#E4E5E9] font-medium text-navy"
+                      : d === 4 && mIdx === TODAY_MONTH
+                        ? "border border-border text-navy"
+                        : "text-navy"
                 }`}
               >
                 {d}

@@ -45,10 +45,36 @@ function NeedsAttentionList() {
 export default function HomePage() {
   const [location, setLocation] = useState(homeHeader.location);
   const [locOpen, setLocOpen] = useState(false);
+
+  // Time-off request: type dropdown, single day / range, half days, reason.
   const [totOpen, setTotOpen] = useState(false);
   const [totType, setTotType] = useState("Annual Leave");
-  const [totDay, setTotDay] = useState<number | null>(null);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [totStart, setTotStart] = useState<number | null>(null);
+  const [totEnd, setTotEnd] = useState<number | null>(null);
+  const [totHalf, setTotHalf] = useState("Full days");
+  const [totReason, setTotReason] = useState("");
   const [extraTimeOff, setExtraTimeOff] = useState<typeof timeOff>([]);
+
+  const pickTotDay = (d: number) => {
+    if (totStart === null || (totStart !== null && totEnd !== null)) {
+      setTotStart(d);
+      setTotEnd(null);
+    } else if (d <= totStart) {
+      setTotStart(d);
+      setTotEnd(null);
+    } else {
+      setTotEnd(d);
+    }
+  };
+  const totDays = totStart === null ? 0 : totEnd === null ? 1 : totEnd - totStart + 1;
+  const totLabel =
+    totStart === null
+      ? null
+      : totEnd === null
+        ? `${totStart} March${totHalf !== "Full days" ? ` (${totHalf.replace("Half day · ", "half day, ")})` : ""}`
+        : `${totStart} – ${totEnd} March · ${totDays} days`;
+  const totValid = totStart !== null && (totType !== "Other" || totReason.trim().length > 0);
 
   return (
     <div className="bg-fog pb-6">
@@ -160,7 +186,12 @@ export default function HomePage() {
               <span className="text-[15px] font-bold text-navy">Time Off</span>
               <button
                 onClick={() => {
-                  setTotDay(null);
+                  setTotType("Annual Leave");
+                  setTotStart(null);
+                  setTotEnd(null);
+                  setTotHalf("Full days");
+                  setTotReason("");
+                  setTypeOpen(false);
                   setTotOpen(true);
                 }}
                 className="flex items-center gap-1 rounded-full bg-canvas px-3 py-1.5 text-[12px] font-medium text-secondary"
@@ -172,7 +203,7 @@ export default function HomePage() {
             {[...timeOff, ...extraTimeOff].map((item) => (
               <div key={item.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas">
-                  {item.detail === "Annual Leave" ? (
+                  {item.detail.startsWith("Annual") ? (
                     <Plane size={16} className="text-secondary" strokeWidth={1.75} />
                   ) : (
                     <Stethoscope size={16} className="text-secondary" strokeWidth={1.75} />
@@ -230,34 +261,104 @@ export default function HomePage() {
       {/* Request time off */}
       <Sheet open={totOpen} onClose={() => setTotOpen(false)} title="Request time off" sub="Your manager will be notified" full>
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</p>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setTypeOpen((o) => !o)}
+            className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-white px-4 text-left"
+          >
+            <span className="text-[14px] font-semibold text-navy">{totType}</span>
+            <motion.span animate={{ rotate: typeOpen ? 180 : 0 }} className="flex text-muted">
+              <ChevronDown size={15} strokeWidth={1.75} />
+            </motion.span>
+          </button>
+          {typeOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute inset-x-0 top-[52px] z-20 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(15,26,46,0.12)]"
+            >
+              {["Annual Leave", "Sick Leave", "Other"].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setTotType(t);
+                    setTypeOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between px-4 py-3 text-left text-[14px] text-navy ${
+                    t === totType ? "bg-canvas font-semibold" : ""
+                  }`}
+                >
+                  {t}
+                  {t === totType && <Check size={14} strokeWidth={2.5} />}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
+
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Dates — tap once for a day, twice for a range
+        </p>
+        <MiniCalendar selected={null} onSelect={pickTotDay} range={{ start: totStart, end: totEnd }} />
+        {totLabel && (
+          <p className="pt-2 text-center text-[12px] font-semibold text-navy">{totLabel}</p>
+        )}
+
+        <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">How much of each day?</p>
         <div className="flex gap-2">
-          {["Annual Leave", "Sick Leave", "Other"].map((t) => (
+          {["Full days", "Half day · AM", "Half day · PM"].map((h) => (
             <button
-              key={t}
+              key={h}
               type="button"
-              onClick={() => setTotType(t)}
-              className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-                totType === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              onClick={() => setTotHalf(h)}
+              className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold transition-colors ${
+                totHalf === h ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
               }`}
             >
-              {t}
+              {h}
             </button>
           ))}
         </div>
-        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">First day off</p>
-        <MiniCalendar selected={totDay} onSelect={setTotDay} />
-        <div className="pt-6">
+
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Reason {totType === "Other" ? "— required for Other" : "(optional)"}
+        </p>
+        <textarea
+          value={totReason}
+          onChange={(e) => setTotReason(e.target.value)}
+          placeholder={
+            totType === "Sick Leave"
+              ? "e.g. Migraine — may need Thursday too"
+              : totType === "Other"
+                ? "e.g. Moving house, jury duty..."
+                : "e.g. Family holiday — booked flights already"
+          }
+          className="h-20 w-full resize-none rounded-xl bg-canvas p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+        />
+
+        <div className="pt-5">
           <DarkButton
-            disabled={!totDay}
+            disabled={!totValid}
             onClick={() => {
               setExtraTimeOff((x) => [
                 ...x,
-                { id: `tot${x.length}`, title: `${totDay} March`, detail: totType, badge: "Pending" },
+                {
+                  id: `tot${x.length}`,
+                  title: totLabel ?? "",
+                  detail: `${totType}${totReason.trim() ? ` — ${totReason.trim().slice(0, 40)}` : ""}`,
+                  badge: "Pending",
+                },
               ]);
               setTotOpen(false);
             }}
           >
-            {totDay ? `Request ${totType} · ${totDay} March` : "Pick a day"}
+            {totStart === null
+              ? "Pick your dates"
+              : totType === "Other" && !totReason.trim()
+                ? "Add a reason to send"
+                : `Request ${totDays > 1 ? `${totDays} days` : totHalf !== "Full days" ? "half day" : "1 day"} · ${totType}`}
           </DarkButton>
         </div>
       </Sheet>
