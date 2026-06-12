@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { MobileFrame } from "@/components/onboarding/MobileFrame";
-import { RouteTransition } from "@/components/onboarding/RouteTransition";
+import { MobileFrame } from "@/components/onboarding2/MobileFrame";
+import { RouteTransition } from "@/components/onboarding2/RouteTransition";
 import { OnboardingChrome, ChromeBackground } from "@/components/onboarding2/chrome";
 
 export default function OnboardingLayout({ children }: { children: ReactNode }) {
