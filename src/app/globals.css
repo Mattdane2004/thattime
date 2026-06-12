@@ -1,3 +1,6 @@
+/* Design tokens generated from Tokens/ (Figma export). See scripts/build-tokens.mjs. */
+@import "../styles/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

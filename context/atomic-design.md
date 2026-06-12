@@ -24,7 +24,14 @@ JSON lands the token classes remap centrally (one pass) and variant APIs stay st
   into `ui/` is the **Phase-2 consolidation** — coordinate with Matt.
 
 ## Remaining before "done"
-1. **Tokens** — wire Austin's Figma shadcn JSON → remap component token classes.
+1. **Tokens** — ✅ *pipeline landed* (`scripts/build-tokens.mjs` → `src/styles/tokens.css`
+   + `tokens.tailwind.ts`, wired into globals + tailwind). Resolver mirrors the Figma
+   collections 1:1 (Primitives / Style / Responsiveness) as kebab CSS vars and
+   **preserves alias chains** so swapping placeholder primitive hexes propagates.
+   Added *additively* — existing `navy`/`coral`/`surface` unchanged. **Still pending:**
+   (a) real brand hexes from Austin → drop into `Tokens/Mode 1`, re-run `npm run tokens`;
+   (b) the `navy`→`brand` component remap pass once hexes land;
+   (c) Mobile/Tablet type scale (HELD — undecided; only layout vars vary per breakpoint).
 2. **Phase-2 consolidation** — de-dupe the 3 component folders into `ui/` (with Matt).
 3. **Phase-2 migration** — swap screens' inline Tailwind onto `ui/` components.
 
