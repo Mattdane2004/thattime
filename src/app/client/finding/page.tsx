@@ -17,7 +17,7 @@ export default function ClientFindingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const t = setTimeout(() => router.push("/client/home"), 2600);
+    const t = setTimeout(() => router.push("/c/home"), 2600);
     return () => clearTimeout(t);
   }, [router]);
 

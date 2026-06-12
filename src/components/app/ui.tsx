@@ -18,9 +18,13 @@ export function AppHeader({ title }: { title: string }) {
           <Bell size={20} strokeWidth={1.75} />
           <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-danger" />
         </Link>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary">
+        <Link
+          href="/app/hub"
+          aria-label="Open business management hub"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[12px] font-semibold text-secondary transition-colors hover:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy/30"
+        >
           SJ
-        </span>
+        </Link>
       </div>
     </div>
   );
