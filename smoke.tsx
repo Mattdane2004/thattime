@@ -38,6 +38,7 @@ import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
+import { Button, Input, Chip } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -204,6 +205,15 @@ check("Hair swatch is #7C3AED", defaultCategories[0].color === "#7C3AED");
 check("tintFromHex", tintFromHex("#7C3AED", 0.1) === "rgba(124,58,237,0.1)");
 check("tintFromHex bad input", tintFromHex("nope") === "rgba(0,0,0,0.12)");
 check("swatch set non-empty", categorySwatches.length > 0);
+
+// 9) UI component library (atoms) — render + variant sanity.
+const btn = renderToString(React.createElement(Button, { children: "Save" }));
+check("Button renders its label", btn.includes("Save"));
+check("Button primary uses the navy token", btn.includes("bg-navy"));
+check("Button secondary variant differs", renderToString(React.createElement(Button, { variant: "secondary", children: "Cancel" })).includes("border-border"));
+check("Button fullWidth adds w-full", renderToString(React.createElement(Button, { fullWidth: true, children: "Go" })).includes("w-full"));
+check("Input renders its label", renderToString(React.createElement(Input, { label: "Email", placeholder: "you@x.com" })).includes("Email"));
+check("Chip selected uses navy", renderToString(React.createElement(Chip, { selected: true, children: "VIP" })).includes("bg-navy"));
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
