@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, X, Plus, Minus, Scissors, ShoppingBag, Percent, CreditCard,
-  Banknote, Landmark, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
+  Banknote, Coins, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
 import { useAppStore, checkoutTotals, type PaymentEntry, type CheckoutItem } from "@/lib/store/appStore";
@@ -154,6 +154,7 @@ export default function CheckoutPage() {
   const [addSheet, setAddSheet] = useState<"service" | "product" | "discount" | null>(null);
   const [method, setMethod] = useState<MethodSheet>(null);
   const [cashAmount, setCashAmount] = useState(10);
+  const [otherAmount, setOtherAmount] = useState(0);
   const [paidScreen, setPaidScreen] = useState(false);
   const [receiptSent, setReceiptSent] = useState(false);
   const [rate, setRate] = useState(false);
@@ -505,14 +506,17 @@ export default function CheckoutPage() {
           [
             { m: "Card", icon: <CreditCard size={16} strokeWidth={1.75} /> },
             { m: "Cash", icon: <Banknote size={16} strokeWidth={1.75} /> },
-            { m: "Bank transfer", icon: <Landmark size={16} strokeWidth={1.75} /> },
+            { m: "Other", icon: <Coins size={16} strokeWidth={1.75} /> },
             { m: "Gift card", icon: <Gift size={16} strokeWidth={1.75} /> },
           ] as { m: PaymentEntry["method"]; icon: React.ReactNode }[]
         ).map(({ m, icon }) => (
           <motion.button
             key={m}
             whileTap={{ scale: 0.97 }}
-            onClick={() => setMethod(m)}
+            onClick={() => {
+              if (m === "Other") setOtherAmount(totals.remaining);
+              setMethod(m);
+            }}
             disabled={totals.remaining <= 0}
             className="flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-white text-[14px] font-semibold text-navy disabled:opacity-40"
           >
@@ -704,7 +708,7 @@ export default function CheckoutPage() {
 
       {/* Payment method sheets */}
       <Sheet
-        open={method === "Card" || method === "Bank transfer" || method === "Gift card"}
+        open={method === "Card" || method === "Gift card"}
         onClose={() => setMethod(null)}
         title={method ?? ""}
         sub={`${fmt(totals.remaining)} remaining`}
@@ -717,13 +721,60 @@ export default function CheckoutPage() {
         <p className="pt-3 text-[13px] text-secondary">
           {method === "Card"
             ? "The card reader will prompt the client to tap or insert."
-            : method === "Bank transfer"
-              ? "Mark as received once the transfer lands."
-              : "The balance will be deducted from their gift card."}
+            : "The balance will be deducted from their gift card."}
         </p>
         <div className="pt-5">
           <DarkButton onClick={() => method && finishPayment(method, totals.remaining)}>
             Charge {fmt(totals.remaining)}
+          </DarkButton>
+        </div>
+      </Sheet>
+
+      {/* Other — bank transfer, voucher, app payment, anything else */}
+      <Sheet open={method === "Other"} onClose={() => setMethod(null)} title="Other payment" sub={`${fmt(totals.remaining)} remaining`}>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Amount paid by other means</p>
+        <div className="flex items-center rounded-2xl bg-canvas px-4 py-4">
+          <span className="pr-1 text-[20px] font-bold text-muted">£</span>
+          <input
+            value={otherAmount}
+            onChange={(e) => setOtherAmount(Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))}
+            inputMode="numeric"
+            className="w-full bg-transparent text-[24px] font-bold text-navy focus:outline-none"
+            aria-label="Amount paid by other means"
+          />
+        </div>
+        <div className="flex gap-2 pt-3">
+          {[
+            { label: `Full · ${fmt(totals.remaining)}`, v: totals.remaining },
+            { label: "£20", v: 20 },
+            { label: "£50", v: 50 },
+          ].map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => setOtherAmount(c.v)}
+              className={`rounded-full border px-3.5 py-2 text-[12px] font-semibold ${
+                otherAmount === c.v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <p className="pt-3 text-[13px] text-secondary">
+          Bank transfer, voucher, an app payment — anything taken outside That Time. It&rsquo;s recorded
+          against this bill.
+        </p>
+        {otherAmount < totals.remaining && otherAmount > 0 && (
+          <p className="mt-3 rounded-xl bg-canvas px-4 py-3 text-[12px] text-secondary">
+            {fmt(totals.remaining - otherAmount)} will still be due — take the rest with another method.
+          </p>
+        )}
+        <div className="pt-5">
+          <DarkButton disabled={otherAmount <= 0} onClick={() => finishPayment("Other", Math.min(otherAmount, totals.remaining))}>
+            {otherAmount >= totals.remaining
+              ? `Pay ${fmt(totals.remaining)} now`
+              : `Add ${fmt(otherAmount)} · split payment`}
           </DarkButton>
         </div>
       </Sheet>
