@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Screen, Wordmark, TermsFootnote } from "@/components/onboarding2/Shell";
-import { PrimaryButton } from "@/components/onboarding2/controls";
+import { PrimaryButton } from "@/components/ui";
 
 export default function WelcomePage() {
   const router = useRouter();

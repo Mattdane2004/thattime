@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Screen, TermsFootnote } from "@/components/onboarding2/Shell";
-import { PrimaryButton, PermissionDialog } from "@/components/onboarding2/controls";
+import { PrimaryButton, PermissionDialog } from "@/components/ui";
 
 export default function ClientLocationPage() {
   const router = useRouter();

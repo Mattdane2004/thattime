@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, KeyRound, Check, Apple, Globe } from "lucide-react";
 import { clientUser } from "@/lib/data/b2c";
-import { Sheet, DarkButton, StatusPill } from "@/components/app/ui";
+import { Sheet, DarkButton, StatusPill } from "@/components/ui";
 
 export default function AccountDetailsPage() {
   const router = useRouter();

@@ -9,7 +9,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, MapPin, Clock, TrendingUp, ChevronRight } from "lucide-react";
-import { Sheet, DarkButton, GhostButton, Segmented, SectionLabel, StatusPill } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton, Segmented, SectionLabel, StatusPill } from "@/components/ui";
 import { Avatar, Stars, OfferTypeBadge } from "@/components/client/shared";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
 import type { CategoryName } from "@/lib/tokens/categories";

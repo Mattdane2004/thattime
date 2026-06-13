@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronDown, Gift, Plus, Crown, Receipt, ChevronRight } from "lucide-react";
 import { clientUser } from "@/lib/data/b2c";
-import { Sheet, DarkButton } from "@/components/app/ui";
+import { Sheet, DarkButton } from "@/components/ui";
 import { OfferTypeBadge } from "@/components/client/shared";
 
 const TIER_TARGET = 500; // points to Platinum

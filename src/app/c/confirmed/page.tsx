@@ -14,7 +14,7 @@ import {
   Camera,
   ChevronRight,
 } from "lucide-react";
-import { DarkButton, GhostButton } from "@/components/app/ui";
+import { DarkButton, GhostButton } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 import { getSalon, getOffer } from "@/lib/data/b2c";
 

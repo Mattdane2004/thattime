@@ -11,7 +11,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { Screen } from "@/components/onboarding2/Shell";
-import { PrimaryButton, ProgressDashes } from "@/components/onboarding2/controls";
+import { PrimaryButton, ProgressDashes } from "@/components/ui";
 import { useFlowChrome } from "@/components/onboarding2/chrome";
 import { useOnboarding2, businessLabel } from "@/lib/store/onboarding2";
 

@@ -9,7 +9,7 @@ import {
   OrDivider,
   Field,
   inputClass,
-} from "@/components/onboarding2/controls";
+} from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const domains = ["@gmail.com", "@hotmail.com", "@hotmail.co.uk"];

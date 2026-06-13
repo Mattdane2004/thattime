@@ -27,7 +27,7 @@ import {
   MiniCalendar,
   TimeChips,
   timeSlots,
-} from "@/components/app/ui";
+} from "@/components/ui";
 import { Avatar, Stars, OfferTypeBadge } from "@/components/client/shared";
 import { getSalon, type ClientOffer } from "@/lib/data/b2c";
 

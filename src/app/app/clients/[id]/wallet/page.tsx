@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import {
   ChevronLeft, Percent, Banknote, Scissors, ShoppingBag, Plus, Check, X, Gift,
 } from "lucide-react";
-import { Sheet, DarkButton } from "@/components/app/ui";
+import { Sheet, DarkButton } from "@/components/ui";
 import { services, products } from "@/lib/data/product";
 
 // Wallet & loyalty — a dedicated page (was a bottom sheet). Balance and

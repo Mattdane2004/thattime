@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, Field, inputClass } from "@/components/onboarding2/controls";
+import { PrimaryButton, Field, inputClass } from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const domains = ["@gmail.com", "@hotmail.com", "@hotmail.co.uk"];

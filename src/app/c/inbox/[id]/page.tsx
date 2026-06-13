@@ -21,7 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getConversation, getSalon, getBooking, type ChatMessage } from "@/lib/data/b2c";
-import { Sheet } from "@/components/app/ui";
+import { Sheet } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 
 const QUICK_REPLIES = ["Thanks!", "Can I reschedule?", "Running 5 min late"];

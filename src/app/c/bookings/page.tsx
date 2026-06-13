@@ -17,7 +17,7 @@ import {
   GhostButton,
   MiniCalendar,
   TimeChips,
-} from "@/components/app/ui";
+} from "@/components/ui";
 import { Avatar, OfferTypeBadge } from "@/components/client/shared";
 import { clientBookings, clientUser, getSalon, type ClientBookingItem } from "@/lib/data/b2c";
 

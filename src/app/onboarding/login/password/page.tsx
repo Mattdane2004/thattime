@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, PasswordField, Field } from "@/components/onboarding2/controls";
+import { PrimaryButton, PasswordField, Field } from "@/components/ui";
 
 export default function LoginPasswordPage() {
   const router = useRouter();

@@ -8,7 +8,7 @@ import {
   Search, UserRound, CheckCircle2, Plus, ChevronDown, Check, Users,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
-import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/ui";
 import {
   services, serviceCategories, staffMembers, clientRows, blockTypes, classTemplates,
 } from "@/lib/data/product";

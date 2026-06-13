@@ -21,7 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { clientUser, feedPosts, getSalon, type UserPost } from "@/lib/data/b2c";
-import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 import { Avatar, Stars, GridTile, OfferTypeBadge } from "@/components/client/shared";
 
 type Tab = "posts" | "saved" | "following";

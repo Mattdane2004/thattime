@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, Ban, Trash2 } from "lucide-react";
-import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 
 // Client settings & policies — a dedicated page (was a bottom sheet),
 // grouped Apple-Settings style: every rule that applies to this one client,

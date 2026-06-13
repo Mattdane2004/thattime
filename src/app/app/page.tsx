@@ -7,7 +7,7 @@ import {
   ChevronDown, Clock, AlertTriangle, CalendarDays, Plane, Stethoscope,
   CirclePlus, Check, MapPin, Plus,
 } from "lucide-react";
-import { AppHeader, SectionLabel, Sheet, DarkButton, MiniCalendar } from "@/components/app/ui";
+import { AppHeader, SectionLabel, Sheet, DarkButton, MiniCalendar } from "@/components/ui";
 import { UpNextSection } from "@/components/app/UpNextCard";
 import {
   homeHeader, staffStats, needsAttention, teamToday, upcomingShifts, timeOff,

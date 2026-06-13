@@ -10,7 +10,7 @@ import {
   Field,
   CheckRow,
   inputClass,
-} from "@/components/onboarding2/controls";
+} from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 export default function ClientDetailsPage() {

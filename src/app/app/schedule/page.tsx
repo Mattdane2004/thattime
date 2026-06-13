@@ -8,7 +8,7 @@ import {
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
   CalendarDays, X,
 } from "lucide-react";
-import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/app/ui";
+import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
 import { useAppStore } from "@/lib/store/appStore";
 import { myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, services, serviceCategories, type GridBlock } from "@/lib/data/product";

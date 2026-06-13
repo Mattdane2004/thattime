@@ -23,7 +23,7 @@ import {
   Plus,
 } from "lucide-react";
 import { clientUser } from "@/lib/data/b2c";
-import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 
 function Row({
   icon,

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, PasswordField, Field, CheckRow } from "@/components/onboarding2/controls";
+import { PrimaryButton, PasswordField, Field, CheckRow } from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 export default function StaffPasswordPage() {

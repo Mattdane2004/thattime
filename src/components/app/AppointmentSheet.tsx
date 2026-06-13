@@ -9,7 +9,7 @@ import {
   RotateCcw, Search, StickyNote, UserRound, X, AlertTriangle, Bell, Camera,
   Image as ImageIcon,
 } from "lucide-react";
-import { Sheet, DarkButton, MiniCalendar, TimeChips, StatusPill, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, MiniCalendar, TimeChips, StatusPill, GhostButton } from "@/components/ui";
 import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
 import { clientNotes, services, serviceCategories } from "@/lib/data/product";
 import { defaultCategories } from "@/lib/tokens/categories";

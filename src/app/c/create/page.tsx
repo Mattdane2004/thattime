@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { photo, salons, clientBookings, type Salon } from "@/lib/data/b2c";
-import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 
 const spring = { type: "spring", stiffness: 420, damping: 34 } as const;

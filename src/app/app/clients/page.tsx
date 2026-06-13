@@ -8,7 +8,7 @@ import {
   MoreVertical, Upload, Merge, FileSpreadsheet, FileText, CheckSquare, Check,
   Ban, Tag as TagIcon, Trash2,
 } from "lucide-react";
-import { AppHeader, Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { AppHeader, Sheet, DarkButton, GhostButton } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { clientRows } from "@/lib/data/product";
 

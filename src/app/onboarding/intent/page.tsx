@@ -9,7 +9,7 @@ import {
   PrimaryButton,
   BottomSheet,
   inputClass,
-} from "@/components/onboarding2/controls";
+} from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const options = [

@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import { DarkButton, SectionLabel, Sheet } from "@/components/app/ui";
+import { DarkButton, SectionLabel, Sheet } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 import { getSalon, getOffer, clientUser, type PaymentMethod } from "@/lib/data/b2c";
 

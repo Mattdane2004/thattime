@@ -8,7 +8,7 @@ import {
   Search, SlidersHorizontal,
 } from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, inputClass } from "@/components/onboarding2/controls";
+import { PrimaryButton, inputClass } from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const types: { id: string; label: string; icon: JSX.Element }[] = [

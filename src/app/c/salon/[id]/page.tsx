@@ -26,7 +26,7 @@ import {
   Accessibility,
   Car,
 } from "lucide-react";
-import { Sheet, DarkButton, GhostButton, SectionLabel, StatusPill } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton, SectionLabel, StatusPill } from "@/components/ui";
 import { Avatar, Stars, GridTile } from "@/components/client/shared";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
 import { salons, getSalon, getOffer, conversations } from "@/lib/data/b2c";

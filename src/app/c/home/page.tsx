@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { feedPosts, type FeedPost } from "@/lib/data/b2c";
 import { stories } from "@/lib/data/b2c";
-import { Sheet } from "@/components/app/ui";
+import { Sheet } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 
 const spring = { type: "spring", stiffness: 420, damping: 34 } as const;

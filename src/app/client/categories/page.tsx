@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton } from "@/components/onboarding2/controls";
+import { PrimaryButton } from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const cats = [

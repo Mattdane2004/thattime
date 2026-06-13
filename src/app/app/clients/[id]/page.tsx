@@ -10,7 +10,7 @@ import {
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
 } from "lucide-react";
-import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/app/ui";
+import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { pastAppointments, clientForms, staffMembers } from "@/lib/data/product";
 

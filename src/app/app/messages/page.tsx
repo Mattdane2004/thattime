@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, Building2 } from "lucide-react";
-import { AppHeader } from "@/components/app/ui";
+import { AppHeader } from "@/components/ui";
 import { conversations } from "@/lib/data/product";
 
 // Messages — conversation list with unread/group/business filters.

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Store, MapPin, Video } from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, SelectCard } from "@/components/onboarding2/controls";
+import { PrimaryButton, SelectCard } from "@/components/ui";
 import { useOnboarding2, businessLabel, type WorkMode } from "@/lib/store/onboarding2";
 
 const modes: { id: WorkMode; title: string; desc: string; icon: JSX.Element }[] = [

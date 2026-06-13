@@ -7,7 +7,7 @@ import {
   ChevronLeft, Phone, UserRound, AlertTriangle, Scissors, CalendarDays,
   Clock, X, RotateCcw, Plus, Send, CalendarPlus, PoundSterling,
 } from "lucide-react";
-import { Sheet, DarkButton, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { Sheet, DarkButton, MiniCalendar, TimeChips } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { conversations } from "@/lib/data/product";
 

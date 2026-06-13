@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Moon } from "lucide-react";
-import { Sheet, DarkButton } from "@/components/app/ui";
+import { Sheet, DarkButton } from "@/components/ui";
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (

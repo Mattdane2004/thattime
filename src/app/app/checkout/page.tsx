@@ -7,7 +7,7 @@ import {
   ChevronLeft, X, Plus, Minus, Scissors, ShoppingBag, Percent, CreditCard,
   Banknote, Coins, Gift, CheckCircle2, Mail, Star, Smartphone, Check, Heart,
 } from "lucide-react";
-import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 import { useAppStore, checkoutTotals, type PaymentEntry, type CheckoutItem } from "@/lib/store/appStore";
 import { services, products, traitChips, upNextQueue } from "@/lib/data/product";
 

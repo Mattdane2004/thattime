@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, CreditCard, Plus, Star, Trash2, Receipt } from "lucide-react";
 import { clientUser, clientBookings, type PaymentMethod } from "@/lib/data/b2c";
-import { Sheet, DarkButton, GhostButton, StatusPill } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton, StatusPill } from "@/components/ui";
 
 const billingHistory = [
   ...clientBookings

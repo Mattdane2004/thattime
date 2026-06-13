@@ -9,7 +9,7 @@ import {
   Copy, Check, Send, CalendarCheck2,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
-import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/app/ui";
+import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/ui";
 import { upNextQueue } from "@/lib/data/product";
 
 /**

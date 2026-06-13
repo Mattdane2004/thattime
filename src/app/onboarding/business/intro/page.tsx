@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Screen, TermsFootnote } from "@/components/onboarding2/Shell";
-import { PrimaryButton } from "@/components/onboarding2/controls";
+import { PrimaryButton } from "@/components/ui";
 import { PhotoCarousel } from "@/components/onboarding2/PhotoCarousel";
 
 export default function BusinessIntroPage() {

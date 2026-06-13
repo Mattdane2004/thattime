@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, Star } from "lucide-react";
-import { StatusPill } from "@/components/app/ui";
+import { StatusPill } from "@/components/ui";
 import { Avatar } from "@/components/client/shared";
 import { salons, getSalon } from "@/lib/data/b2c";
 

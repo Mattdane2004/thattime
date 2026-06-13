@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, Star, Send, Check } from "lucide-react";
-import { Sheet, DarkButton } from "@/components/app/ui";
+import { Sheet, DarkButton } from "@/components/ui";
 import { clientReviews } from "@/lib/data/product";
 
 // Client reviews — a dedicated page (was a bottom sheet). Summary up top,

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { User, Users, UsersRound, Building2 } from "lucide-react";
 import { Screen, Title } from "@/components/onboarding2/Shell";
-import { PrimaryButton, CheckCircle } from "@/components/onboarding2/controls";
+import { PrimaryButton, CheckCircle } from "@/components/ui";
 import { useOnboarding2 } from "@/lib/store/onboarding2";
 
 const sizes = [

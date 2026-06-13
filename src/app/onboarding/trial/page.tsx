@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { BadgePercent, CalendarDays, Users, BarChart3, ChevronDown, Receipt, UsersRound } from "lucide-react";
 import { Screen } from "@/components/onboarding2/Shell";
-import { PrimaryButton } from "@/components/onboarding2/controls";
+import { PrimaryButton } from "@/components/ui";
 import { useOnboarding2, type Plan } from "@/lib/store/onboarding2";
 
 const benefits = [
