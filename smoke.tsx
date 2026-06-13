@@ -55,7 +55,7 @@ import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, SheetTrigger, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -308,10 +308,24 @@ check("Checkbox renders role=checkbox", h(React.createElement(Checkbox, { checke
 check("RadioGroup renders radios", (() => { const s = h(React.createElement(RadioGroup, { defaultValue: "a", children: [React.createElement(RadioGroupItem, { key: "a", value: "a" }), React.createElement(RadioGroupItem, { key: "b", value: "b" })] })); return s.includes('role="radiogroup"'); })());
 check("Tabs renders tablist + active tab", (() => { const s = h(React.createElement(Tabs, { defaultValue: "x", children: [React.createElement(TabsList, { key: "l", children: [React.createElement(TabsTrigger, { key: "x", value: "x", children: "Overview" }), React.createElement(TabsTrigger, { key: "y", value: "y", children: "Record" })] }), React.createElement(TabsContent, { key: "c", value: "x", children: "panel" })] })); return s.includes("Overview") && s.includes('role="tab"'); })());
 
-// 12) UI overlays (Radix Dialog/Sheet/Toast) — render the trigger/host without crashing.
+// 12) UI overlays — Radix Dialog/Toast + the frame-scoped Sheet/BottomSheet/PermissionDialog.
 check("Dialog renders trigger", h(React.createElement(Dialog, { children: React.createElement(DialogTrigger, { children: "Open dialog" }) })).includes("Open dialog"));
-check("Sheet renders trigger", h(React.createElement(Sheet, { children: React.createElement(SheetTrigger, { children: "Open sheet" }) })).includes("Open sheet"));
+check("Sheet (open) renders title + children", h(React.createElement(Sheet, { open: true, onClose: () => {}, title: "Pick a time", children: "body" })).includes("Pick a time"));
+check("BottomSheet (open) renders children", h(React.createElement(BottomSheet, { open: true, onClose: () => {}, children: "sheet body" })).includes("sheet body"));
+check("PermissionDialog (open) shows text + Yes", (() => { const s = h(React.createElement(PermissionDialog, { open: true, text: "Allow location", onYes: () => {} })); return s.includes("Allow location") && s.includes("Yes"); })());
 check("Toaster mounts (toast fn is callable)", typeof toast === "function" && h(React.createElement(Toaster, {})).length >= 0);
+
+// 12b) Promoted in-use primitives (now canonical in @/components/ui).
+check("PrimaryButton renders label", h(React.createElement(PrimaryButton, { children: "Continue" })).includes("Continue"));
+check("DarkButton renders label", h(React.createElement(DarkButton, { children: "Save" })).includes("Save"));
+check("GhostButton renders label", h(React.createElement(GhostButton, { children: "Cancel" })).includes("Cancel"));
+check("StatusPill renders tone", h(React.createElement(StatusPill, { tone: "amber", children: "Pending" })).includes("Pending"));
+check("Segmented renders options + active", (() => { const s = h(React.createElement(Segmented, { options: ["My Day", "Calendar"], value: "My Day", onChange: () => {} })); return s.includes("My Day") && s.includes("Calendar"); })());
+check("MiniCalendar renders month", h(React.createElement(MiniCalendar, { selected: 4, onSelect: () => {} })).includes("March 2026"));
+check("TimeChips renders slots", h(React.createElement(TimeChips, { value: null, onSelect: () => {} })).includes("09:00"));
+check("PasswordField renders hint", h(React.createElement(PasswordField, { value: "", onChange: () => {} })).includes("characters"));
+check("AppHeader renders title", h(React.createElement(AppHeader, { title: "Schedule" })).includes("Schedule"));
+check("SectionLabel renders heading", h(React.createElement(SectionLabel, { children: "Team Today", count: 4 })).includes("Team Today"));
 
 // 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
 check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));

@@ -16,6 +16,10 @@ export { Separator, type SeparatorProps } from "./atoms/Separator";
 export { Switch } from "./atoms/Switch";
 export { Checkbox } from "./atoms/Checkbox";
 export { CheckCircle } from "./atoms/CheckCircle";
+// In-use pill CTAs + status pill (kept verbatim while the shadcn Button/Badge
+// look-and-feel is settled; these are what the screens render today).
+export { PrimaryButton, DarkButton, GhostButton } from "./atoms/PrimaryButton";
+export { StatusPill } from "./atoms/StatusPill";
 
 // ── molecules ──
 export { Card, cardVariants, type CardProps } from "./molecules/Card";
@@ -27,8 +31,15 @@ export { StatTile, type StatTileProps } from "./molecules/StatTile";
 export { RadioGroup, RadioGroupItem } from "./molecules/RadioGroup";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./molecules/Tabs";
 export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogTitle, DialogDescription } from "./molecules/Dialog";
-export { Sheet, SheetTrigger, SheetClose, SheetContent, type SheetContentProps } from "./molecules/Sheet";
 export { Toaster, toast, type ToastItem } from "./molecules/Toast";
+// Frame-scoped overlays (render inside the phone frame, not a body portal) —
+// the app's canonical Sheet/BottomSheet/PermissionDialog.
+export { Sheet, BottomSheet, PermissionDialog } from "./molecules/Overlays";
+// In-use app molecules: sliding-pill segmented control, password field, and the
+// pageable month calendar + time-slot chips.
+export { Segmented } from "./molecules/Segmented";
+export { PasswordField } from "./molecules/PasswordField";
+export { MiniCalendar, TimeChips, timeSlots } from "./molecules/MiniCalendar";
 
 // ── onboarding/form molecules (ported from onboarding2/controls; identical APIs) ──
 export { PhoneInput, inputClass } from "./molecules/PhoneInput";
@@ -38,3 +49,6 @@ export { CheckRow } from "./molecules/CheckRow";
 export { SocialButtons } from "./molecules/SocialButtons";
 export { OrDivider } from "./molecules/OrDivider";
 export { ProgressDashes } from "./molecules/ProgressDashes";
+
+// ── organisms ──
+export { AppHeader, SectionLabel } from "./organisms/AppHeader";
