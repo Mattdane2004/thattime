@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Check, Plus } from "lucide-react";
 import { productsCatalog, productCategories } from "@/lib/data/products";
 
@@ -9,7 +9,8 @@ import { productsCatalog, productCategories } from "@/lib/data/products";
 // service "Products" module. Attach retail products to an offer; selection is
 // local state (persisting to the offer is backlog).
 
-export default function ProductsModulePage({ params }: { params: { id: string } }) {
+export default function ProductsModulePage() {
+  const router = useRouter();
   const [category, setCategory] = useState<string>("All");
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -19,9 +20,9 @@ export default function ProductsModulePage({ params }: { params: { id: string } 
   return (
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center px-5">
-        <Link href={`/app/services/${params.id}`} aria-label="Back to offer" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Products</span>
       </div>
 

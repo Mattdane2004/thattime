@@ -5,7 +5,10 @@
 
 export type SystemRole = "Owner" | "Manager" | "Instructor" | "Staff";
 
-export type StaffStatus = "active" | "pending" | "needs_setup";
+export type StaffStatus = "active" | "pending" | "needs_setup" | "archived";
+
+/** Workspace access level — a preset over the per-area permission flags. */
+export type AccessLevel = "basic" | "low" | "medium" | "high" | "owner";
 
 export type Weekday = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
@@ -20,6 +23,24 @@ export interface TimeOff {
   id: string;
   label: string;
   date: string;
+}
+
+/** One line in a pay run — a member's earnings for the period. */
+export interface PayRunLine {
+  staffId: string;
+  wages: number;
+  commission: number;
+  tips: number;
+  adjustments: number;
+}
+
+export type PayRunStatus = "draft" | "completed";
+
+export interface PayRun {
+  id: string;
+  period: string; // e.g. "1–14 Jun 2026"
+  status: PayRunStatus;
+  lines: PayRunLine[];
 }
 
 export interface StaffSchedule {
@@ -83,6 +104,7 @@ export interface Staff {
   /** Service names this member can deliver. */
   services: string[];
   bookable: boolean;
+  accessLevel: AccessLevel;
   profile: StaffProfile;
   schedule: StaffSchedule;
   permissions: StaffPermissions;

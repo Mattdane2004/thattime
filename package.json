@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "tokens": "node scripts/correct-tokens.mjs && node scripts/build-tokens.mjs",
-    "smoke": "TSX_TSCONFIG_PATH=tsconfig.smoke.json npx --yes tsx smoke.tsx"
+    "smoke": "TSX_TSCONFIG_PATH=tsconfig.smoke.json npx --yes tsx smoke.tsx",
+    "dev:preview": "NEXT_DIST_DIR=.next-preview next dev --turbo"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.4",

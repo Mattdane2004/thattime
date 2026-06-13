@@ -36,7 +36,7 @@ export default function IntentPage() {
 
   const next = () => {
     if (picked === "owner") router.push("/onboarding/business/intro");
-    else if (picked === "client") router.push("/client/setup");
+    else if (picked === "client") router.push("/client/signup");
   };
 
   return (

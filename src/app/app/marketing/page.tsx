@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
   ChevronLeft, ChevronRight, Megaphone, Send, Zap, Star, Gift, Tag, BadgePercent,
@@ -31,12 +33,13 @@ const GROUPS: { title: string; items: Tool[] }[] = [
 ];
 
 export default function MarketingPage() {
+  const router = useRouter();
   return (
     <div className="flex h-full flex-col bg-canvas">
       <div className="flex h-16 items-center px-4">
-        <Link href="/app/hub" aria-label="Back to hub" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-surface">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-surface">
           <ChevronLeft size={22} />
-        </Link>
+        </button>
         <span className="ml-1 text-[17px] font-semibold text-navy">Marketing</span>
       </div>
 

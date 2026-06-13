@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
+import { useOffersStore, offerFromDraft } from "@/lib/store/offersStore";
 
-// Subscription wizard 3/3 — billing. Ported from that-time-app
-// /routes/wizard/SubscriptionBilling.jsx. Create routes to the hub for now.
+// Subscription wizard final step — billing. Creating persists the membership
+// and opens its dashboard.
 
 const PERIODS: SubscriptionDraft["billingPeriod"][] = ["week", "month", "quarter", "year"];
 
@@ -16,13 +18,17 @@ export default function SubscriptionBillingPage() {
   const updateDraft = useWizardStore((s) => s.updateDraft);
   const updateSubscription = useWizardStore((s) => s.updateSubscription);
   const resetDraft = useWizardStore((s) => s.resetDraft);
+  const offers = useOffersStore((s) => s.offers);
+  const addOffer = useOffersStore((s) => s.addOffer);
 
   const canCreate = Boolean(draft.price);
 
   const create = () => {
     if (!canCreate) return;
+    const offer = offerFromDraft(draft, offers);
+    addOffer(offer);
     resetDraft();
-    router.push("/app/hub");
+    router.push(`/app/services/${offer.id}?created=1`);
   };
 
   return (
@@ -69,12 +75,14 @@ export default function SubscriptionBillingPage() {
           </label>
         </div>
       </div>
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button onClick={create} disabled={!canCreate}
-          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white hover:bg-navy/90 disabled:bg-border disabled:text-muted">
-          Create subscription
-        </button>
-      </div>
+      <WizardFooter
+        step={4}
+        total={TOTAL_STEPS.subscription}
+        onBack={() => router.push("/new/subscription-benefits")}
+        onNext={create}
+        nextLabel="Create subscription"
+        disabled={!canCreate}
+      />
     </>
   );
 }

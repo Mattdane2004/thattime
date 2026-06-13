@@ -21,7 +21,7 @@ export default function ClientVerifyPage() {
           loading={verifying}
           onClick={() => {
             setVerifying(true);
-            setTimeout(() => router.push("/client/home"), 800);
+            setTimeout(() => router.push("/client/setup"), 800);
           }}
         >
           Verify

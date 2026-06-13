@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Plus, Trash2, Camera } from "lucide-react";
 
 // Photo gallery — manage an offer's photos. Functional port of the legacy
@@ -10,7 +10,8 @@ import { ChevronLeft, Plus, Trash2, Camera } from "lucide-react";
 
 const TONES = ["bg-canvas", "bg-border/60", "bg-navy/5", "bg-warning/10", "bg-success/10", "bg-danger/5"];
 
-export default function PhotosModulePage({ params }: { params: { id: string } }) {
+export default function PhotosModulePage() {
+  const router = useRouter();
   const [photos, setPhotos] = useState<number[]>([0, 1]);
 
   const add = () => setPhotos((p) => [...p, p.length ? Math.max(...p) + 1 : 0]);
@@ -20,9 +21,9 @@ export default function PhotosModulePage({ params }: { params: { id: string } })
     <div className="flex h-full flex-col bg-surface">
       <div className="flex h-16 items-center justify-between px-5">
         <div className="flex items-center">
-          <Link href={`/app/services/${params.id}`} aria-label="Back to offer" className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+          <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
             <ChevronLeft size={22} />
-          </Link>
+          </button>
           <span className="ml-1 text-[17px] font-semibold text-navy">Photos</span>
         </div>
         <button onClick={add} className="flex h-9 items-center gap-1.5 rounded-full bg-navy px-3.5 text-[13px] font-semibold text-white hover:bg-navy/90">

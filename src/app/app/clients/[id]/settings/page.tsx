@@ -1,0 +1,298 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ChevronLeft, Ban, Trash2 } from "lucide-react";
+import { Sheet, DarkButton, GhostButton } from "@/components/app/ui";
+
+// Client settings & policies — a dedicated page (was a bottom sheet),
+// grouped Apple-Settings style: every rule that applies to this one client,
+// including holding their bookings for manual review and blocking with a
+// recorded reason.
+
+const blockReasons = ["No-shows", "Repeated late cancellations", "Rude or abusive", "Payment issues", "Other"];
+
+function ToggleRow({
+  title,
+  sub,
+  on,
+  onToggle,
+  divider,
+}: {
+  title: string;
+  sub?: string;
+  on: boolean;
+  onToggle: () => void;
+  divider?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left ${divider ? "border-t border-border" : ""}`}
+    >
+      <span className="min-w-0">
+        <span className="block text-[14px] font-medium text-navy">{title}</span>
+        {sub && <span className="block pt-0.5 text-[11px] leading-snug text-muted">{sub}</span>}
+      </span>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? "bg-[#14181F]" : "bg-border"}`}>
+        <motion.span
+          className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow"
+          animate={{ left: on ? 22 : 2 }}
+          transition={{ type: "spring", stiffness: 500, damping: 32 }}
+        />
+      </span>
+    </button>
+  );
+}
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">{children}</div>
+    </div>
+  );
+}
+
+export default function ClientSettingsPage() {
+  const router = useRouter();
+
+  // Booking
+  const [onlineBooking, setOnlineBooking] = useState(true);
+  const [manualReview, setManualReview] = useState(false);
+  const [afterOne, setAfterOne] = useState(true);
+  const [bookDays, setBookDays] = useState<string[]>(["Thu"]);
+  const [policy, setPolicy] = useState("24h notice");
+
+  // Payments
+  const [payPrefs, setPayPrefs] = useState<string[]>(["Card"]);
+  const [deposit, setDeposit] = useState(false);
+
+  // Communication
+  const [marketing, setMarketing] = useState({ email: true, sms: false, confirmations: true });
+
+  // Access
+  const [blocked, setBlocked] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState<string | null>(null);
+  const [blockNote, setBlockNote] = useState("");
+  const [savedReason, setSavedReason] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  return (
+    <div className="min-h-full bg-fog pb-6">
+      <div className="bg-white px-4 pb-4 pt-4">
+        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+        <h1 className="pt-1 text-[24px] font-bold text-navy">Settings & policies</h1>
+        <p className="pt-0.5 text-[13px] text-muted">Only applies to Sarah Johnson</p>
+      </div>
+
+      <div className="flex flex-col gap-5 px-4 pt-4">
+        <Group label="Booking">
+          <ToggleRow
+            title="Allow online booking"
+            sub="Can book through the client app and your booking page"
+            on={onlineBooking}
+            onToggle={() => setOnlineBooking((v) => !v)}
+          />
+          <ToggleRow
+            divider
+            title="Require manual review"
+            sub="Their requests wait for your approval before confirming"
+            on={manualReview}
+            onToggle={() => setManualReview((v) => !v)}
+          />
+          <ToggleRow
+            divider
+            title="Only show slots after 1 PM"
+            sub="Hides morning availability for this client"
+            on={afterOne}
+            onToggle={() => setAfterOne((v) => !v)}
+          />
+          <div className="border-t border-border px-4 py-3.5">
+            <p className="text-[14px] font-medium text-navy">Preferred days</p>
+            <div className="flex flex-wrap gap-2 pt-2.5">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => {
+                const on = bookDays.includes(d);
+                return (
+                  <button
+                    key={d}
+                    onClick={() => setBookDays((x) => (on ? x.filter((y) => y !== d) : [...x, d]))}
+                    className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
+                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    }`}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="border-t border-border px-4 py-3.5">
+            <p className="text-[14px] font-medium text-navy">Cancellation policy</p>
+            <div className="flex gap-2 pt-2.5">
+              {["24h notice", "48h notice", "No fee"].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPolicy(p)}
+                  className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold ${
+                    policy === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Group>
+
+        <Group label="Payments">
+          <div className="px-4 py-3.5">
+            <p className="text-[14px] font-medium text-navy">Payment preferences</p>
+            <div className="flex gap-2 pt-2.5">
+              {["Card", "Cash", "Finance"].map((p) => {
+                const on = payPrefs.includes(p);
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPayPrefs((x) => (on ? x.filter((y) => y !== p) : [...x, p]))}
+                    className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
+                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <ToggleRow
+            divider
+            title="Require a deposit"
+            sub="25% up front on colour and treatments over £100"
+            on={deposit}
+            onToggle={() => setDeposit((v) => !v)}
+          />
+        </Group>
+
+        <Group label="Communication">
+          <ToggleRow
+            title="Booking confirmations & reminders"
+            sub="SMS and email for upcoming appointments"
+            on={marketing.confirmations}
+            onToggle={() => setMarketing((m) => ({ ...m, confirmations: !m.confirmations }))}
+          />
+          <ToggleRow
+            divider
+            title="Email marketing"
+            sub="Campaigns, offers and newsletters"
+            on={marketing.email}
+            onToggle={() => setMarketing((m) => ({ ...m, email: !m.email }))}
+          />
+          <ToggleRow
+            divider
+            title="SMS marketing"
+            sub="Offers by text — reminders stay on"
+            on={marketing.sms}
+            onToggle={() => setMarketing((m) => ({ ...m, sms: !m.sms }))}
+          />
+        </Group>
+
+        <Group label="Access">
+          <button
+            type="button"
+            onClick={() => {
+              if (blocked) {
+                setBlocked(false);
+                setSavedReason(null);
+              } else {
+                setBlockReason(null);
+                setBlockNote("");
+                setBlockOpen(true);
+              }
+            }}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+          >
+            <Ban size={16} strokeWidth={1.8} className="shrink-0 text-secondary" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-medium text-navy">{blocked ? "Unblock client" : "Block client"}</span>
+              <span className="block pt-0.5 text-[11px] text-muted">
+                {blocked ? `Blocked · ${savedReason}` : "Stops all bookings · a reason is recorded for the team"}
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="flex w-full items-center gap-3 border-t border-border px-4 py-3.5 text-left"
+          >
+            <Trash2 size={16} strokeWidth={1.8} className="shrink-0 text-danger" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-medium text-danger">Delete client</span>
+              <span className="block pt-0.5 text-[11px] text-muted">Removes bookings, notes and documents after 30 days</span>
+            </span>
+          </button>
+        </Group>
+      </div>
+
+      {/* Block with a required reason */}
+      <Sheet open={blockOpen} onClose={() => setBlockOpen(false)} title="Block Sarah Johnson?" sub="She won't be able to book until unblocked">
+        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Why is she being blocked?</p>
+        <div className="flex flex-wrap gap-2">
+          {blockReasons.map((r) => (
+            <button
+              key={r}
+              onClick={() => setBlockReason(r)}
+              className={`rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors ${
+                blockReason === r ? "border-danger bg-danger text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        {blockReason === "Other" && (
+          <input
+            autoFocus
+            value={blockNote}
+            onChange={(e) => setBlockNote(e.target.value)}
+            placeholder="Add a short note for the team..."
+            className="mt-3 h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        )}
+        <p className="pt-3 text-[12px] leading-snug text-muted">
+          The reason is kept on the profile so the whole team knows why. Blocking never notifies the client.
+        </p>
+        <div className="pt-4">
+          <DarkButton
+            disabled={!blockReason || (blockReason === "Other" && !blockNote.trim())}
+            onClick={() => {
+              const reason = blockReason === "Other" ? blockNote.trim() : blockReason;
+              setSavedReason(reason);
+              setBlocked(true);
+              setBlockOpen(false);
+            }}
+          >
+            {blockReason ? `Block · ${blockReason === "Other" ? blockNote.trim() || "Other" : blockReason}` : "Pick a reason first"}
+          </DarkButton>
+          <GhostButton className="mt-3" onClick={() => setBlockOpen(false)}>Keep her active</GhostButton>
+        </div>
+      </Sheet>
+
+      {/* Delete confirm */}
+      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Sarah Johnson?">
+        <p className="pb-5 text-[14px] leading-relaxed text-secondary">
+          Her bookings, notes and documents will be removed after 30 days. This can be undone from Settings until then.
+        </p>
+        <DarkButton onClick={() => router.push("/app/clients")}>Delete client</DarkButton>
+        <div className="pt-3">
+          <GhostButton onClick={() => setDeleteOpen(false)}>Keep</GhostButton>
+        </div>
+      </Sheet>
+    </div>
+  );
+}

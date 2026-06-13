@@ -63,3 +63,4 @@ Thumbs.db
 
 # Legacy source app — kept locally as the porting reference, not deployed
 that-time-app/
+.next-preview/

@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore } from "@/lib/store/wizardStore";
+import { useOffersStore, offerFromDraft } from "@/lib/store/offersStore";
 
-// Wizard final step (service path) — "Price & duration". Functional port of the
-// legacy that-time-app /routes/wizard/Price.jsx (service branch). The class /
-// bundle / subscription pricing panels are backlog. Create routes back to the
-// hub as a temporary save endpoint — see PORTING.md.
+// Wizard final step (service path) — "Price & duration" (Figma 12135:44758).
+// Creating persists the offer and opens its dashboard as the success state.
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
@@ -17,13 +17,17 @@ export default function PricePage() {
   const draft = useWizardStore((s) => s.draft);
   const updateDraft = useWizardStore((s) => s.updateDraft);
   const resetDraft = useWizardStore((s) => s.resetDraft);
+  const offers = useOffersStore((s) => s.offers);
+  const addOffer = useOffersStore((s) => s.addOffer);
 
-  const canCreate = Boolean(draft.price && draft.durationMin > 0);
+  const canCreate = Boolean(draft.price && draft.durationMin > 0 && (!draft.depositEnabled || draft.depositAmount));
 
   const create = () => {
     if (!canCreate) return;
+    const offer = offerFromDraft(draft, offers);
+    addOffer(offer);
     resetDraft();
-    router.push("/app/hub");
+    router.push(`/app/services/${offer.id}?created=1`);
   };
 
   const stepDuration = (delta: number) =>
@@ -31,28 +35,25 @@ export default function PricePage() {
 
   return (
     <>
-      <ScreenHeader onBack={() => router.push("/new/staff")} />
+      <ScreenHeader onBack={() => router.push("/new/staff")} rightAction={<span className="text-[13px] text-muted">Help</span>} />
       <div className="flex-1 overflow-y-auto px-5">
-        <div className="pb-10 pt-2">
-          <div className="text-[28px] font-semibold leading-tight tracking-tight text-navy">Price &amp; duration</div>
-          <div className="mt-1 text-[14px] text-muted">How much, how long, and what to charge up front.</div>
-        </div>
+        <WizardTitle title="Price & duration" subtitle="How much, how long, and what to charge up front." />
 
         <div className="space-y-6 pb-6">
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Price (£)</span>
+            <FieldLabel>Price (£)</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
               value={draft.price}
               onChange={(e) => updateDraft({ price: e.target.value })}
               placeholder="35"
-              className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+              className={fieldInput}
             />
           </label>
 
           <div>
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Duration</span>
+            <FieldLabel>Duration</FieldLabel>
             <div className="flex items-center justify-between rounded-xl bg-canvas px-4 py-3">
               <button onClick={() => stepDuration(-15)} aria-label="Less" className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-navy hover:bg-border/40">
                 <Minus size={16} />
@@ -85,36 +86,33 @@ export default function PricePage() {
               <div className="text-[14px] font-medium text-navy">Require a deposit</div>
               <div className="text-[12px] text-muted">Charge part of the price up front</div>
             </div>
-            <span className={`relative h-6 w-10 rounded-full transition-colors ${draft.depositEnabled ? "bg-navy" : "bg-border"}`}>
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-all ${draft.depositEnabled ? "left-[1.125rem]" : "left-0.5"}`} />
-            </span>
+            <Toggle on={draft.depositEnabled} />
           </button>
 
           {draft.depositEnabled && (
             <label className="block">
-              <span className="mb-2 block text-[13px] font-medium text-secondary">Deposit amount (£)</span>
+              <FieldLabel>Deposit amount (£)</FieldLabel>
               <input
                 type="number"
                 inputMode="decimal"
                 value={draft.depositAmount}
                 onChange={(e) => updateDraft({ depositAmount: e.target.value })}
                 placeholder="10"
-                className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+                className={fieldInput}
               />
             </label>
           )}
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button
-          onClick={create}
-          disabled={!canCreate}
-          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white transition-colors hover:bg-navy/90 disabled:bg-border disabled:text-muted"
-        >
-          Create service
-        </button>
-      </div>
+      <WizardFooter
+        step={4}
+        total={TOTAL_STEPS.service}
+        onBack={() => router.push("/new/staff")}
+        onNext={create}
+        nextLabel="Create service"
+        disabled={!canCreate}
+      />
     </>
   );
 }

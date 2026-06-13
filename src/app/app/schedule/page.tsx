@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Coffee, CalendarCog, SlidersHorizontal,
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
-  CalendarDays,
+  CalendarDays, X,
 } from "lucide-react";
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/app/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
@@ -346,28 +346,43 @@ function ClassSheet({
 
   return (
     <>
-    <Sheet
-      open={open}
-      onClose={onClose}
-      full
-      title={
-        <span className="flex items-center gap-2">
-          {m.name}
-          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-navy">Class</span>
-        </span>
-      }
-      sub={m.sub}
-    >
-      <div className="flex items-center justify-between pb-3">
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-navy">
-          <span>{m.time}</span>
-          <span className="text-muted">·</span>
-          <span>{m.staff}</span>
-          <span className="text-muted">·</span>
-          <span>{m.location}</span>
-        </span>
-        <StatusPill tone={cancelled ? "danger" : "light"}>{cancelled ? "Cancelled" : "Scheduled"}</StatusPill>
-      </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="class-page"
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", stiffness: 380, damping: 38 }}
+          className="absolute inset-0 z-[80] flex flex-col bg-fog"
+        >
+          {/* ── Header: what the class is and where it stands ── */}
+          <div className="shrink-0 bg-white px-4 pb-4 pt-4">
+            <div className="flex items-start justify-between">
+              <span className="min-w-0">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-[18px] font-bold text-navy">{m.name}</span>
+                  <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-navy">Class</span>
+                </span>
+                <span className="block pt-0.5 text-[12px] text-muted">{m.sub}</span>
+              </span>
+              <button type="button" aria-label="Close class" onClick={onClose} className="-mr-1 p-2 text-navy">
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between pt-3">
+              <span className="flex items-center gap-2 text-[13px] font-semibold text-navy">
+                <span>{m.time}</span>
+                <span className="text-muted">·</span>
+                <span>{m.staff}</span>
+                <span className="text-muted">·</span>
+                <span>{m.location}</span>
+              </span>
+              <StatusPill tone={cancelled ? "danger" : "light"}>{cancelled ? "Cancelled" : "Scheduled"}</StatusPill>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
 
       <div className="h-2 overflow-hidden rounded-full bg-canvas">
         <motion.div
@@ -457,7 +472,7 @@ function ClassSheet({
             whileTap={{ scale: 0.96 }}
             onClick={a.run}
             disabled={cancelled && a.label !== "Message all"}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-canvas px-2 py-4 text-[12px] font-medium text-navy disabled:opacity-40"
+            className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)] disabled:opacity-40"
           >
             {a.icon}
             {a.label}
@@ -468,7 +483,7 @@ function ClassSheet({
       <p className="flex items-center gap-1.5 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
         <ListChecks size={12} /> Agenda
       </p>
-      <div className="overflow-hidden rounded-2xl border border-border">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
         {m.agenda.map((step, i) => (
           <div key={step} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
@@ -478,18 +493,22 @@ function ClassSheet({
           </div>
         ))}
       </div>
-      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-canvas px-4 py-3.5 text-[12px] leading-snug text-secondary">
+      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3.5 text-[12px] leading-snug text-secondary shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
         <Wrench size={13} className="mt-0.5 shrink-0" strokeWidth={1.75} />
         {m.note}
       </p>
 
-      <div className="sticky bottom-0 -mx-6 mt-4 bg-white px-6 pb-1 pt-3">
-        <DarkButton onClick={cancelled ? undefined : onClose} disabled={cancelled}>
-          {!cancelled && <Play size={15} />}
-          {cancelled ? "Class cancelled" : "Start class"}
-        </DarkButton>
-      </div>
-    </Sheet>
+          </div>
+
+          <div className="shrink-0 border-t border-border bg-white px-5 pb-6 pt-3">
+            <DarkButton onClick={cancelled ? undefined : onClose} disabled={cancelled}>
+              {!cancelled && <Play size={15} />}
+              {cancelled ? "Class cancelled" : "Start class"}
+            </DarkButton>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     {/* Add attendee */}
     <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Add attendee" sub={`${m.capacity - booked} seats left`}>

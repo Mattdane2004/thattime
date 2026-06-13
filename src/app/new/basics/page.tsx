@@ -1,21 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Scissors, Users, Package, Repeat } from "lucide-react";
 import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/app/WizardChrome";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
 import type { OfferType } from "@/lib/types";
 
-// Wizard step 1 — "The basics" (name + category). Functional port of the legacy
-// that-time-app /routes/wizard/Basics.jsx. The icon picker, class-visibility
-// controls, and the later wizard steps (locations, staff, price…) are backlog;
-// Continue routes to the hub as a temporary completion. See PORTING.md.
+// Wizard step 1 — "The basics" (Figma 12135:45389): icon, name, category,
+// description. Branches into the type-specific step sequence.
 
-const HINTS: Record<OfferType, { title: string; hint: string; placeholder: string }> = {
-  service: { title: "service", hint: "Give this service a name and a category.", placeholder: "e.g. Classic haircut" },
-  class: { title: "course", hint: "Give this course or training session a name and category.", placeholder: "e.g. Lip filler foundation course" },
-  bundle: { title: "bundle", hint: "Give this bundle a name and a category.", placeholder: "e.g. Cut + colour package" },
-  subscription: { title: "membership", hint: "Give this membership a name and a category.", placeholder: "e.g. Monthly cuts membership" },
+const HINTS: Record<OfferType, { hint: string; placeholder: string }> = {
+  service: { hint: "Give this service a name and a category.", placeholder: "e.g. Classic haircut" },
+  class: { hint: "Give this class or course a name and a category.", placeholder: "e.g. Beginner yoga" },
+  bundle: { hint: "Give this bundle a name and a category.", placeholder: "e.g. Cut + colour package" },
+  subscription: { hint: "Give this membership a name and a category.", placeholder: "e.g. Monthly cuts membership" },
+};
+
+const TYPE_ICON: Record<OfferType, typeof Scissors> = {
+  service: Scissors, class: Users, bundle: Package, subscription: Repeat,
 };
 
 export default function BasicsPage() {
@@ -23,41 +27,52 @@ export default function BasicsPage() {
   const draft = useWizardStore((s) => s.draft);
   const updateDraft = useWizardStore((s) => s.updateDraft);
 
-  const meta = HINTS[draft.type ?? "service"];
+  const type = draft.type ?? "service";
+  const meta = HINTS[type];
+  const Icon = TYPE_ICON[type];
+  const selectedCat = defaultCategories.find((c) => c.name === draft.category);
   const canContinue = Boolean(draft.name.trim() && draft.category);
 
   const onContinue = () => {
     if (!canContinue) return;
-    // Branch by offer type. (class/bundle still route the service path for now
-    // — see PORTING.md.)
-    if (draft.type === "subscription") router.push("/new/subscription-type");
-    else if (draft.type === "bundle") router.push("/new/bundle-services");
-    else if (draft.type === "class") router.push("/new/class-participants");
+    if (type === "subscription") router.push("/new/subscription-type");
+    else if (type === "bundle") router.push("/new/bundle-services");
+    else if (type === "class") router.push("/new/class-participants");
     else router.push("/new/locations");
   };
 
   return (
     <>
-      <ScreenHeader onBack={() => router.push("/new")} />
+      <ScreenHeader onClose={() => router.push("/app/hub")} rightAction={<span className="text-[13px] text-muted">Help</span>} />
       <div className="flex-1 overflow-y-auto px-5">
-        <div className="pb-6 pt-2">
-          <div className="text-[26px] font-semibold leading-tight tracking-tight text-navy">The basics</div>
-          <div className="mt-1 text-[14px] text-muted">{meta.hint}</div>
-        </div>
+        <WizardTitle title="The basics" subtitle={meta.hint} />
 
-        <div className="space-y-6 pb-6">
+        <div className="space-y-5 pb-6">
+          <div>
+            <FieldLabel>Icon</FieldLabel>
+            <div className="flex items-center gap-4">
+              <span
+                className="flex h-14 w-14 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: tintFromHex(selectedCat?.color ?? "#9CA3AF", 0.16) }}
+              >
+                <Icon size={22} style={{ color: selectedCat?.color ?? "#6B7280" }} strokeWidth={1.75} />
+              </span>
+              <span className="text-[13px] text-muted">Icon follows the category colour</span>
+            </div>
+          </div>
+
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Name</span>
+            <FieldLabel>Name</FieldLabel>
             <input
               value={draft.name}
               onChange={(e) => updateDraft({ name: e.target.value })}
               placeholder={meta.placeholder}
-              className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+              className={fieldInput}
             />
           </label>
 
           <div>
-            <span className="mb-2 block text-[13px] font-medium text-secondary">Category</span>
+            <FieldLabel>Category</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {defaultCategories.map((cat) => {
                 const selected = draft.category === cat.name;
@@ -77,18 +92,27 @@ export default function BasicsPage() {
               })}
             </div>
           </div>
+
+          <label className="block">
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              value={draft.description}
+              onChange={(e) => updateDraft({ description: e.target.value })}
+              placeholder="Short description shown to clients"
+              rows={4}
+              className="w-full resize-none rounded-xl bg-canvas px-4 py-3 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+            />
+          </label>
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-border px-5 py-4">
-        <button
-          onClick={onContinue}
-          disabled={!canContinue}
-          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white transition-colors hover:bg-navy/90 disabled:bg-border disabled:text-muted"
-        >
-          Continue
-        </button>
-      </div>
+      <WizardFooter
+        step={1}
+        total={TOTAL_STEPS[type]}
+        onBack={() => router.push("/new/type")}
+        onNext={onContinue}
+        disabled={!canContinue}
+      />
     </>
   );
 }
