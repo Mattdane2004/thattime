@@ -130,6 +130,7 @@ function CalendarBlock({
   const icon = isBreak ? <Coffee size={10} className="mr-1 inline shrink-0" />
     : isBlocked ? <Lock size={10} className="mr-1 inline shrink-0" />
       : isBundle ? <Layers size={10} className="mr-1 inline shrink-0" /> : null;
+  const attention = !!status && isAttentionStatus(status);
 
   return (
     <motion.button
@@ -142,20 +143,20 @@ function CalendarBlock({
       style={{ top, height: heightPx }}
     >
       {showAccent && <span className="absolute inset-y-1 left-1 w-[3px] rounded-full" style={{ background: accent }} />}
+      {/* Status is noise when it's the expected "Confirmed" — only ever flag the
+          exceptions, and as a corner dot so it never steals the name's width. */}
+      {attention && (
+        <span
+          className={`absolute right-1.5 top-1.5 h-2 w-2 rounded-full ${status === "Unconfirmed" ? "bg-warning" : "bg-danger"}`}
+          title={status}
+        />
+      )}
       <div className={showAccent ? "pl-2.5" : ""}>
-        {status && d === "minimal" && isAttentionStatus(status) && (
-          <span className={`float-right mt-0.5 h-1.5 w-1.5 rounded-full ${status === "Unconfirmed" ? "bg-warning" : "bg-danger"}`} />
+        <p className={`truncate text-[11px] font-bold leading-tight ${attention ? "pr-3" : ""}`}>{icon}{block.name}</p>
+        {d !== "minimal" && block.service && heightPx > 40 && (
+          <p className="truncate pt-0.5 text-[10px] leading-tight opacity-75">{block.service}</p>
         )}
-        {status && d !== "minimal" && (
-          <span className="float-right ml-1">
-            <StatusPill tone={shade === "dark" ? "dark" : isAttentionStatus(status) ? "danger" : "light"}>{status}</StatusPill>
-          </span>
-        )}
-        <p className="truncate text-[11px] font-bold leading-tight">{icon}{block.name}</p>
-        {d !== "minimal" && block.service && heightPx > 46 && (
-          <p className="truncate text-[10px] opacity-75">{block.service}</p>
-        )}
-        {d === "full" && block.price && <p className="pt-0.5 text-[9px] opacity-60">{block.price}</p>}
+        {d === "full" && block.price && <p className="truncate pt-0.5 text-[9px] opacity-60">{block.price}</p>}
       </div>
     </motion.button>
   );
