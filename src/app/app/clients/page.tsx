@@ -8,7 +8,7 @@ import {
   MoreVertical, Upload, Merge, FileSpreadsheet, FileText, CheckSquare, Check,
   Ban, Tag as TagIcon, Trash2,
 } from "lucide-react";
-import { AppHeader, Sheet, DarkButton, GhostButton } from "@/components/ui";
+import { AppHeader, Sheet, DarkButton, GhostButton, Tag } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { clientRows } from "@/lib/data/product";
 
@@ -21,19 +21,6 @@ const sortOptions = ["Recent booking", "Name A–Z", "Rating"];
 const filterTags = ["All", "Regular", "VIP", "New", "Allergy", "Blocked", "Inactive"];
 const assignableTags = ["VIP", "Regular", "New", "Inactive"];
 const blockReasons = ["No-shows", "Repeated late cancellations", "Rude or abusive", "Payment issues", "Other"];
-
-function Tag({ label }: { label: string }) {
-  const dark = label === "Allergy" || label === "Blocked";
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-        dark ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
 
 type Row = (typeof clientRows)[number];
 
@@ -218,7 +205,7 @@ export default function ClientsPage() {
                   {c.tags.length > 0 && (
                     <span className="mt-1.5 flex gap-1.5">
                       {c.tags.map((t) => (
-                        <Tag key={t} label={t} />
+                        <Tag key={t} label={t} emphasis={t === "Allergy" || t === "Blocked"} />
                       ))}
                     </span>
                   )}

@@ -20,6 +20,7 @@ export { CheckCircle } from "./atoms/CheckCircle";
 // look-and-feel is settled; these are what the screens render today).
 export { PrimaryButton, DarkButton, GhostButton } from "./atoms/PrimaryButton";
 export { StatusPill } from "./atoms/StatusPill";
+export { Tag, type TagProps } from "./atoms/Tag";
 
 // ── molecules ──
 export { Card, cardVariants, type CardProps } from "./molecules/Card";
@@ -40,6 +41,9 @@ export { Sheet, BottomSheet, PermissionDialog } from "./molecules/Overlays";
 export { Segmented } from "./molecules/Segmented";
 export { PasswordField } from "./molecules/PasswordField";
 export { MiniCalendar, TimeChips, timeSlots } from "./molecules/MiniCalendar";
+export { ToggleRow, type ToggleRowProps } from "./molecules/ToggleRow";
+export { SettingsGroup } from "./molecules/SettingsGroup";
+export { StarRating, type StarRatingProps } from "./molecules/StarRating";
 
 // ── onboarding/form molecules (ported from onboarding2/controls; identical APIs) ──
 export { PhoneInput, inputClass } from "./molecules/PhoneInput";

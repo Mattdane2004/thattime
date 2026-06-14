@@ -3,22 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronLeft, Star, Send, Check } from "lucide-react";
-import { Sheet, DarkButton } from "@/components/ui";
+import { ChevronLeft, Send, Check } from "lucide-react";
+import { Sheet, DarkButton, StarRating } from "@/components/ui";
 import { clientReviews } from "@/lib/data/product";
 
 // Client reviews — a dedicated page (was a bottom sheet). Summary up top,
 // replies inline, ask-for-review one tap away.
-
-function Stars({ n, size = 13 }: { n: number; size?: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} size={size} className={i <= n ? "fill-navy text-navy" : "text-border"} />
-      ))}
-    </span>
-  );
-}
 
 export default function ClientReviewsPage() {
   const router = useRouter();
@@ -46,7 +36,7 @@ export default function ClientReviewsPage() {
         <div className="flex items-center gap-5 rounded-3xl bg-white p-5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
           <span>
             <span className="block text-[34px] font-bold leading-none text-navy">4.7</span>
-            <span className="block pt-1.5"><Stars n={5} size={12} /></span>
+            <span className="block pt-1.5"><StarRating value={5} size={12} /></span>
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-semibold text-navy">3 reviews</span>
@@ -67,7 +57,7 @@ export default function ClientReviewsPage() {
           {clientReviews.map((r) => (
             <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
               <div className="flex items-center gap-2.5">
-                <Stars n={r.stars} />
+                <StarRating value={r.stars} />
                 <span className="text-[11px] text-muted">{r.date}</span>
               </div>
               <p className="pt-2 text-[14px] leading-snug text-navy">{r.text}</p>

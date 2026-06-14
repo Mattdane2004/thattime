@@ -55,7 +55,7 @@ import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -326,6 +326,12 @@ check("TimeChips renders slots", h(React.createElement(TimeChips, { value: null,
 check("PasswordField renders hint", h(React.createElement(PasswordField, { value: "", onChange: () => {} })).includes("characters"));
 check("AppHeader renders title", h(React.createElement(AppHeader, { title: "Schedule" })).includes("Schedule"));
 check("SectionLabel renders heading", h(React.createElement(SectionLabel, { children: "Team Today", count: 4 })).includes("Team Today"));
+check("Tag emphasis uses ink", h(React.createElement(Tag, { label: "Allergy", emphasis: true })).includes("bg-fg-primary"));
+check("Tag default is quiet", h(React.createElement(Tag, { label: "Regular" })).includes("bg-canvas"));
+check("ToggleRow ink on", h(React.createElement(ToggleRow, { title: "Online booking", on: true, onToggle: () => {} })).includes("bg-fg-primary"));
+check("ToggleRow coral on", h(React.createElement(ToggleRow, { title: "Push", tone: "coral", on: true, onToggle: () => {} })).includes("bg-coral"));
+check("SettingsGroup renders label", h(React.createElement(SettingsGroup, { label: "Booking", children: "x" })).includes("Booking"));
+check("StarRating renders 5 stars", (() => { const s = h(React.createElement(StarRating, { value: 3 })); return (s.match(/lucide-star/g) || []).length === 5; })());
 
 // 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
 check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));

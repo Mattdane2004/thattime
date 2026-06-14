@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ChevronLeft, Ban, Trash2 } from "lucide-react";
-import { Sheet, DarkButton, GhostButton } from "@/components/ui";
+import { Sheet, DarkButton, GhostButton, ToggleRow, SettingsGroup } from "@/components/ui";
 
 // Client settings & policies — a dedicated page (was a bottom sheet),
 // grouped Apple-Settings style: every rule that applies to this one client,
@@ -12,49 +11,6 @@ import { Sheet, DarkButton, GhostButton } from "@/components/ui";
 // recorded reason.
 
 const blockReasons = ["No-shows", "Repeated late cancellations", "Rude or abusive", "Payment issues", "Other"];
-
-function ToggleRow({
-  title,
-  sub,
-  on,
-  onToggle,
-  divider,
-}: {
-  title: string;
-  sub?: string;
-  on: boolean;
-  onToggle: () => void;
-  divider?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left ${divider ? "border-t border-border" : ""}`}
-    >
-      <span className="min-w-0">
-        <span className="block text-[14px] font-medium text-navy">{title}</span>
-        {sub && <span className="block pt-0.5 text-[11px] leading-snug text-muted">{sub}</span>}
-      </span>
-      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? "bg-fg-primary" : "bg-border"}`}>
-        <motion.span
-          className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow"
-          animate={{ left: on ? 22 : 2 }}
-          transition={{ type: "spring", stiffness: 500, damping: 32 }}
-        />
-      </span>
-    </button>
-  );
-}
-
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">{children}</div>
-    </div>
-  );
-}
 
 export default function ClientSettingsPage() {
   const router = useRouter();
@@ -92,7 +48,7 @@ export default function ClientSettingsPage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4 pt-4">
-        <Group label="Booking">
+        <SettingsGroup label="Booking">
           <ToggleRow
             title="Allow online booking"
             sub="Can book through the client app and your booking page"
@@ -148,9 +104,9 @@ export default function ClientSettingsPage() {
               ))}
             </div>
           </div>
-        </Group>
+        </SettingsGroup>
 
-        <Group label="Payments">
+        <SettingsGroup label="Payments">
           <div className="px-4 py-3.5">
             <p className="text-[14px] font-medium text-navy">Payment preferences</p>
             <div className="flex gap-2 pt-2.5">
@@ -177,9 +133,9 @@ export default function ClientSettingsPage() {
             on={deposit}
             onToggle={() => setDeposit((v) => !v)}
           />
-        </Group>
+        </SettingsGroup>
 
-        <Group label="Communication">
+        <SettingsGroup label="Communication">
           <ToggleRow
             title="Booking confirmations & reminders"
             sub="SMS and email for upcoming appointments"
@@ -200,9 +156,9 @@ export default function ClientSettingsPage() {
             on={marketing.sms}
             onToggle={() => setMarketing((m) => ({ ...m, sms: !m.sms }))}
           />
-        </Group>
+        </SettingsGroup>
 
-        <Group label="Access">
+        <SettingsGroup label="Access">
           <button
             type="button"
             onClick={() => {
@@ -236,7 +192,7 @@ export default function ClientSettingsPage() {
               <span className="block pt-0.5 text-[11px] text-muted">Removes bookings, notes and documents after 30 days</span>
             </span>
           </button>
-        </Group>
+        </SettingsGroup>
       </div>
 
       {/* Block with a required reason */}
