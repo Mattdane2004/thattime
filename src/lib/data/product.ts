@@ -220,6 +220,40 @@ export const clientNotes: Record<string, { allergies?: string[]; formNote?: stri
   "Emily Davis": { formNote: "Aftercare form not sent" },
 };
 
+// Contact details surfaced on the booking page client card (quick call/text).
+export const clientContacts: Record<string, { phone: string; email?: string }> = {
+  "Sarah Johnson": { phone: "(555) 234-5678", email: "sarah.j@email.com" },
+  "Emily Davis": { phone: "(555) 102-4471", email: "emily.d@email.com" },
+  "Jessica Brown": { phone: "(555) 778-1290" },
+  "Amanda White": { phone: "(555) 332-0091" },
+  "Michael Chen": { phone: "(555) 640-2210" },
+  "Lisa Anderson": { phone: "(555) 419-7733" },
+};
+export const contactFor = (name: string) =>
+  clientContacts[name] ?? { phone: "(555) 000-0000" };
+
+// Tag presets offered when tagging a client from the booking page.
+export const tagPresets = [
+  "VIP", "Regular", "New client", "Sensitive", "Allergy", "Deposit required",
+  "No-show risk", "Loyalty member", "Student", "Senior", "Referral", "Walk-in",
+  "Colour client", "Patch test due",
+];
+
+// Form templates that can be attached to a booking, grouped for filtering.
+export const formCategories = ["All", "Consultation", "Medical", "Consent", "Intake", "Aftercare"] as const;
+export const formTemplates: { name: string; category: string }[] = [
+  { name: "Consultation form", category: "Consultation" },
+  { name: "Allergy questionnaire", category: "Medical" },
+  { name: "Medical history", category: "Medical" },
+  { name: "Patch test consent", category: "Consent" },
+  { name: "Photo & marketing consent", category: "Consent" },
+  { name: "GDPR consent", category: "Consent" },
+  { name: "Minor consent form", category: "Consent" },
+  { name: "Pre-appointment checklist", category: "Intake" },
+  { name: "New client intake", category: "Intake" },
+  { name: "Aftercare instructions", category: "Aftercare" },
+];
+
 // Templates for scheduling a class from the calendar.
 export const classTemplates = [
   { id: "colour-mc", emoji: "🎨", name: "Colour Masterclass", sub: "90m · £65 per seat · 8 seats" },

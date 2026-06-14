@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Calendar, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock,
-  CreditCard, EyeOff, FileText, MapPin, MessageSquare, Play, Plus, Repeat,
-  RotateCcw, Search, StickyNote, UserRound, X, AlertTriangle, Bell, Camera,
-  Image as ImageIcon,
+  Calendar, Camera, Check, CheckCircle2, ChevronRight, Clock, CreditCard,
+  FileText, Image as ImageIcon, MapPin, MessageSquare, Phone, Play, Plus,
+  Repeat, RotateCcw, Search, ShieldCheck, StickyNote, UserRound, Users, X,
+  AlertTriangle, Bell, Flag, Tag as TagIcon,
 } from "lucide-react";
-import { Sheet, DarkButton, MiniCalendar, TimeChips, StatusPill, GhostButton } from "@/components/ui";
+import {
+  Sheet, DarkButton, GhostButton, Avatar, MiniCalendar, TimeChips, StatusPill,
+} from "@/components/ui";
 import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
-import { clientNotes, services, serviceCategories } from "@/lib/data/product";
+import {
+  clientNotes, clientRows, contactFor, formCategories, formTemplates, services,
+  serviceCategories, tagPresets,
+} from "@/lib/data/product";
 import { defaultCategories } from "@/lib/tokens/categories";
 
-// The booking lifecycle reads as a row of steps — tap to move it along.
+// The booking lifecycle reads as a progress timeline — tap a step to move it along.
 const lifecycle: { label: string; live: ApptStatus }[] = [
   { label: "Upcoming", live: "upcoming" },
   { label: "Arrived", live: "arrived" },
@@ -28,19 +33,26 @@ const CAT_ALIAS: Record<string, string> = { Cuts: "Hair", Styling: "Hair", Barbe
 const catColor = (cat?: string) =>
   defaultCategories.find((c) => c.name === (CAT_ALIAS[cat ?? ""] ?? cat))?.color ?? "#080706";
 
+const initialsOf = (name: string) =>
+  name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+
 interface BookingNote {
   date: string;
   note: string;
   imgs: number;
+  kind: "note" | "alert";
 }
+
+type ManageMode = "allergy" | "staffnote" | "patch" | "tag" | "change" | null;
 
 /**
  * Booking page — a full-page takeover opened from any appointment card,
- * agenda row or calendar block via `setApptSheet`. Identity and safety sit
- * in the header, the lifecycle is a tappable step row, the body is one idea
- * per card (when/where, actions, services, forms, notes), and money plus
- * quick actions stay fixed at the bottom. Save only appears once something
- * was actually changed.
+ * agenda row or calendar block via `setApptSheet`. The service is the title,
+ * the lifecycle is a tappable progress timeline, a client card carries identity
+ * + quick contact + profile edits, and the body is one idea per card
+ * (when/where, services, forms, notes). Money + the lifecycle action stay fixed
+ * at the bottom. Every sub-flow (change/add service, reschedule, cancel, note,
+ * form, manage client) is a frame-scoped bottom sheet over the details page.
  */
 export function AppointmentSheetHost() {
   const router = useRouter();
@@ -52,45 +64,76 @@ export function AppointmentSheetHost() {
   // navigate without closing — the sheet hides while the path differs and
   // restores, state intact, when the user backs out to where they started.
   const [homePath, setHomePath] = useState<string | null>(null);
-  const [view, setView] = useState<"details" | "reschedule" | "cancel" | "note" | "picker">("details");
   const [localMoved, setLocalMoved] = useState<string | null>(null);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
-  const [reminded, setReminded] = useState(false);
   const [localStatus, setLocalStatus] = useState<string | null>(null);
   const [svcOverride, setSvcOverride] = useState<string | null>(null);
   const [extras, setExtras] = useState<string[]>([]);
-  const [pick, setPick] = useState<"change" | "add">("add");
-  const [svcQuery, setSvcQuery] = useState("");
-  const [svcCat, setSvcCat] = useState("All");
-  const [actionsSheet, setActionsSheet] = useState(false);
   // Save only shows after an actual edit this session.
   const [dirty, setDirty] = useState(false);
   // Notes & photos attached to this booking (saved to the client record).
   const [bookingNotes, setBookingNotes] = useState<BookingNote[]>([]);
   const [noteDraft, setNoteDraft] = useState("");
   const [notePhotos, setNotePhotos] = useState(0);
+  // Profile edits made from the booking page.
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageMode, setManageMode] = useState<ManageMode>(null);
+  const [manageDraft, setManageDraft] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [tagQuery, setTagQuery] = useState("");
+  const [localAllergies, setLocalAllergies] = useState<string[]>([]);
+  const [localTags, setLocalTags] = useState<string[]>([]);
+  const [patchTest, setPatchTest] = useState<string | null>(null);
+  const [clientOverride, setClientOverride] = useState<{ name: string; initials: string } | null>(null);
+  // Forms attached to this booking.
+  const [localForms, setLocalForms] = useState<string[]>([]);
+  const [reminded, setReminded] = useState<string[]>([]);
+  // Bottom sheets.
+  const [serviceSheet, setServiceSheet] = useState<null | "add" | "change">(null);
+  const [svcQuery, setSvcQuery] = useState("");
+  const [svcCat, setSvcCat] = useState("All");
+  const [rescheduleSheet, setRescheduleSheet] = useState(false);
+  const [cancelSheet, setCancelSheet] = useState(false);
+  const [noteSheet, setNoteSheet] = useState(false);
+  const [formSheet, setFormSheet] = useState(false);
+  const [formQuery, setFormQuery] = useState("");
+  const [formCat, setFormCat] = useState("All");
 
   const open = apptSheet !== null;
   useEffect(() => {
     if (open) {
       setHomePath(window.location.pathname);
-      setView("details");
       setLocalMoved(null);
       setDay(null);
       setTime(null);
-      setReminded(false);
       setLocalStatus(null);
       setSvcOverride(null);
       setExtras([]);
-      setPick("add");
-      setSvcQuery("");
-      setSvcCat("All");
-      setActionsSheet(false);
       setDirty(false);
       setBookingNotes([]);
       setNoteDraft("");
       setNotePhotos(0);
+      setManageOpen(false);
+      setManageMode(null);
+      setManageDraft("");
+      setClientQuery("");
+      setTagQuery("");
+      setLocalAllergies([]);
+      setLocalTags([]);
+      setPatchTest(null);
+      setClientOverride(null);
+      setLocalForms([]);
+      setReminded([]);
+      setServiceSheet(null);
+      setSvcQuery("");
+      setSvcCat("All");
+      setRescheduleSheet(false);
+      setCancelSheet(false);
+      setNoteSheet(false);
+      setFormSheet(false);
+      setFormQuery("");
+      setFormCat("All");
     }
   }, [open]);
 
@@ -107,6 +150,7 @@ export function AppointmentSheetHost() {
       : apptStatus === "in-progress" ? "In progress"
       : "Done"
     : localStatus ?? (a.status === "Confirmed" ? "Upcoming" : a.status ?? "Upcoming");
+  const phaseIdx = lifecycle.findIndex((s) => s.label === status);
 
   // Edited booking: service can be swapped and extras added on the fly.
   const svcName = svcOverride ?? a.service;
@@ -115,31 +159,58 @@ export function AppointmentSheetHost() {
   const basePrice = svcOverride ? priceOf(svcOverride) : a.price ?? priceOf(a.service);
   const totalPrice = basePrice + extras.reduce((sum, e) => sum + priceOf(e), 0);
 
-  const firstName = a.client.split(" ")[0];
+  // Client identity (can be swapped from the booking page).
+  const clientName = clientOverride?.name ?? a.client;
+  const clientInitials = clientOverride?.initials ?? a.initials;
+  const firstName = clientName.split(" ")[0];
   const slug = firstName.toLowerCase();
-  const notes = clientNotes[a.client];
+  const contact = contactFor(clientName);
+  const notes = clientNotes[clientName];
+  const allergies = [...(notes?.allergies ?? []), ...localAllergies];
+  const tags = [...(clientOverride ? [] : a.tags ?? []), ...localTags];
 
-  const liveAction =
-    a.live && apptStatus === "upcoming"
-      ? { label: "Check In", icon: <CheckCircle2 size={15} />, run: () => setApptStatus("arrived") }
-      : a.live && apptStatus === "arrived"
-        ? { label: "Start service", icon: <Play size={14} />, run: () => setApptStatus("in-progress") }
-        : a.live && apptStatus === "in-progress"
-          ? { label: "Checkout", icon: <CreditCard size={15} />, run: () => { close(); router.push("/app/checkout"); } }
+  // Forms on this booking: the seeded consultation form + anything added.
+  const forms: { name: string; sub: string }[] = [
+    ...(notes?.formNote ? [{ name: "Consultation form", sub: "Not completed yet" }] : []),
+    ...localForms.map((name) => ({ name, sub: "Just added · not completed" })),
+  ];
+
+  const markStatus = (live: ApptStatus, label: string) => {
+    if (a.live) setApptStatus(live);
+    setLocalStatus(label);
+  };
+
+  // Bottom-bar lifecycle action keyed to the displayed phase (works whether or
+  // not the booking is tied to the live Up Next queue).
+  const lifeAction =
+    status === "Upcoming"
+      ? { label: "Check In", icon: <CheckCircle2 size={16} strokeWidth={2} />, run: () => markStatus("arrived", "Arrived") }
+      : status === "Arrived"
+        ? { label: "Start service", icon: <Play size={15} strokeWidth={2} />, run: () => markStatus("in-progress", "In progress") }
+        : status === "In progress"
+          ? { label: "Mark done", icon: <Check size={16} strokeWidth={2.5} />, run: () => markStatus("done", "Done") }
           : null;
 
-  const headerLabel =
-    view === "reschedule" ? "Reschedule"
-      : view === "picker" ? (pick === "change" ? "Change service" : "Add a service")
-        : view === "note" ? "Add note & photos"
-          : "Cancel appointment";
+  const goPay = () => { close(); router.push("/app/checkout"); };
+
+  const openService = (mode: "add" | "change") => { setSvcQuery(""); setSvcCat("All"); setServiceSheet(mode); };
+  const openManage = (mode: ManageMode) => { setManageOpen(false); setManageDraft(""); setClientQuery(""); setTagQuery(""); setManageMode(mode); };
+
+  // Tag picker: presets plus any already on the booking, searchable.
+  const tagOptions = Array.from(new Set([...tagPresets, ...tags]));
+  const tagMatches = tagOptions.filter((t) => t.toLowerCase().includes(tagQuery.trim().toLowerCase()));
+  const canCreateTag = tagQuery.trim().length > 0 && !tagOptions.some((t) => t.toLowerCase() === tagQuery.trim().toLowerCase());
+  const toggleTag = (t: string) => {
+    if (tags.includes(t) && !localTags.includes(t)) return; // original tag, can't remove
+    setLocalTags((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
+  };
 
   const ServiceRow = ({ name, price, removable }: { name: string; price: number; removable?: boolean }) => (
-    <div className="flex items-stretch gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+    <div className="flex items-stretch gap-3.5 rounded-2xl bg-white p-4 shadow-sm">
       <span className="w-1 shrink-0 rounded-full" style={{ background: catColor(findSvc(name)?.category) }} />
       <button
         type="button"
-        onClick={() => { setSvcQuery(""); setSvcCat("All"); setPick("change"); setView("picker"); }}
+        onClick={() => openService("change")}
         className="min-w-0 flex-1 text-left"
         disabled={removable}
       >
@@ -164,6 +235,22 @@ export function AppointmentSheetHost() {
     </div>
   );
 
+  const SectionHeader = ({ title, onAdd, addLabel }: { title: string; onAdd?: () => void; addLabel?: string }) => (
+    <div className="flex items-center justify-between px-1 pb-2.5 pt-6">
+      <p className="text-[16px] font-bold text-navy">{title}</p>
+      {onAdd && (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[12px] font-semibold text-navy shadow-sm"
+        >
+          <Plus size={13} strokeWidth={2.5} />
+          {addLabel ?? "Add"}
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <motion.div
       key="appt-page"
@@ -172,442 +259,692 @@ export function AppointmentSheetHost() {
       transition={{ type: "spring", stiffness: 380, damping: 38 }}
       className="absolute inset-0 z-[80] flex flex-col bg-fog"
     >
-      {view === "details" ? (
-        <>
-          {/* ── Header: who, when, and where the booking stands ── */}
-          <div className="shrink-0 bg-white px-4 pb-4 pt-4">
-            <div className="flex items-start justify-between">
-              <span className="flex min-w-0 items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-canvas text-[14px] font-bold text-secondary">
-                  {a.initials}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[18px] font-bold text-navy">{a.client}</span>
-                  <span className="block pt-0.5 text-[12px] text-muted">
-                    {moved ?? `Wed 4 Mar · ${a.time}`}
-                    {moved && <StatusPill tone="amber"> moved</StatusPill>}
-                  </span>
-                </span>
-              </span>
-              <button type="button" aria-label="Close booking" onClick={close} className="-mr-1 p-2 text-navy">
-                <X size={20} strokeWidth={2} />
-              </button>
-            </div>
-            {notes?.allergies && (
-              <p className="flex items-center gap-2 pt-3 text-[12px] font-medium text-navy">
-                <AlertTriangle size={13} strokeWidth={2} className="shrink-0 text-danger" />
-                {notes.allergies.join(" · ")}
-              </p>
-            )}
-            {/* Lifecycle as a tappable step row — no dropdowns, no sheets */}
-            <div className="flex gap-1.5 pt-3.5">
-              {lifecycle.map((s) => {
-                const active = status === s.label;
+      {/* ── Header: the service, when, and the lifecycle timeline ── */}
+      <div className="shrink-0 bg-white px-4 pb-4 pt-4">
+        <div className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block truncate text-[20px] font-bold text-navy">{svcName}</span>
+            <span className="flex items-center gap-2 pt-0.5 text-[12px] text-muted">
+              {moved ?? `Wed 10 Jun · ${a.time}`}
+              {moved && <StatusPill tone="amber">moved</StatusPill>}
+            </span>
+          </span>
+          <button type="button" aria-label="Close booking" onClick={close} className="-mr-1 -mt-1 p-2 text-navy">
+            <X size={20} strokeWidth={2} />
+          </button>
+        </div>
+
+        {/* Lifecycle as a tappable progress timeline */}
+        {status === "No-show" ? (
+          <div className="flex items-center gap-2 pt-4 text-[13px] font-semibold text-danger">
+            <AlertTriangle size={15} strokeWidth={2} /> Marked as no-show
+          </div>
+        ) : (
+          <div className="relative pt-5">
+            <div className="absolute left-8 right-8 top-[13px] h-[2px] rounded-full bg-canvas" />
+            <div
+              className="absolute left-8 top-[13px] h-[2px] rounded-full bg-fg-primary transition-all duration-300"
+              style={{ width: `calc((100% - 4rem) * ${Math.max(0, phaseIdx) / (lifecycle.length - 1)})` }}
+            />
+            <div className="relative flex justify-between">
+              {lifecycle.map((s, i) => {
+                const done = phaseIdx > i;
+                const active = phaseIdx === i;
                 return (
                   <button
                     key={s.label}
                     type="button"
-                    onClick={() => {
-                      if (a.live) setApptStatus(s.live);
-                      setLocalStatus(s.label);
-                    }}
-                    className={`flex-1 rounded-full py-2 text-[11px] font-semibold transition-colors ${
-                      active ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
-                    }`}
+                    onClick={() => markStatus(s.live, s.label)}
+                    className="flex w-16 flex-col items-center gap-1.5"
                   >
-                    {s.label}
+                    <span
+                      className={`flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 transition-colors ${
+                        done || active
+                          ? "border-fg-primary bg-fg-primary text-white"
+                          : "border-border bg-white text-transparent"
+                      }`}
+                    >
+                      {done ? <Check size={13} strokeWidth={3} /> : <span className={`h-2 w-2 rounded-full ${active ? "bg-white" : "bg-border"}`} />}
+                    </span>
+                    <span className={`text-center text-[10.5px] font-semibold leading-tight ${active || done ? "text-navy" : "text-muted"}`}>
+                      {s.label}
+                    </span>
                   </button>
                 );
               })}
-              {status === "No-show" && (
-                <span className="flex flex-1 items-center justify-center rounded-full bg-danger py-2 text-[11px] font-semibold text-white">
-                  No-show
-                </span>
-              )}
             </div>
           </div>
+        )}
+      </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
-            {/* ── When and where ── */}
-            <div className="rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
-              <div className="flex items-center justify-between px-4 py-3.5">
-                <span className="flex items-center gap-3 text-[14px] font-semibold text-navy">
-                  <Calendar size={15} strokeWidth={1.8} className="text-secondary" />
-                  {moved ?? "Wed 4 Mar"}
-                </span>
-                <span className="flex items-center gap-2.5 text-[14px] font-semibold text-navy">
-                  <Clock size={15} strokeWidth={1.8} className="text-secondary" />
-                  {a.time}
-                </span>
-              </div>
-              <div className="mx-4 border-t border-border" />
-              <div className="flex items-center justify-between px-4 py-3.5">
-                <span className="flex items-center gap-3 text-[14px] text-navy">
-                  <Repeat size={15} strokeWidth={1.8} className="text-secondary" />
-                  Doesn&rsquo;t repeat
-                </span>
-                <span className="flex items-center gap-2.5 text-[14px] text-navy">
-                  <MapPin size={15} strokeWidth={1.8} className="text-secondary" />
-                  Salon Soho
-                </span>
-              </div>
-            </div>
-
-            {/* ── The three things you reach for most ── */}
-            <div className="grid grid-cols-3 gap-2.5 pt-3">
-              {[
-                {
-                  icon: <MessageSquare size={17} strokeWidth={1.7} />, label: "Message",
-                  run: () => router.push(`/app/messages/${slug}`),
-                },
-                { icon: <RotateCcw size={17} strokeWidth={1.7} />, label: "Reschedule", run: () => setView("reschedule") },
-                { icon: <X size={17} strokeWidth={1.7} />, label: "Cancel", run: () => setView("cancel") },
-              ].map((t) => (
-                <motion.button
-                  key={t.label}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={t.run}
-                  className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
-                >
-                  {t.icon}
-                  {t.label}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* ── Services ── */}
-            <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Services</p>
-            <div className="flex flex-col gap-2.5">
-              <ServiceRow name={svcName} price={basePrice} />
-              {extras.map((e) => (
-                <ServiceRow key={e} name={e} price={priceOf(e)} removable />
-              ))}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        {/* ── Client card: identity, quick contact, profile edits ── */}
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Avatar size="lg" initials={clientInitials} />
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-[16px] font-bold text-navy">{clientName}</span>
+              <span className="block truncate text-[13px] text-muted">{contact.phone}</span>
             </div>
             <button
               type="button"
-              onClick={() => { setSvcQuery(""); setSvcCat("All"); setPick("add"); setView("picker"); }}
-              className="mt-3 flex h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-[13px] font-semibold text-navy"
+              aria-label={`Call ${firstName}`}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-navy"
             >
-              <Plus size={14} strokeWidth={2} />
-              Add service
+              <Phone size={16} strokeWidth={1.9} />
             </button>
+            <button
+              type="button"
+              aria-label={`Message ${firstName}`}
+              onClick={() => router.push(`/app/messages/${slug}`)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-navy"
+            >
+              <MessageSquare size={16} strokeWidth={1.9} />
+            </button>
+          </div>
 
-            {/* ── Forms attached to this visit ── */}
-            {notes?.formNote && (
-              <>
-                <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Forms</p>
-                <div className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-3">
+              {tags.map((t) => (
+                <span key={t} className="rounded-full bg-canvas px-2.5 py-1 text-[11px] font-semibold text-secondary">{t}</span>
+              ))}
+            </div>
+          )}
+          {allergies.length > 0 && (
+            <p className="flex items-center gap-2 pt-3 text-[12px] font-medium text-navy">
+              <AlertTriangle size={13} strokeWidth={2} className="shrink-0 text-danger" />
+              {allergies.join(" · ")}
+            </p>
+          )}
+          {patchTest && (
+            <p className="flex items-center gap-2 pt-2 text-[12px] font-medium text-navy">
+              <ShieldCheck size={13} strokeWidth={2} className="shrink-0 text-success" />
+              Patch test · {patchTest}
+            </p>
+          )}
+
+          <div className="mt-3.5 border-t border-border pt-3">
+            <button
+              type="button"
+              onClick={() => setManageOpen(true)}
+              className="flex w-full items-center justify-between text-[13px] font-semibold text-navy"
+            >
+              <span className="flex items-center gap-2"><UserRound size={15} strokeWidth={1.9} className="text-secondary" /> Manage client</span>
+              <ChevronRight size={16} strokeWidth={2} className="text-muted" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── When and where ── */}
+        <div className="mt-3 rounded-2xl bg-white shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3.5">
+            <span className="flex items-center gap-3 text-[14px] font-semibold text-navy">
+              <Calendar size={15} strokeWidth={1.8} className="text-secondary" />
+              {moved ?? "Wed 10 Jun"}
+            </span>
+            <span className="flex items-center gap-2.5 text-[14px] font-semibold text-navy">
+              <Clock size={15} strokeWidth={1.8} className="text-secondary" />
+              {a.time}
+            </span>
+          </div>
+          <div className="mx-4 border-t border-border" />
+          <div className="flex items-center justify-between px-4 py-3.5">
+            <span className="flex items-center gap-3 text-[14px] text-navy">
+              <Repeat size={15} strokeWidth={1.8} className="text-secondary" />
+              Doesn&rsquo;t repeat
+            </span>
+            <span className="flex items-center gap-2.5 text-[14px] text-navy">
+              <MapPin size={15} strokeWidth={1.8} className="text-secondary" />
+              Salon Soho
+            </span>
+          </div>
+        </div>
+
+        {/* ── Reschedule / cancel the appointment ── */}
+        <div className="grid grid-cols-2 gap-2.5 pt-3">
+          {[
+            { icon: <RotateCcw size={16} strokeWidth={1.7} />, label: "Reschedule", run: () => { setDay(null); setTime(null); setRescheduleSheet(true); } },
+            { icon: <X size={16} strokeWidth={1.9} />, label: "Cancel", run: () => setCancelSheet(true) },
+          ].map((t) => (
+            <motion.button
+              key={t.label}
+              whileTap={{ scale: 0.97 }}
+              onClick={t.run}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-[13px] font-semibold text-navy shadow-sm"
+            >
+              {t.icon}
+              {t.label}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* ── Services ── */}
+        <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Services</p>
+        <div className="flex flex-col gap-2.5">
+          <ServiceRow name={svcName} price={basePrice} />
+          {extras.map((e) => (
+            <ServiceRow key={e} name={e} price={priceOf(e)} removable />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => openService("add")}
+          className="mt-3 flex h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-[13px] font-semibold text-navy"
+        >
+          <Plus size={14} strokeWidth={2} />
+          Add service
+        </button>
+
+        {/* ── Forms ── */}
+        <SectionHeader title="Forms" onAdd={() => { setFormQuery(""); setFormCat("All"); setFormSheet(true); }} addLabel="Add form" />
+        {forms.length > 0 ? (
+          <div className="flex flex-col gap-2.5">
+            {forms.map((f) => {
+              const isReminded = reminded.includes(f.name);
+              return (
+                <div key={f.name} className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-sm">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                     <FileText size={17} strokeWidth={1.6} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-semibold text-navy">Consultation form</span>
-                    <span className="block pt-0.5 text-[12px] text-muted">Not completed yet</span>
+                    <span className="block text-[14px] font-semibold text-navy">{f.name}</span>
+                    <span className="block pt-0.5 text-[12px] text-muted">{f.sub}</span>
                   </span>
                   <button
                     type="button"
-                    onClick={() => setReminded(true)}
-                    disabled={reminded}
+                    onClick={() => setReminded((r) => (r.includes(f.name) ? r : [...r, f.name]))}
+                    disabled={isReminded}
                     className={`flex shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[12px] font-semibold ${
-                      reminded ? "bg-canvas text-muted" : "bg-fg-primary text-white"
+                      isReminded ? "bg-canvas text-muted" : "bg-fg-primary text-white"
                     }`}
                   >
-                    {reminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
-                    {reminded ? "Reminded" : "Remind"}
+                    {isReminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
+                    {isReminded ? "Reminded" : "Remind"}
                   </button>
                 </div>
-              </>
-            )}
+              );
+            })}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setFormQuery(""); setFormCat("All"); setFormSheet(true); }}
+            className="flex w-full flex-col items-center gap-1 rounded-2xl border border-dashed border-border bg-white/50 py-6 text-center"
+          >
+            <FileText size={18} strokeWidth={1.5} className="text-muted" />
+            <span className="text-[13px] font-semibold text-navy">Attach a form</span>
+            <span className="text-[12px] text-muted">Consultation, allergy, patch test &amp; more</span>
+          </button>
+        )}
 
-            {/* ── Notes & photos saved on this booking ── */}
-            {bookingNotes.length > 0 && (
-              <>
-                <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Notes & photos</p>
-                <div className="flex flex-col gap-2.5">
-                  {bookingNotes.map((n, i) => (
-                    <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
-                          <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
-                          This visit
-                        </span>
-                        <span className="text-[11px] text-muted">{n.date}</span>
-                      </div>
-                      <p className="pt-2 text-[13px] leading-snug text-navy">{n.note}</p>
-                      {n.imgs > 0 && (
-                        <div className="flex gap-2 pt-3">
-                          {Array.from({ length: n.imgs }, (_, j) => (
-                            <span key={j} className="flex h-16 w-16 items-center justify-center rounded-xl bg-canvas text-muted">
-                              <ImageIcon size={18} strokeWidth={1.5} />
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="pt-2 text-[11px] text-muted">Saved to {firstName}&rsquo;s record</p>
-                    </div>
-                  ))}
+        {/* ── Notes & photos ── */}
+        <SectionHeader title="Notes &amp; photos" onAdd={() => { setNoteDraft(""); setNotePhotos(0); setNoteSheet(true); }} addLabel="Add note" />
+        {bookingNotes.length > 0 ? (
+          <div className="flex flex-col gap-2.5">
+            {bookingNotes.map((n, i) => (
+              <div key={i} className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
+                    {n.kind === "alert"
+                      ? <><Flag size={13} strokeWidth={1.9} className="text-danger" /> Staff note</>
+                      : <><StickyNote size={13} strokeWidth={1.75} className="text-secondary" /> This visit</>}
+                  </span>
+                  <span className="text-[11px] text-muted">{n.date}</span>
                 </div>
-              </>
-            )}
+                <p className="pt-2 text-[13px] leading-snug text-navy">{n.note}</p>
+                {n.imgs > 0 && (
+                  <div className="flex gap-2 pt-3">
+                    {Array.from({ length: n.imgs }, (_, j) => (
+                      <span key={j} className="flex h-16 w-16 items-center justify-center rounded-xl bg-canvas text-muted">
+                        <ImageIcon size={18} strokeWidth={1.5} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="pt-2 text-[11px] text-muted">Saved to {firstName}&rsquo;s record</p>
+              </div>
+            ))}
           </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setNoteDraft(""); setNotePhotos(0); setNoteSheet(true); }}
+            className="flex w-full flex-col items-center gap-1 rounded-2xl border border-dashed border-border bg-white/50 py-6 text-center"
+          >
+            <StickyNote size={18} strokeWidth={1.5} className="text-muted" />
+            <span className="text-[13px] font-semibold text-navy">Add a note</span>
+            <span className="text-[12px] text-muted">Products, formulas, before &amp; after photos</span>
+          </button>
+        )}
+      </div>
 
-          {/* ── Fixed money + actions bar ── */}
-          <div className="shrink-0 border-t border-border bg-white px-5 pb-6 pt-3">
-            {totalPrice > 0 && (
-              <button
-                type="button"
-                onClick={() => { close(); router.push("/app/checkout"); }}
-                className="flex w-full items-baseline justify-between"
-              >
-                <span className="flex items-center gap-1 text-[14px] font-bold text-navy">
-                  To pay
-                  <ChevronRight size={13} strokeWidth={2.5} className="text-muted" />
-                </span>
-                <span className="text-[16px] font-bold text-navy">£{totalPrice}</span>
-              </button>
+      {/* ── Fixed money + actions bar ── */}
+      <div className="shrink-0 border-t border-border bg-white px-5 pb-6 pt-3">
+        {dirty ? (
+          <DarkButton onClick={() => { setDirty(false); close(); }}>Save changes</DarkButton>
+        ) : (
+          <div className="flex gap-2.5">
+            {lifeAction && (
+              <DarkButton className="flex-1" onClick={lifeAction.run}>
+                {lifeAction.icon}
+                {lifeAction.label}
+              </DarkButton>
             )}
-            <div className="flex gap-2.5 pt-3">
-              <button
-                type="button"
-                aria-label="Quick actions"
-                onClick={() => setActionsSheet(true)}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border text-navy"
-              >
-                <span className="flex flex-col gap-[3px]">
-                  {[0, 1, 2].map((i) => (
-                    <span key={i} className="h-[3px] w-[3px] rounded-full bg-navy" />
-                  ))}
-                </span>
-              </button>
-              {dirty ? (
-                <DarkButton className="flex-1" onClick={() => { setDirty(false); close(); }}>
-                  Save changes
-                </DarkButton>
-              ) : liveAction ? (
-                <DarkButton
-                  className="flex-1"
-                  onClick={() => {
-                    liveAction.run();
-                    if (liveAction.label !== "Checkout") close();
-                  }}
-                >
-                  {liveAction.icon}
-                  {liveAction.label}
-                </DarkButton>
-              ) : (
-                <DarkButton className="flex-1" onClick={close}>Done</DarkButton>
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* ── Sub-view header ── */}
-          <div className="shrink-0 bg-white px-4 pb-3 pt-4">
             <button
               type="button"
-              onClick={() => setView("details")}
-              className="flex items-center gap-1 py-1 text-navy"
+              onClick={goPay}
+              className={`flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-colors ${
+                lifeAction
+                  ? "flex-1 border border-border bg-white text-navy"
+                  : "w-full bg-fg-primary text-white"
+              }`}
             >
-              <ChevronLeft size={20} strokeWidth={2} />
-              <span className="text-[17px] font-bold">{headerLabel}</span>
+              <CreditCard size={16} strokeWidth={1.9} />
+              {totalPrice > 0 ? `Pay £${totalPrice}` : "Pay"}
             </button>
-            <p className="pl-6 pt-0.5 text-[12px] text-muted">{a.client} · {svcName} · {a.staff}</p>
           </div>
+        )}
+      </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={view}
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.18 }}
-              >
-                {view === "note" && (
-                  <>
-                    <textarea
-                      autoFocus
-                      value={noteDraft}
-                      onChange={(e) => setNoteDraft(e.target.value)}
-                      placeholder="Products used, formulas, observations, follow-up needed..."
-                      className="h-28 w-full resize-none rounded-xl bg-white p-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setNotePhotos((p) => p + 1)}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-[13px] font-medium text-secondary"
-                    >
-                      <Camera size={15} strokeWidth={1.75} />
-                      {notePhotos > 0 ? `${notePhotos} photo${notePhotos > 1 ? "s" : ""} attached · add another` : "Add before / after photos"}
-                    </button>
-                    <p className="pt-3 text-[12px] leading-snug text-muted">
-                      Saved against this booking and added to {firstName}&rsquo;s record — the team sees it on every future visit.
-                    </p>
-                    <div className="pt-5">
-                      <DarkButton
-                        disabled={!noteDraft.trim() && notePhotos === 0}
-                        onClick={() => {
-                          setBookingNotes((n) => [
-                            { date: "Today · 4 Mar 2026", note: noteDraft.trim() || "Photos attached.", imgs: notePhotos },
-                            ...n,
-                          ]);
-                          setView("details");
-                        }}
-                      >
-                        Save to record
-                      </DarkButton>
-                    </div>
-                  </>
-                )}
+      {/* ── Change / add a service ── */}
+      <Sheet
+        open={serviceSheet !== null}
+        onClose={() => setServiceSheet(null)}
+        title={serviceSheet === "change" ? "Change service" : "Add a service"}
+        sub={serviceSheet === "change" ? "Swap the booked service" : "Add to this booking"}
+        full
+      >
+        <div className="relative pb-3">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={svcQuery}
+            onChange={(e) => setSvcQuery(e.target.value)}
+            placeholder="Search your services..."
+            className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-3 [scrollbar-width:none]">
+          {serviceCategories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setSvcCat(c)}
+              className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
+                svcCat === c ? "bg-fg-primary text-white" : "border border-border bg-white text-secondary"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col">
+          {services
+            .filter((s) => svcCat === "All" || s.category === svcCat)
+            .filter((s) => s.name.toLowerCase().includes(svcQuery.toLowerCase()))
+            .map((s) => {
+              const isCurrent = serviceSheet === "change" && s.name === svcName;
+              const alreadyAdded = serviceSheet === "add" && (extras.includes(s.name) || s.name === svcName);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={alreadyAdded}
+                  onClick={() => {
+                    if (serviceSheet === "change") {
+                      setSvcOverride(s.name);
+                      setExtras((x) => x.filter((e) => e !== s.name));
+                    } else {
+                      setExtras((x) => [...x, s.name]);
+                    }
+                    setDirty(true);
+                    setServiceSheet(null);
+                  }}
+                  className="flex items-center justify-between border-b border-border py-4 text-left last:border-0 disabled:opacity-40"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="h-8 w-1 rounded-full" style={{ background: catColor(s.category) }} />
+                    <span>
+                      <span className="block text-[15px] font-semibold text-navy">{s.name}</span>
+                      <span className="mt-0.5 block text-[12px] text-muted">
+                        {s.duration}
+                        {alreadyAdded ? " · already on this booking" : ""}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
+                    £{s.price}
+                    {isCurrent ? <Check size={15} strokeWidth={2.5} /> : <ChevronRight size={15} className="text-muted" />}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+      </Sheet>
 
-                {view === "reschedule" && (
-                  <>
-                    <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a day</p>
-                    <MiniCalendar selected={day} onSelect={setDay} />
-                    <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a time</p>
-                    <TimeChips value={time} onSelect={setTime} />
-                    <div className="pt-6">
-                      <DarkButton
-                        disabled={!day || !time}
-                        onClick={() => {
-                          const label = `Sat ${day} Mar, ${time}`;
-                          if (a.live) setMovedTo(label);
-                          else setLocalMoved(label);
-                          setDirty(true);
-                          setView("details");
-                        }}
-                      >
-                        {day && time ? `Confirm · Sat ${day} Mar, ${time}` : "Confirm new time"}
-                      </DarkButton>
-                    </div>
-                  </>
-                )}
+      {/* ── Reschedule ── */}
+      <Sheet open={rescheduleSheet} onClose={() => setRescheduleSheet(false)} title="Reschedule" sub={`${clientName} · ${svcName}`} full>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a day</p>
+        <MiniCalendar selected={day} onSelect={setDay} />
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a time</p>
+        <TimeChips value={time} onSelect={setTime} />
+        <div className="pt-6">
+          <DarkButton
+            disabled={!day || !time}
+            onClick={() => {
+              const label = `Sat ${day} Jun, ${time}`;
+              if (a.live) setMovedTo(label);
+              else setLocalMoved(label);
+              setDirty(true);
+              setRescheduleSheet(false);
+            }}
+          >
+            {day && time ? `Confirm · Sat ${day} Jun, ${time}` : "Confirm new time"}
+          </DarkButton>
+        </div>
+      </Sheet>
 
-                {view === "picker" && (
-                  <>
-                    <div className="relative pb-3">
-                      <Search size={15} strokeWidth={1.75} className="absolute left-4 top-[22px] -translate-y-1/2 text-muted" />
-                      <input
-                        autoFocus
-                        value={svcQuery}
-                        onChange={(e) => setSvcQuery(e.target.value)}
-                        placeholder="Search your services..."
-                        className="h-11 w-full rounded-xl bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
-                      />
-                    </div>
-                    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
-                      {serviceCategories.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setSvcCat(c)}
-                          className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                            svcCat === c ? "bg-fg-primary text-white" : "bg-white text-secondary shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex flex-col">
-                      {services
-                        .filter((s) => svcCat === "All" || s.category === svcCat)
-                        .filter((s) => s.name.toLowerCase().includes(svcQuery.toLowerCase()))
-                        .map((s) => {
-                          const isCurrent = pick === "change" && s.name === svcName;
-                          const alreadyAdded = pick === "add" && (extras.includes(s.name) || s.name === svcName);
-                          return (
-                            <button
-                              key={s.id}
-                              type="button"
-                              disabled={alreadyAdded}
-                              onClick={() => {
-                                if (pick === "change") {
-                                  setSvcOverride(s.name);
-                                  setExtras((x) => x.filter((e) => e !== s.name));
-                                } else {
-                                  setExtras((x) => [...x, s.name]);
-                                }
-                                setDirty(true);
-                                setView("details");
-                              }}
-                              className="flex items-center justify-between border-b border-border py-4 text-left last:border-0 disabled:opacity-40"
-                            >
-                              <span className="flex items-center gap-3">
-                                <span className="h-8 w-1 rounded-full" style={{ background: catColor(s.category) }} />
-                                <span>
-                                  <span className="block text-[15px] font-semibold text-navy">{s.name}</span>
-                                  <span className="mt-0.5 block text-[12px] text-muted">
-                                    {s.duration}
-                                    {alreadyAdded ? " · already on this booking" : ""}
-                                  </span>
-                                </span>
-                              </span>
-                              <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
-                                £{s.price}
-                                {isCurrent ? <Check size={15} strokeWidth={2.5} /> : <ChevronRight size={15} className="text-muted" />}
-                              </span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </>
-                )}
+      {/* ── Cancel ── */}
+      <Sheet open={cancelSheet} onClose={() => setCancelSheet(false)} title="Cancel appointment">
+        <p className="pb-5 text-[14px] leading-relaxed text-secondary">
+          {clientName} · {svcName} · {a.staff} at {a.time}. We&rsquo;ll let them know and free up the slot.
+        </p>
+        <DarkButton
+          onClick={() => {
+            if (a.live) setApptStatus("cancelled");
+            close();
+          }}
+        >
+          Cancel appointment
+        </DarkButton>
+        <div className="pt-3">
+          <GhostButton onClick={() => setCancelSheet(false)}>Keep it</GhostButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
 
-                {view === "cancel" && (
-                  <>
-                    <p className="pb-5 text-[14px] leading-relaxed text-secondary">
-                      {a.client} · {svcName} · {a.staff} at {a.time}. We&rsquo;ll let them know and free
-                      up the slot.
-                    </p>
-                    <DarkButton
-                      onClick={() => {
-                        if (a.live) setApptStatus("cancelled");
-                        close();
-                      }}
-                    >
-                      Cancel appointment
-                    </DarkButton>
-                    <div className="pt-3">
-                      <GhostButton onClick={() => setView("details")}>Keep it</GhostButton>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            </AnimatePresence>
+      {/* ── Add note & photos ── */}
+      <Sheet open={noteSheet} onClose={() => setNoteSheet(false)} title="Add note & photos" sub={`Saved to ${firstName}'s record`}>
+        <textarea
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="Products used, formulas, observations, follow-up needed..."
+          className="h-28 w-full resize-none rounded-xl border border-border bg-white p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => setNotePhotos((p) => p + 1)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-[13px] font-medium text-secondary"
+        >
+          <Camera size={15} strokeWidth={1.75} />
+          {notePhotos > 0 ? `${notePhotos} photo${notePhotos > 1 ? "s" : ""} attached · add another` : "Add before / after photos"}
+        </button>
+        {notePhotos > 0 && (
+          <div className="flex flex-wrap gap-2 pt-3">
+            {Array.from({ length: notePhotos }, (_, j) => (
+              <span key={j} className="flex h-16 w-16 items-center justify-center rounded-xl bg-canvas text-muted">
+                <ImageIcon size={18} strokeWidth={1.5} />
+              </span>
+            ))}
           </div>
-        </>
-      )}
+        )}
+        <div className="pt-5">
+          <DarkButton
+            disabled={!noteDraft.trim() && notePhotos === 0}
+            onClick={() => {
+              setBookingNotes((n) => [
+                { date: "Today · 10 Jun 2026", note: noteDraft.trim() || "Photos attached.", imgs: notePhotos, kind: "note" },
+                ...n,
+              ]);
+              setNoteSheet(false);
+            }}
+          >
+            Save to record
+          </DarkButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
 
-      {/* ── Quick actions ── */}
-      <Sheet open={actionsSheet} onClose={() => setActionsSheet(false)} title="Quick actions">
+      {/* ── Manage client — profile edits made from the booking ── */}
+      <Sheet open={manageOpen} onClose={() => setManageOpen(false)} title={`Manage ${clientName}`} sub="Saved to their client profile">
         <div className="flex flex-col pt-1">
           {[
-            { icon: <StickyNote size={17} strokeWidth={1.8} />, t: "Add note & photos", run: () => { setNoteDraft(""); setNotePhotos(0); setView("note"); } },
-            { icon: <UserRound size={17} strokeWidth={1.8} />, t: "View client profile", run: () => router.push(`/app/clients/${slug}`) },
-            { icon: <EyeOff size={16} strokeWidth={1.8} />, t: "Mark as no-show", run: () => setLocalStatus("No-show") },
+            { icon: <AlertTriangle size={17} strokeWidth={1.8} />, t: "Add allergy", run: () => openManage("allergy") },
+            { icon: <Flag size={17} strokeWidth={1.8} />, t: "Add staff note", run: () => openManage("staffnote") },
+            { icon: <ShieldCheck size={17} strokeWidth={1.8} />, t: "Add patch test", run: () => openManage("patch") },
+            { icon: <TagIcon size={17} strokeWidth={1.8} />, t: "Add tag", run: () => openManage("tag") },
+            { icon: <Users size={17} strokeWidth={1.8} />, t: "Change client", run: () => openManage("change") },
+            { icon: <UserRound size={17} strokeWidth={1.8} />, t: "View full profile", run: () => { setManageOpen(false); router.push(`/app/clients/${slug}`); } },
           ].map((q) => (
             <button
               key={q.t}
               type="button"
-              onClick={() => { setActionsSheet(false); q.run(); }}
-              className="flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left text-[15px] font-medium text-navy"
+              onClick={q.run}
+              className="flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left text-[15px] font-medium text-navy last:border-0"
             >
               <span className="text-secondary">{q.icon}</span>
               {q.t}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => { setActionsSheet(false); setView("cancel"); }}
-            className="flex w-full items-center gap-3.5 py-3.5 text-left text-[15px] font-medium text-danger"
-          >
-            <X size={17} strokeWidth={2} />
-            Cancel appointment
-          </button>
         </div>
         <div className="h-2" />
+      </Sheet>
+
+      {/* ── Manage sub-forms ── */}
+      <Sheet
+        open={manageMode === "allergy"}
+        onClose={() => setManageMode(null)}
+        title="Add an allergy"
+        sub="Flagged on every booking and checkout"
+      >
+        <input
+          value={manageDraft}
+          onChange={(e) => setManageDraft(e.target.value)}
+          placeholder="e.g. PPD, fragrance, latex..."
+          className="h-12 w-full rounded-xl border border-border bg-white px-4 text-[15px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <div className="pt-4">
+          <DarkButton
+            disabled={!manageDraft.trim()}
+            onClick={() => {
+              setLocalAllergies((x) => [...x, manageDraft.trim()]);
+              setManageMode(null);
+            }}
+          >
+            Add allergy
+          </DarkButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
+      <Sheet
+        open={manageMode === "staffnote"}
+        onClose={() => setManageMode(null)}
+        title="Add a staff note"
+        sub="Private — only your team sees this"
+      >
+        <textarea
+          value={manageDraft}
+          onChange={(e) => setManageDraft(e.target.value)}
+          placeholder="e.g. Prefers quieter appointments, always running late..."
+          className="h-28 w-full resize-none rounded-xl border border-border bg-white p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <div className="pt-4">
+          <DarkButton
+            disabled={!manageDraft.trim()}
+            onClick={() => {
+              setBookingNotes((n) => [{ date: "Today · 10 Jun 2026", note: manageDraft.trim(), imgs: 0, kind: "alert" }, ...n]);
+              setManageMode(null);
+            }}
+          >
+            Save note
+          </DarkButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
+      <Sheet
+        open={manageMode === "patch"}
+        onClose={() => setManageMode(null)}
+        title="Record a patch test"
+        sub="Confirms the client is cleared for colour"
+      >
+        <p className="pb-4 text-[14px] leading-relaxed text-secondary">
+          Record that {firstName}&rsquo;s patch test was carried out today. It&rsquo;ll show on this booking and their profile.
+        </p>
+        <DarkButton onClick={() => { setPatchTest("Recorded today · 10 Jun 2026"); setManageMode(null); }}>
+          Mark patch test done
+        </DarkButton>
+        <div className="h-2" />
+      </Sheet>
+
+      {/* ── Add tag — searchable list with create-new ── */}
+      <Sheet open={manageMode === "tag"} onClose={() => setManageMode(null)} title="Add a tag" sub="Search, pick, or create your own" full>
+        <div className="relative pb-3">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={tagQuery}
+            onChange={(e) => setTagQuery(e.target.value)}
+            placeholder="Search or create a tag..."
+            className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        {canCreateTag && (
+          <button
+            type="button"
+            onClick={() => { setLocalTags((x) => [...x, tagQuery.trim()]); setTagQuery(""); }}
+            className="mb-1 flex w-full items-center gap-3 rounded-xl border border-dashed border-border py-3.5 pl-4 text-left"
+          >
+            <Plus size={16} strokeWidth={2} className="text-navy" />
+            <span className="text-[15px] font-semibold text-navy">Create &ldquo;{tagQuery.trim()}&rdquo;</span>
+          </button>
+        )}
+        <div className="flex flex-col">
+          {tagMatches.map((t) => {
+            const selected = tags.includes(t);
+            const locked = selected && !localTags.includes(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                disabled={locked}
+                onClick={() => toggleTag(t)}
+                className="flex items-center justify-between border-b border-border py-3.5 text-left last:border-0 disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3 text-[15px] font-medium text-navy">
+                  <TagIcon size={15} strokeWidth={1.7} className="text-secondary" />
+                  {t}
+                </span>
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                    selected ? "border-fg-primary bg-fg-primary text-white" : "border-border text-transparent"
+                  }`}
+                >
+                  <Check size={13} strokeWidth={3} />
+                </span>
+              </button>
+            );
+          })}
+          {tagMatches.length === 0 && !canCreateTag && (
+            <p className="py-6 text-center text-[13px] text-muted">No tags found</p>
+          )}
+        </div>
+        <div className="pt-5">
+          <DarkButton onClick={() => setManageMode(null)}>Done</DarkButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
+      <Sheet open={manageMode === "change"} onClose={() => setManageMode(null)} title="Change client" sub="Move this booking to another client" full>
+        <div className="relative pb-3">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={clientQuery}
+            onChange={(e) => setClientQuery(e.target.value)}
+            placeholder="Search clients..."
+            className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        <div className="flex flex-col">
+          {clientRows
+            .filter((c) => c.name.toLowerCase().includes(clientQuery.toLowerCase()))
+            .map((c) => {
+              const current = c.name === clientName;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={current}
+                  onClick={() => { setClientOverride({ name: c.name, initials: initialsOf(c.name) }); setManageMode(null); }}
+                  className="flex items-center justify-between border-b border-border py-3.5 text-left last:border-0 disabled:opacity-50"
+                >
+                  <span className="flex items-center gap-3">
+                    <Avatar size="sm" initials={initialsOf(c.name)} />
+                    <span>
+                      <span className="block text-[15px] font-semibold text-navy">{c.name}</span>
+                      <span className="block text-[12px] text-muted">{c.meta}</span>
+                    </span>
+                  </span>
+                  {current && <Check size={16} strokeWidth={2.5} className="text-navy" />}
+                </button>
+              );
+            })}
+        </div>
+      </Sheet>
+
+      {/* ── Add a form — searchable + filterable ── */}
+      <Sheet open={formSheet} onClose={() => setFormSheet(false)} title="Add a form" sub="Sent to the client to complete" full>
+        <div className="relative pb-3">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={formQuery}
+            onChange={(e) => setFormQuery(e.target.value)}
+            placeholder="Search forms..."
+            className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        <div className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-3 [scrollbar-width:none]">
+          {formCategories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setFormCat(c)}
+              className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
+                formCat === c ? "bg-fg-primary text-white" : "border border-border bg-white text-secondary"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col">
+          {formTemplates
+            .filter((f) => formCat === "All" || f.category === formCat)
+            .filter((f) => f.name.toLowerCase().includes(formQuery.toLowerCase()))
+            .map((f) => {
+              const added = forms.some((x) => x.name === f.name);
+              return (
+                <button
+                  key={f.name}
+                  type="button"
+                  disabled={added}
+                  onClick={() => { setLocalForms((x) => [...x, f.name]); setFormSheet(false); }}
+                  className="flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left last:border-0 disabled:opacity-50"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
+                    <FileText size={16} strokeWidth={1.7} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-medium text-navy">{f.name}</span>
+                    <span className="block text-[12px] text-muted">{f.category}</span>
+                  </span>
+                  {added ? <Check size={16} strokeWidth={2.5} className="text-navy" /> : <Plus size={16} strokeWidth={2} className="text-muted" />}
+                </button>
+              );
+            })}
+          {formTemplates.filter((f) => (formCat === "All" || f.category === formCat) && f.name.toLowerCase().includes(formQuery.toLowerCase())).length === 0 && (
+            <p className="py-6 text-center text-[13px] text-muted">No forms found</p>
+          )}
+        </div>
       </Sheet>
     </motion.div>
   );
