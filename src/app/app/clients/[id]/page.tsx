@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
-import { pastAppointments, clientForms, staffMembers } from "@/lib/data/product";
+import { pastAppointments, clientForms, staffMembers, tagPresets } from "@/lib/data/product";
 
 // Client detail, organised by job-to-be-done:
 //   Overview     — the dashboard: safety strip, next appointment, a
@@ -63,6 +63,7 @@ interface Allergy {
   type: "Drug" | "Non-drug" | "Note";
   reaction: string;
   severity: "Mild" | "Moderate" | "Severe" | "Fatal";
+  note?: string; // free detail, used by the "Note" type instead of reaction/severity
 }
 
 const severityTone: Record<Allergy["severity"], string> = {
@@ -139,6 +140,27 @@ export default function ClientDetailPage() {
   const [tags, setTags] = useState<string[]>(["Regular"]);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Editable client details
+  const [details, setDetails] = useState({ name: "Sarah Johnson", phone: "(555) 234-5678", email: "sarah.j@email.com" });
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState(details.name);
+  const [editPhone, setEditPhone] = useState(details.phone);
+  const [editEmail, setEditEmail] = useState(details.email);
+  const initials = details.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+  // Tag picker (search + create + toggle)
+  const [tagSheetOpen, setTagSheetOpen] = useState(false);
+  const [tagQuery, setTagQuery] = useState("");
+
+  // Appointment history search + filter
+  const [apptSearch, setApptSearch] = useState("");
+  const [apptFilter, setApptFilter] = useState("All");
+  const [apptFilterOpen, setApptFilterOpen] = useState(false);
+
+  // Allergy "Note" detail + note-link dropdown
+  const [alNote, setAlNote] = useState("");
+  const [noteApptOpen, setNoteApptOpen] = useState(false);
+
   // Allergies — structured records
   const [allergies, setAllergies] = useState<Allergy[]>([
     { name: "PPD (hair dye)", type: "Drug", reaction: "Itching", severity: "Severe" },
@@ -182,6 +204,16 @@ export default function ClientDetailPage() {
 
   const unpaid = pastAppointments.find((p) => p.id === "p3");
   const severe = allergies.some((a) => a.severity === "Severe" || a.severity === "Fatal");
+
+  // Tag picker options (presets + any already applied), searchable + create-new.
+  const tagOptions = Array.from(new Set([...tagPresets, ...tags]));
+  const tagMatches = tagOptions.filter((t) => t.toLowerCase().includes(tagQuery.trim().toLowerCase()));
+  const canCreateTag = tagQuery.trim().length > 0 && !tagOptions.some((t) => t.toLowerCase() === tagQuery.trim().toLowerCase());
+
+  // Notes can be linked to a past appointment (a dropdown, not tabs).
+  const noteLinkOptions = ["General", ...pastAppointments.map((p) => `${p.name} · ${p.meta.split(" · ")[0]}`)];
+
+  const field = "h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none";
 
   // Needs-attention rows, most urgent first. Each is one compact row with a
   // single clear action — not a separate full-width card per concern.
@@ -227,15 +259,15 @@ export default function ClientDetailPage() {
 
         <div className="flex flex-col items-center pt-1 text-center">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-canvas text-[24px] font-semibold text-muted">
-            SJ
+            {initials}
           </span>
           <div className="flex items-center gap-2.5 pt-4">
-            <h1 className="text-[24px] font-bold tracking-tight text-navy">Sarah Johnson</h1>
+            <h1 className="text-[24px] font-bold tracking-tight text-navy">{details.name}</h1>
             <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-fg-primary text-white"}`}>
               {blocked ? "Blocked" : "Active"}
             </span>
           </div>
-          <p className="pt-1.5 text-[14px] text-secondary">(555) 234-5678 · sarah.j@email.com</p>
+          <p className="pt-1.5 text-[14px] text-secondary">{details.phone} · {details.email}</p>
           <span className="flex items-center gap-2 pt-2.5 text-[13px] font-medium text-navy">
             <span className="flex items-center gap-1"><Star size={13} className="fill-current" /> 4.8</span>
             {tags.map((t) => (
@@ -281,25 +313,51 @@ export default function ClientDetailPage() {
           {/* ════ OVERVIEW — a dashboard: safety, what's next, the numbers, where to go ════ */}
           {tab === "Overview" && (
             <div className="flex flex-col gap-3">
-              {/* Allergies highlighted right at the top, one slim line */}
-              <button
-                type="button"
-                onClick={() => setTab("Record")}
-                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
-                  severe ? "border-danger/40" : "border-border"
-                }`}
-              >
-                <AlertTriangle size={16} strokeWidth={2} className={severe ? "shrink-0 text-danger" : "shrink-0 text-secondary"} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-bold text-navy">Allergies</span>
-                  <span className="block truncate pt-0.5 text-[12px] text-secondary">
-                    {allergies.length
-                      ? allergies.map((a) => `${a.name} · ${a.severity}`).join("   ")
-                      : "None recorded — tap to add"}
+              {/* Allergies & care notes — each one its own clear line */}
+              <div className={`overflow-hidden rounded-2xl border bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${severe ? "border-danger/40" : "border-border"}`}>
+                <button
+                  type="button"
+                  onClick={() => setTab("Record")}
+                  className="flex w-full items-center justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
+                >
+                  <span className="flex items-center gap-2 text-[13px] font-bold text-navy">
+                    <AlertTriangle size={15} strokeWidth={2} className={severe ? "text-danger" : "text-secondary"} />
+                    Allergies &amp; notes
+                    {allergies.length > 0 && <span className="font-semibold text-muted">· {allergies.length}</span>}
                   </span>
-                </span>
-                <ChevronRight size={14} className="shrink-0 text-muted" />
-              </button>
+                  <ChevronRight size={14} className="shrink-0 text-muted" />
+                </button>
+                {allergies.length === 0 ? (
+                  <p className="px-4 pb-4 text-[12px] text-muted">None recorded — tap to add.</p>
+                ) : (
+                  <div className="divide-y divide-border border-t border-border">
+                    {allergies.map((a) => (
+                      <div key={a.name} className="flex items-start gap-2.5 px-4 py-3">
+                        <span
+                          className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                            a.type === "Note" ? "bg-secondary" : a.severity === "Severe" || a.severity === "Fatal" ? "bg-danger" : "bg-warning"
+                          }`}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="truncate text-[13px] font-semibold text-navy">{a.name}</span>
+                            {a.type === "Note" ? (
+                              <span className="shrink-0 rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">Note</span>
+                            ) : (
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${severityTone[a.severity]}`}>{a.severity}</span>
+                            )}
+                          </span>
+                          <span className="block truncate pt-0.5 text-[12px] text-secondary">
+                            {a.type === "Note"
+                              ? a.note || "Care note"
+                              : `${a.type} allergy${a.reaction !== "—" ? ` · reaction: ${a.reaction.toLowerCase()}` : ""}`}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* What's next, right under safety */}
               {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
@@ -395,17 +453,55 @@ export default function ClientDetailPage() {
                 <div className="relative flex-1">
                   <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
                   <input
+                    value={apptSearch}
+                    onChange={(e) => setApptSearch(e.target.value)}
                     placeholder="Search service, date, staff..."
                     className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
                   />
                 </div>
-                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
-                  <SlidersHorizontal size={13} strokeWidth={1.75} />
-                  All
-                  <ChevronDown size={12} className="text-muted" />
-                </button>
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setApptFilterOpen((o) => !o)}
+                    aria-haspopup="menu"
+                    aria-expanded={apptFilterOpen}
+                    className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-semibold shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
+                      apptFilter !== "All" ? "bg-fg-primary text-white" : "bg-white text-navy"
+                    }`}
+                  >
+                    <SlidersHorizontal size={13} strokeWidth={1.9} />
+                    {apptFilter}
+                    <ChevronDown size={12} className={`transition-transform ${apptFilterOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {apptFilterOpen && (
+                    <>
+                      <button type="button" aria-hidden tabIndex={-1} onClick={() => setApptFilterOpen(false)} className="fixed inset-0 z-10 cursor-default" />
+                      <div className="absolute right-0 top-[calc(100%+6px)] z-20 w-40 overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+                        {["All", "Completed", "Cancelled"].map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => { setApptFilter(f); setApptFilterOpen(false); }}
+                            className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-[13px] ${f === apptFilter ? "bg-canvas font-semibold text-navy" : "text-secondary"}`}
+                          >
+                            {f}
+                            {f === apptFilter && <Check size={13} strokeWidth={2.5} className="text-navy" />}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-              {pastAppointments.map((p) => {
+              {(() => {
+                const q = apptSearch.trim().toLowerCase();
+                const filtered = pastAppointments.filter(
+                  (p) => (apptFilter === "All" || p.status === apptFilter) && (!q || `${p.name} ${p.meta}`.toLowerCase().includes(q)),
+                );
+                if (filtered.length === 0) {
+                  return <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">No appointments match.</p>;
+                }
+                return filtered.map((p) => {
                 const isUnpaid = p.id === "p3";
                 return (
                   <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
@@ -435,7 +531,8 @@ export default function ClientDetailPage() {
                     </div>
                   </button>
                 );
-              })}
+                });
+              })()}
             </div>
           )}
 
@@ -448,7 +545,7 @@ export default function ClientDetailPage() {
                     type="button"
                     aria-label="Add allergy"
                     onClick={() => {
-                      setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild");
+                      setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild"); setAlNote("");
                       setAllergyOpen(true);
                     }}
                     className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
@@ -481,7 +578,9 @@ export default function ClientDetailPage() {
                       </span>
                     </span>
                     <span className="block pt-0.5 text-[12px] text-muted">
-                      {al.type === "Note" ? "Note" : `${al.type} allergy`}{al.reaction !== "—" ? ` · Reaction: ${al.reaction.toLowerCase()}` : ""}
+                      {al.type === "Note"
+                        ? al.note || "Care note"
+                        : `${al.type} allergy${al.reaction !== "—" ? ` · Reaction: ${al.reaction.toLowerCase()}` : ""}`}
                     </span>
                     {expandedNow && (
                       <span className="mt-2 flex items-center justify-between border-t border-border pt-2">
@@ -537,7 +636,7 @@ export default function ClientDetailPage() {
                 action={
                   <button
                     type="button"
-                    onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteDay(null); setNotePickDate(false); setNoteOpen(true); }}
+                    onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteDay(null); setNotePickDate(false); setNoteApptOpen(false); setNoteOpen(true); }}
                     className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Add note
@@ -632,8 +731,8 @@ export default function ClientDetailPage() {
       <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Sarah Johnson" sub="Profile actions">
         <div className="flex flex-col gap-2 pt-1">
           {[
-            { icon: <Pencil size={15} />, t: "Edit details", run: () => setActionsOpen(false) },
-            { icon: <TagIcon size={15} />, t: tags.includes("VIP") ? "VIP tag added ✓" : "Add VIP tag", run: () => setTags((t) => (t.includes("VIP") ? t : [...t, "VIP"])) },
+            { icon: <Pencil size={15} />, t: "Edit details", run: () => { setEditName(details.name); setEditPhone(details.phone); setEditEmail(details.email); setActionsOpen(false); setEditOpen(true); } },
+            { icon: <TagIcon size={15} />, t: "Add tags", run: () => { setActionsOpen(false); setTagQuery(""); setTagSheetOpen(true); } },
             { icon: <Merge size={15} />, t: "Merge duplicate profile", run: () => setActionsOpen(false) },
             { icon: <Ban size={15} />, t: blocked ? "Unblock client" : "Block client", run: () => { setBlocked((b) => !b); setActionsOpen(false); } },
           ].map((a) => (
@@ -653,6 +752,78 @@ export default function ClientDetailPage() {
         <div className="h-2" />
       </Sheet>
 
+      {/* Edit client details */}
+      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title="Edit details" sub="Updates the client profile">
+        <label className="block pb-4">
+          <span className="mb-2 block text-[13px] font-medium text-navy">Full name</span>
+          <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full name" className={field} />
+        </label>
+        <label className="block pb-4">
+          <span className="mb-2 block text-[13px] font-medium text-navy">Mobile</span>
+          <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Mobile number" inputMode="tel" className={field} />
+        </label>
+        <label className="block pb-5">
+          <span className="mb-2 block text-[13px] font-medium text-navy">Email</span>
+          <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email address" inputMode="email" className={field} />
+        </label>
+        <DarkButton
+          disabled={!editName.trim()}
+          onClick={() => { setDetails({ name: editName.trim(), phone: editPhone.trim(), email: editEmail.trim() }); setEditOpen(false); }}
+        >
+          Save changes
+        </DarkButton>
+        <div className="h-2" />
+      </Sheet>
+
+      {/* Add tags — search, pick, or create your own */}
+      <Sheet open={tagSheetOpen} onClose={() => setTagSheetOpen(false)} title="Tags" sub="Search, pick or create your own" full>
+        <div className="relative pb-3">
+          <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={tagQuery}
+            onChange={(e) => setTagQuery(e.target.value)}
+            placeholder="Search or create a tag..."
+            className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+          />
+        </div>
+        {canCreateTag && (
+          <button
+            type="button"
+            onClick={() => { setTags((t) => [...t, tagQuery.trim()]); setTagQuery(""); }}
+            className="mb-1 flex w-full items-center gap-3 rounded-xl border border-dashed border-border py-3.5 pl-4 text-left"
+          >
+            <Plus size={16} strokeWidth={2} className="text-navy" />
+            <span className="text-[15px] font-semibold text-navy">Create &ldquo;{tagQuery.trim()}&rdquo;</span>
+          </button>
+        )}
+        <div className="flex flex-col">
+          {tagMatches.map((t) => {
+            const on = tags.includes(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTags((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]))}
+                className="flex items-center justify-between border-b border-border py-3.5 text-left last:border-0"
+              >
+                <span className="flex items-center gap-3 text-[15px] font-medium text-navy">
+                  <TagIcon size={15} strokeWidth={1.7} className="text-secondary" />
+                  {t}
+                </span>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${on ? "border-fg-primary bg-fg-primary text-white" : "border-border text-transparent"}`}>
+                  <Check size={13} strokeWidth={3} />
+                </span>
+              </button>
+            );
+          })}
+          {tagMatches.length === 0 && !canCreateTag && <p className="py-6 text-center text-[13px] text-muted">No tags found</p>}
+        </div>
+        <div className="pt-5">
+          <DarkButton onClick={() => setTagSheetOpen(false)}>Done</DarkButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
       {/* Delete confirm */}
       <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Sarah Johnson?">
         <p className="pb-5 text-[14px] leading-relaxed text-secondary">
@@ -666,15 +837,14 @@ export default function ClientDetailPage() {
 
       {/* Add allergy — free-text name, reaction picked from a full dropdown,
           severity set on a slider */}
-      <Sheet open={allergyOpen} onClose={() => setAllergyOpen(false)} title="Add an allergy" sub="Flagged on every booking and checkout" full>
-        <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">What are they allergic to?</p>
-        <input
-          value={alName}
-          onChange={(e) => setAlName(e.target.value)}
-          placeholder="Name the allergy..."
-          className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
-        />
-        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</p>
+      <Sheet
+        open={allergyOpen}
+        onClose={() => setAllergyOpen(false)}
+        title={alType === "Note" ? "Add a note" : "Add an allergy"}
+        sub={alType === "Note" ? "A care note kept on the client's record" : "Flagged on every booking and checkout"}
+        full
+      >
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</p>
         <div className="flex gap-2">
           {(["Drug", "Non-drug", "Note"] as const).map((t) => (
             <button
@@ -688,88 +858,119 @@ export default function ClientDetailPage() {
             </button>
           ))}
         </div>
-        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Reaction</p>
-        <button
-          type="button"
-          onClick={() => setReactOpen((o) => !o)}
-          className="flex h-12 w-full items-center justify-between rounded-xl bg-canvas px-4 text-left"
-        >
-          <span className={`text-[14px] ${alReaction ? "font-semibold text-navy" : "text-muted"}`}>
-            {alReaction ?? "Select a reaction"}
-          </span>
-          <motion.span animate={{ rotate: reactOpen ? 180 : 0 }} className="flex text-muted">
-            <ChevronDown size={15} strokeWidth={1.75} />
-          </motion.span>
-        </button>
-        <AnimatePresence initial={false}>
-          {reactOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-border">
-                {reactionOptions.map((rx) => (
-                  <button
-                    key={rx}
-                    type="button"
-                    onClick={() => {
-                      setAlReaction(rx);
-                      setReactOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-[14px] last:border-0 ${
-                      alReaction === rx ? "bg-canvas font-semibold text-navy" : "text-navy"
-                    }`}
-                  >
-                    {rx}
-                    {alReaction === rx && <Check size={14} strokeWidth={2.5} />}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <div className="flex items-baseline justify-between pb-1 pt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Severity</p>
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${severityTone[alSeverity]}`}>{alSeverity}</span>
-        </div>
+
+        <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+          {alType === "Note" ? "What's the note about?" : "What are they allergic to?"}
+        </p>
         <input
-          type="range"
-          min={0}
-          max={3}
-          step={1}
-          value={severities.indexOf(alSeverity)}
-          onChange={(e) => setAlSeverity(severities[Number(e.target.value)])}
-          aria-label="Severity"
-          className="w-full accent-fg-primary"
+          value={alName}
+          onChange={(e) => setAlName(e.target.value)}
+          placeholder={alType === "Note" ? "e.g. Sensitive scalp, runs late..." : "Name the allergy..."}
+          className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
         />
-        <div className="flex justify-between pt-1">
-          {severities.map((sv) => (
-            <span
-              key={sv}
-              className={`text-[11px] ${
-                alSeverity === sv
-                  ? sv === "Severe" || sv === "Fatal" ? "font-bold text-danger" : "font-bold text-navy"
-                  : "text-muted"
-              }`}
+
+        {alType === "Note" ? (
+          <>
+            <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Details (optional)</p>
+            <textarea
+              value={alNote}
+              onChange={(e) => setAlNote(e.target.value)}
+              placeholder="Anything the team should know..."
+              className="h-24 w-full resize-none rounded-xl bg-canvas p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+            />
+          </>
+        ) : (
+          <>
+            <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Reaction</p>
+            <button
+              type="button"
+              onClick={() => setReactOpen((o) => !o)}
+              className="flex h-12 w-full items-center justify-between rounded-xl bg-canvas px-4 text-left"
             >
-              {sv}
-            </span>
-          ))}
-        </div>
+              <span className={`text-[14px] ${alReaction ? "font-semibold text-navy" : "text-muted"}`}>
+                {alReaction ?? "Select a reaction"}
+              </span>
+              <motion.span animate={{ rotate: reactOpen ? 180 : 0 }} className="flex text-muted">
+                <ChevronDown size={15} strokeWidth={1.75} />
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {reactOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-border">
+                    {reactionOptions.map((rx) => (
+                      <button
+                        key={rx}
+                        type="button"
+                        onClick={() => { setAlReaction(rx); setReactOpen(false); }}
+                        className={`flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-[14px] last:border-0 ${
+                          alReaction === rx ? "bg-canvas font-semibold text-navy" : "text-navy"
+                        }`}
+                      >
+                        {rx}
+                        {alReaction === rx && <Check size={14} strokeWidth={2.5} />}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="flex items-baseline justify-between pb-1 pt-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Severity</p>
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${severityTone[alSeverity]}`}>{alSeverity}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={1}
+              value={severities.indexOf(alSeverity)}
+              onChange={(e) => setAlSeverity(severities[Number(e.target.value)])}
+              aria-label="Severity"
+              className="w-full accent-fg-primary"
+            />
+            <div className="flex justify-between pt-1">
+              {severities.map((sv) => (
+                <span
+                  key={sv}
+                  className={`text-[11px] ${
+                    alSeverity === sv
+                      ? sv === "Severe" || sv === "Fatal" ? "font-bold text-danger" : "font-bold text-navy"
+                      : "text-muted"
+                  }`}
+                >
+                  {sv}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="pt-6">
           <DarkButton
             disabled={!alName.trim()}
             onClick={() => {
               setAllergies((a) => [
                 ...a,
-                { name: alName.trim(), type: alType, reaction: alReaction ?? "—", severity: alSeverity },
+                {
+                  name: alName.trim(),
+                  type: alType,
+                  reaction: alType === "Note" ? "—" : alReaction ?? "—",
+                  severity: alType === "Note" ? "Mild" : alSeverity,
+                  note: alType === "Note" ? alNote.trim() || undefined : undefined,
+                },
               ]);
               setAllergyOpen(false);
             }}
           >
-            {alName.trim() ? `Save ${alName.trim()} · ${alSeverity}` : "Save allergy"}
+            {alType === "Note"
+              ? "Save note"
+              : alName.trim() ? `Save ${alName.trim()} · ${alSeverity}` : "Save allergy"}
           </DarkButton>
         </div>
       </Sheet>
@@ -959,18 +1160,45 @@ export default function ClientDetailPage() {
       {/* Add clinical note */}
       <Sheet open={noteOpen} onClose={() => setNoteOpen(false)} title="Add note" sub="Timestamped on Sarah's record">
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Linked to</p>
-        <div className="flex flex-wrap gap-2">
-          {["General", "Cut & Style · 3 Mar", "Cut & Style · 10 Feb"].map((o) => (
-            <button
-              key={o}
-              onClick={() => setNoteAppt(o)}
-              className={`rounded-full border px-3.5 py-2 text-[12px] font-medium ${
-                noteAppt === o ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
-              }`}
-            >
-              {o}
-            </button>
-          ))}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setNoteApptOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={noteApptOpen}
+            className="flex h-12 w-full items-center justify-between rounded-xl bg-canvas px-4 text-left"
+          >
+            <span className="text-[14px] font-semibold text-navy">{noteAppt ?? "General"}</span>
+            <motion.span animate={{ rotate: noteApptOpen ? 180 : 0 }} className="flex text-muted">
+              <ChevronDown size={15} strokeWidth={1.75} />
+            </motion.span>
+          </button>
+          <AnimatePresence initial={false}>
+            {noteApptOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-border">
+                  {noteLinkOptions.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => { setNoteAppt(o); setNoteApptOpen(false); }}
+                      className={`flex w-full items-center justify-between border-b border-border px-4 py-3 text-left text-[14px] last:border-0 ${
+                        noteAppt === o ? "bg-canvas font-semibold text-navy" : "text-navy"
+                      }`}
+                    >
+                      {o}
+                      {noteAppt === o && <Check size={14} strokeWidth={2.5} />}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         {noteAppt === "General" && (
           <>
