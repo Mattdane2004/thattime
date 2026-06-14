@@ -233,15 +233,25 @@ export const contactFor = (name: string) =>
   clientContacts[name] ?? { phone: "(555) 000-0000" };
 
 // Tag presets offered when tagging a client from the booking page.
-export const tagPresets = ["VIP", "Regular", "New", "Sensitive", "Allergy", "Deposit required"];
+export const tagPresets = [
+  "VIP", "Regular", "New client", "Sensitive", "Allergy", "Deposit required",
+  "No-show risk", "Loyalty member", "Student", "Senior", "Referral", "Walk-in",
+  "Colour client", "Patch test due",
+];
 
-// Form templates that can be attached to a booking.
-export const formTemplates = [
-  "Consultation form",
-  "Allergy questionnaire",
-  "Patch test consent",
-  "Aftercare instructions",
-  "Pre-appointment checklist",
+// Form templates that can be attached to a booking, grouped for filtering.
+export const formCategories = ["All", "Consultation", "Medical", "Consent", "Intake", "Aftercare"] as const;
+export const formTemplates: { name: string; category: string }[] = [
+  { name: "Consultation form", category: "Consultation" },
+  { name: "Allergy questionnaire", category: "Medical" },
+  { name: "Medical history", category: "Medical" },
+  { name: "Patch test consent", category: "Consent" },
+  { name: "Photo & marketing consent", category: "Consent" },
+  { name: "GDPR consent", category: "Consent" },
+  { name: "Minor consent form", category: "Consent" },
+  { name: "Pre-appointment checklist", category: "Intake" },
+  { name: "New client intake", category: "Intake" },
+  { name: "Aftercare instructions", category: "Aftercare" },
 ];
 
 // Templates for scheduling a class from the calendar.
