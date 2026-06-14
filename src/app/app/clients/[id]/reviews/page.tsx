@@ -43,7 +43,7 @@ export default function ClientReviewsPage() {
 
       <div className="flex flex-col gap-5 px-4 pt-4">
         {/* Summary */}
-        <div className="flex items-center gap-5 rounded-3xl bg-white p-5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+        <div className="flex items-center gap-5 rounded-3xl bg-white p-5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
           <span>
             <span className="block text-[34px] font-bold leading-none text-navy">4.7</span>
             <span className="block pt-1.5"><Stars n={5} size={12} /></span>
@@ -56,7 +56,7 @@ export default function ClientReviewsPage() {
           </span>
           <button
             onClick={() => { setAskSent(false); setAskReview(true); }}
-            className="shrink-0 rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white"
+            className="shrink-0 rounded-full bg-fg-primary px-3.5 py-2 text-[12px] font-semibold text-white"
           >
             Ask for a review
           </button>
@@ -65,7 +65,7 @@ export default function ClientReviewsPage() {
         {/* Reviews */}
         <div className="flex flex-col gap-3">
           {clientReviews.map((r) => (
-            <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+            <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
               <div className="flex items-center gap-2.5">
                 <Stars n={r.stars} />
                 <span className="text-[11px] text-muted">{r.date}</span>
@@ -94,7 +94,7 @@ export default function ClientReviewsPage() {
                       setReplyFor(null);
                       setReplyDraft("");
                     }}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#14181F] text-white disabled:opacity-40"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-fg-primary text-white disabled:opacity-40"
                   >
                     <Send size={14} />
                   </button>
@@ -113,7 +113,7 @@ export default function ClientReviewsPage() {
       <Sheet open={askReview} onClose={() => setAskReview(false)} title="Ask for a review" sub="Sent by SMS and in-app">
         {askSent ? (
           <div className="flex flex-col items-center pb-2 pt-4 text-center">
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14181F] text-white">
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white">
               <Check size={26} strokeWidth={2.2} />
             </motion.span>
             <p className="pt-5 text-[16px] font-bold text-navy">Request sent</p>

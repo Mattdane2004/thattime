@@ -26,7 +26,7 @@ const lifecycle: { label: string; live: ApptStatus }[] = [
 // category names until offers.ts becomes the single catalogue (PR #3).
 const CAT_ALIAS: Record<string, string> = { Cuts: "Hair", Styling: "Hair", Barber: "Barbering" };
 const catColor = (cat?: string) =>
-  defaultCategories.find((c) => c.name === (CAT_ALIAS[cat ?? ""] ?? cat))?.color ?? "#14181F";
+  defaultCategories.find((c) => c.name === (CAT_ALIAS[cat ?? ""] ?? cat))?.color ?? "#080706";
 
 interface BookingNote {
   date: string;
@@ -135,7 +135,7 @@ export function AppointmentSheetHost() {
           : "Cancel appointment";
 
   const ServiceRow = ({ name, price, removable }: { name: string; price: number; removable?: boolean }) => (
-    <div className="flex items-stretch gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+    <div className="flex items-stretch gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
       <span className="w-1 shrink-0 rounded-full" style={{ background: catColor(findSvc(name)?.category) }} />
       <button
         type="button"
@@ -212,7 +212,7 @@ export function AppointmentSheetHost() {
                       setLocalStatus(s.label);
                     }}
                     className={`flex-1 rounded-full py-2 text-[11px] font-semibold transition-colors ${
-                      active ? "bg-[#14181F] text-white" : "bg-canvas text-secondary"
+                      active ? "bg-fg-primary text-white" : "bg-canvas text-secondary"
                     }`}
                   >
                     {s.label}
@@ -229,7 +229,7 @@ export function AppointmentSheetHost() {
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
             {/* ── When and where ── */}
-            <div className="rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+            <div className="rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
               <div className="flex items-center justify-between px-4 py-3.5">
                 <span className="flex items-center gap-3 text-[14px] font-semibold text-navy">
                   <Calendar size={15} strokeWidth={1.8} className="text-secondary" />
@@ -267,7 +267,7 @@ export function AppointmentSheetHost() {
                   key={t.label}
                   whileTap={{ scale: 0.96 }}
                   onClick={t.run}
-                  className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                  className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                 >
                   {t.icon}
                   {t.label}
@@ -296,7 +296,7 @@ export function AppointmentSheetHost() {
             {notes?.formNote && (
               <>
                 <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Forms</p>
-                <div className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                     <FileText size={17} strokeWidth={1.6} />
                   </span>
@@ -309,7 +309,7 @@ export function AppointmentSheetHost() {
                     onClick={() => setReminded(true)}
                     disabled={reminded}
                     className={`flex shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[12px] font-semibold ${
-                      reminded ? "bg-canvas text-muted" : "bg-[#14181F] text-white"
+                      reminded ? "bg-canvas text-muted" : "bg-fg-primary text-white"
                     }`}
                   >
                     {reminded ? <Check size={12} strokeWidth={2.5} /> : <Bell size={12} strokeWidth={2} />}
@@ -325,7 +325,7 @@ export function AppointmentSheetHost() {
                 <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Notes & photos</p>
                 <div className="flex flex-col gap-2.5">
                   {bookingNotes.map((n, i) => (
-                    <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                    <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
                           <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
@@ -431,7 +431,7 @@ export function AppointmentSheetHost() {
                       value={noteDraft}
                       onChange={(e) => setNoteDraft(e.target.value)}
                       placeholder="Products used, formulas, observations, follow-up needed..."
-                      className="h-28 w-full resize-none rounded-xl bg-white p-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
+                      className="h-28 w-full resize-none rounded-xl bg-white p-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
                     />
                     <button
                       type="button"
@@ -493,7 +493,7 @@ export function AppointmentSheetHost() {
                         value={svcQuery}
                         onChange={(e) => setSvcQuery(e.target.value)}
                         placeholder="Search your services..."
-                        className="h-11 w-full rounded-xl bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
+                        className="h-11 w-full rounded-xl bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
                       />
                     </div>
                     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
@@ -503,7 +503,7 @@ export function AppointmentSheetHost() {
                           type="button"
                           onClick={() => setSvcCat(c)}
                           className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-medium ${
-                            svcCat === c ? "bg-[#14181F] text-white" : "bg-white text-secondary shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                            svcCat === c ? "bg-fg-primary text-white" : "bg-white text-secondary shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                           }`}
                         >
                           {c}

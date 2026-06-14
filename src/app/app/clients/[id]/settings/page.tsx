@@ -36,7 +36,7 @@ function ToggleRow({
         <span className="block text-[14px] font-medium text-navy">{title}</span>
         {sub && <span className="block pt-0.5 text-[11px] leading-snug text-muted">{sub}</span>}
       </span>
-      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? "bg-[#14181F]" : "bg-border"}`}>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? "bg-fg-primary" : "bg-border"}`}>
         <motion.span
           className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow"
           animate={{ left: on ? 22 : 2 }}
@@ -51,7 +51,7 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div>
       <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{label}</p>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">{children}</div>
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">{children}</div>
     </div>
   );
 }
@@ -123,7 +123,7 @@ export default function ClientSettingsPage() {
                     key={d}
                     onClick={() => setBookDays((x) => (on ? x.filter((y) => y !== d) : [...x, d]))}
                     className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                      on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                     }`}
                   >
                     {d}
@@ -140,7 +140,7 @@ export default function ClientSettingsPage() {
                   key={p}
                   onClick={() => setPolicy(p)}
                   className={`flex-1 rounded-full border py-2.5 text-[12px] font-semibold ${
-                    policy === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    policy === p ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                   }`}
                 >
                   {p}
@@ -161,7 +161,7 @@ export default function ClientSettingsPage() {
                     key={p}
                     onClick={() => setPayPrefs((x) => (on ? x.filter((y) => y !== p) : [...x, p]))}
                     className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                      on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                     }`}
                   >
                     {p}

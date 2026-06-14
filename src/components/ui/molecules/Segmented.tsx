@@ -29,7 +29,7 @@ export function Segmented({
             {active && (
               <motion.span
                 layoutId={`seg-${options.join("-")}`}
-                className="absolute inset-0 rounded-full bg-white shadow-[0_1px_4px_rgba(15,26,46,0.1)]"
+                className="absolute inset-0 rounded-full bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.1)]"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}

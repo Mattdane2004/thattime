@@ -472,7 +472,7 @@ function ClassSheet({
             whileTap={{ scale: 0.96 }}
             onClick={a.run}
             disabled={cancelled && a.label !== "Message all"}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)] disabled:opacity-40"
+            className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] disabled:opacity-40"
           >
             {a.icon}
             {a.label}
@@ -483,7 +483,7 @@ function ClassSheet({
       <p className="flex items-center gap-1.5 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
         <ListChecks size={12} /> Agenda
       </p>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
         {m.agenda.map((step, i) => (
           <div key={step} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
@@ -493,7 +493,7 @@ function ClassSheet({
           </div>
         ))}
       </div>
-      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3.5 text-[12px] leading-snug text-secondary shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3.5 text-[12px] leading-snug text-secondary shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
         <Wrench size={13} className="mt-0.5 shrink-0" strokeWidth={1.75} />
         {m.note}
       </p>

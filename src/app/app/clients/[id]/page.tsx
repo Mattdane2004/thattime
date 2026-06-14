@@ -26,7 +26,7 @@ import { pastAppointments, clientForms, staffMembers } from "@/lib/data/product"
 /** Compact next-appointment card — actions live behind the dots, not on the card. */
 function NextAppointmentCard({ onMenu, moved }: { onMenu: () => void; moved: string | null }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
       <div className="flex items-start justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
           Next appointment
@@ -231,7 +231,7 @@ export default function ClientDetailPage() {
           </span>
           <div className="flex items-center gap-2.5 pt-4">
             <h1 className="text-[24px] font-bold tracking-tight text-navy">Sarah Johnson</h1>
-            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-[#14181F] text-white"}`}>
+            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-fg-primary text-white"}`}>
               {blocked ? "Blocked" : "Active"}
             </span>
           </div>
@@ -285,7 +285,7 @@ export default function ClientDetailPage() {
               <button
                 type="button"
                 onClick={() => setTab("Record")}
-                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)] ${
+                className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
                   severe ? "border-danger/40" : "border-border"
                 }`}
               >
@@ -305,7 +305,7 @@ export default function ClientDetailPage() {
               {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
 
               {/* The numbers, one quiet row */}
-              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                 {[
                   ["Last Visit", "3 Mar 2026"],
                   ["Total Bookings", "24"],
@@ -326,7 +326,7 @@ export default function ClientDetailPage() {
                   </p>
                   <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
                     {attention.map((a) => (
-                      <div key={a.id} className="flex w-[185px] shrink-0 flex-col rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                      <div key={a.id} className="flex w-[185px] shrink-0 flex-col rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-canvas">{a.icon}</span>
                         <span className="block pt-2.5 text-[13px] font-semibold leading-tight text-navy">{a.title}</span>
                         <span className="block flex-1 pt-1 text-[11px] leading-snug text-muted">{a.sub}</span>
@@ -339,7 +339,7 @@ export default function ClientDetailPage() {
                               ? "bg-canvas text-muted"
                               : a.id === "unpaid"
                                 ? "bg-[#FEF3C7] text-[#B45309]"
-                                : "bg-[#14181F] text-white"
+                                : "bg-fg-primary text-white"
                           }`}
                         >
                           {a.done && <Check size={11} strokeWidth={3} className="mr-1 inline" />}
@@ -354,7 +354,7 @@ export default function ClientDetailPage() {
               {/* Wallet, reviews and settings are full pages now; contact stays a sheet */}
               <div>
                 <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manage</p>
-                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   {[
                     { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: "£25 credit · 320 pts · 2 rewards", run: () => router.push(`/app/clients/${clientId}/wallet`) },
                     { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => router.push(`/app/clients/${clientId}/reviews`) },
@@ -380,9 +380,9 @@ export default function ClientDetailPage() {
             <div className="flex flex-col gap-3">
               <RecordHeading>Upcoming</RecordHeading>
               {cancelled ? (
-                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="text-[13px] text-muted">No upcoming appointments.</span>
-                  <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-[#14181F] px-3.5 py-2 text-[12px] font-semibold text-white">
+                  <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-fg-primary px-3.5 py-2 text-[12px] font-semibold text-white">
                     Book
                   </button>
                 </div>
@@ -396,10 +396,10 @@ export default function ClientDetailPage() {
                   <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
                   <input
                     placeholder="Search service, date, staff..."
-                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)] focus:outline-none"
+                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
                   />
                 </div>
-                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <SlidersHorizontal size={13} strokeWidth={1.75} />
                   All
                   <ChevronDown size={12} className="text-muted" />
@@ -408,7 +408,7 @@ export default function ClientDetailPage() {
               {pastAppointments.map((p) => {
                 const isUnpaid = p.id === "p3";
                 return (
-                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                     <div className="flex items-center justify-between">
                       <p className="text-[15px] font-semibold text-navy">{p.name}</p>
                       <span className="flex gap-1.5">
@@ -451,7 +451,7 @@ export default function ClientDetailPage() {
                       setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild");
                       setAllergyOpen(true);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                   >
                     <Plus size={14} strokeWidth={2} />
                   </button>
@@ -460,7 +460,7 @@ export default function ClientDetailPage() {
                 Allergies
               </RecordHeading>
               {allergies.length === 0 && (
-                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(15,26,46,0.04)]">No known allergies.</p>
+                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">No known allergies.</p>
               )}
               {allergies.map((al) => {
                 const expandedNow = expandedAllergy === al.name;
@@ -469,7 +469,7 @@ export default function ClientDetailPage() {
                     key={al.name}
                     type="button"
                     onClick={() => setExpandedAllergy(expandedNow ? null : al.name)}
-                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(15,26,46,0.04)]"
+                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
                   >
                     <span className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
@@ -511,7 +511,7 @@ export default function ClientDetailPage() {
                       setPtStaff(null); setPtStatus("Pending"); setPtDesc("");
                       setPtOpen(true);
                     }}
-                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                    className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Record new
                   </button>
@@ -520,7 +520,7 @@ export default function ClientDetailPage() {
                 Patch tests
               </RecordHeading>
               {patchTests.map((pt, i) => (
-                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
                       <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
@@ -538,7 +538,7 @@ export default function ClientDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setNoteDraft(""); setNoteAppt("General"); setNotePhotos(0); setNoteDay(null); setNotePickDate(false); setNoteOpen(true); }}
-                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                    className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Add note
                   </button>
@@ -547,7 +547,7 @@ export default function ClientDetailPage() {
                 Notes & images
               </RecordHeading>
               {notes.map((n, i) => (
-                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
                       <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
@@ -574,7 +574,7 @@ export default function ClientDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setFormPick(null); setFormOpen(true); }}
-                    className="rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+                    className="rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
                   >
                     Send form
                   </button>
@@ -590,7 +590,7 @@ export default function ClientDetailPage() {
                 </span>
               </div>
               {clientForms.map((f) => (
-                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                     <FileText size={17} strokeWidth={1.6} />
                   </span>
@@ -681,7 +681,7 @@ export default function ClientDetailPage() {
               key={t}
               onClick={() => setAlType(t)}
               className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                alType === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                alType === t ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {t}
@@ -742,7 +742,7 @@ export default function ClientDetailPage() {
           value={severities.indexOf(alSeverity)}
           onChange={(e) => setAlSeverity(severities[Number(e.target.value)])}
           aria-label="Severity"
-          className="w-full accent-[#14181F]"
+          className="w-full accent-fg-primary"
         />
         <div className="flex justify-between pt-1">
           {severities.map((sv) => (
@@ -796,7 +796,7 @@ export default function ClientDetailPage() {
                   if (i === 0) setPtDay(null);
                 }}
                 className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                  on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                  on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                 }`}
               >
                 {i === 1 && ptDay ? `${ptDay} Mar 2026` : d}
@@ -817,7 +817,7 @@ export default function ClientDetailPage() {
               type="button"
               onClick={() => setPtStaff(m)}
               className={`rounded-full border px-3.5 py-2 text-[13px] font-medium ${
-                ptStaff === m ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                ptStaff === m ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {m}
@@ -835,7 +835,7 @@ export default function ClientDetailPage() {
                 ptStatus === st
                   ? st === "Failed"
                     ? "border-danger bg-danger text-white"
-                    : "border-[#14181F] bg-[#14181F] text-white"
+                    : "border-fg-primary bg-fg-primary text-white"
                   : "border-border bg-white text-navy"
               }`}
             >
@@ -965,7 +965,7 @@ export default function ClientDetailPage() {
               key={o}
               onClick={() => setNoteAppt(o)}
               className={`rounded-full border px-3.5 py-2 text-[12px] font-medium ${
-                noteAppt === o ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                noteAppt === o ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               {o}
@@ -987,7 +987,7 @@ export default function ClientDetailPage() {
                       if (i === 0) setNoteDay(null);
                     }}
                     className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                      on ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                      on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                     }`}
                   >
                     {i === 1 && noteDay ? `${noteDay} Mar 2026` : d}
@@ -1132,7 +1132,7 @@ export default function ClientDetailPage() {
               ) : (
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full border transition-colors ${
-                    formPick === t ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                    formPick === t ? "border-fg-primary bg-fg-primary text-white" : "border-border"
                   }`}
                 >
                   {formPick === t && <Check size={11} strokeWidth={3} />}

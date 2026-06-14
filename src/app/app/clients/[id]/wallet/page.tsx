@@ -100,7 +100,7 @@ export default function ClientWalletPage() {
 
       <div className="flex flex-col gap-5 px-4 pt-4">
         {/* Balance + points hero — labels first, numbers loud */}
-        <div className="rounded-3xl bg-[#14181F] p-5 text-white">
+        <div className="rounded-3xl bg-fg-primary p-5 text-white">
           <div className="flex">
             <div className="flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">Wallet balance</p>
@@ -148,13 +148,13 @@ export default function ClientWalletPage() {
             <button
               type="button"
               onClick={() => { resetAdd(); setAddOpen(true); }}
-              className="flex items-center gap-1 rounded-full bg-[#14181F] px-3 py-1.5 text-[11px] font-bold text-white"
+              className="flex items-center gap-1 rounded-full bg-fg-primary px-3 py-1.5 text-[11px] font-bold text-white"
             >
               <Plus size={12} strokeWidth={2.5} />
               Add reward
             </button>
           </div>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
             {rewards.map((r, i) => (
               <div key={r.id} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
@@ -183,7 +183,7 @@ export default function ClientWalletPage() {
         {/* Activity */}
         <div>
           <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Recent activity</p>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(15,26,46,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
             {activity.map((a, i) => (
               <div key={a.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
                 <span className="text-[13px] font-medium text-navy">{a.label}</span>
@@ -203,7 +203,7 @@ export default function ClientWalletPage() {
               key={v}
               onClick={() => { setTopup(topup === v ? null : v); setTopupCustom(""); }}
               className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-                topup === v ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                topup === v ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
               }`}
             >
               +£{v}
@@ -270,7 +270,7 @@ export default function ClientWalletPage() {
                   key={p}
                   onClick={() => { setPctPick(pctPick === p ? null : p); setPctCustom(""); }}
                   className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                    pctPick === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    pctPick === p ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                   }`}
                 >
                   {p}%
@@ -299,7 +299,7 @@ export default function ClientWalletPage() {
                   key={p}
                   onClick={() => { setAmtPick(amtPick === p ? null : p); setAmtCustom(""); }}
                   className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold ${
-                    amtPick === p ? "border-[#14181F] bg-[#14181F] text-white" : "border-border bg-white text-navy"
+                    amtPick === p ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
                   }`}
                 >
                   £{p}
@@ -334,7 +334,7 @@ export default function ClientWalletPage() {
                 </span>
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    itemPick === s.name ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                    itemPick === s.name ? "border-fg-primary bg-fg-primary text-white" : "border-border"
                   }`}
                 >
                   {itemPick === s.name && <Check size={11} strokeWidth={3} />}
@@ -359,7 +359,7 @@ export default function ClientWalletPage() {
                 </span>
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    itemPick === p.name ? "border-[#14181F] bg-[#14181F] text-white" : "border-border"
+                    itemPick === p.name ? "border-fg-primary bg-fg-primary text-white" : "border-border"
                   }`}
                 >
                   {itemPick === p.name && <Check size={11} strokeWidth={3} />}
