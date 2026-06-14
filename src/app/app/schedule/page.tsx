@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Coffee, CalendarCog, SlidersHorizontal,
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
-  CalendarDays, X,
+  CalendarDays, X, Clock, Check, Calendar as CalendarIcon, Users,
 } from "lucide-react";
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
@@ -233,14 +233,26 @@ function CalendarGridView({ days, filterCat, timeFmt }: { days: number; filterCa
   );
 }
 
-function TeamView({ onOpenClass, classCancelled, timeFmt }: { onOpenClass: () => void; classCancelled: boolean; timeFmt: string }) {
+function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff }: { onOpenClass: () => void; classCancelled: boolean; timeFmt: string; selectedStaff: string[] }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const visibleColumns = teamColumns.filter((c) => selectedStaff.includes(c.id));
+
+  if (visibleColumns.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+        <Users size={22} strokeWidth={1.6} className="text-muted" />
+        <p className="text-[14px] font-semibold text-navy">No team members selected</p>
+        <p className="text-[12px] text-muted">Open settings and pick who to show.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="px-2 pb-6 pt-2">
-      <div className="grid grid-cols-[34px_1fr_1fr_1fr]">
+      <div className="grid" style={{ gridTemplateColumns: `34px repeat(${visibleColumns.length}, 1fr)` }}>
         <span className="self-end pb-2 text-[10px] text-muted">Time</span>
-        {teamColumns.map((c) => (
+        {visibleColumns.map((c) => (
           <div key={c.id} className="border-b border-border pb-2 text-center">
             <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-[10px] font-bold text-secondary">
               {c.initials}
@@ -256,7 +268,7 @@ function TeamView({ onOpenClass, classCancelled, timeFmt }: { onOpenClass: () =>
             </span>
           ))}
         </div>
-        {teamColumns.map((c, col) => (
+        {visibleColumns.map((c, col) => (
           <div
             key={c.id}
             role="button"
@@ -560,94 +572,198 @@ function ClassSheet({
   );
 }
 
-const calendarLayouts = [
+// Calendar-view options (Calendar tab only) — matches the Figma cards.
+const calendarViews = [
   { label: "Day", days: 1 },
-  { label: "2 days", days: 2 },
-  { label: "3 days", days: 3 },
+  { label: "3 Day", days: 3 },
   { label: "Week", days: 7 },
 ];
 
+const SECTION_LABEL = "pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted";
+
+// 12h / 24h segmented toggle (shared by every view).
+function TimeFormatToggle({ timeFmt, onTimeFmt }: { timeFmt: "12h" | "24h"; onTimeFmt: (f: "12h" | "24h") => void }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Clock size={15} strokeWidth={1.75} className="text-muted" />
+      <div className="flex rounded-full bg-canvas p-1">
+        {(["12h", "24h"] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => onTimeFmt(f)}
+            className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
+              timeFmt === f ? "bg-white text-navy shadow-sm" : "text-muted"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Filter dropdown — a selection panel (not pills), opens inline below the row.
+function FilterDropdown({ filterCat, onFilterCat }: { filterCat: string; onFilterCat: (c: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const active = filterCat !== "All";
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+          active ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
+        }`}
+      >
+        <SlidersHorizontal size={14} strokeWidth={1.9} />
+        {active ? filterCat : "Filter"}
+        <ChevronDown size={14} strokeWidth={2} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <>
+          <button type="button" aria-hidden tabIndex={-1} onClick={() => setOpen(false)} className="fixed inset-0 z-10 cursor-default" />
+          <div className="absolute left-0 top-[calc(100%+8px)] z-20 max-h-60 w-56 overflow-y-auto rounded-2xl border border-border bg-white py-1 shadow-lg">
+            {serviceCategories.map((c) => {
+              const sel = filterCat === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => { onFilterCat(c); setOpen(false); }}
+                  className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-[14px] ${sel ? "font-semibold text-navy" : "text-secondary"}`}
+                >
+                  {c === "All" ? "All appointments" : c}
+                  {sel && <Check size={15} strokeWidth={2.5} className="text-navy" />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const JUMP_DOTS: Record<number, "g" | "a" | "r"> = {
+  1: "r", 2: "g", 3: "a", 5: "g", 6: "g", 7: "r", 8: "a", 9: "g", 10: "g", 11: "g",
+  12: "a", 13: "r", 14: "a", 15: "a", 16: "r", 17: "g", 18: "r", 19: "r", 20: "r",
+  21: "r", 22: "r", 23: "g", 24: "r", 25: "r", 26: "r", 27: "r", 28: "a", 29: "r",
+  30: "g", 31: "a",
+};
+
+/**
+ * Calendar settings — one sheet, view-specific content. Every view shares the
+ * Filter dropdown + 12h/24h toggle + jump-to-date; Calendar adds a view-layout
+ * selector and Team adds a team-member filter (matches the three Figma designs).
+ */
 function SettingsSheet({
   open,
   onClose,
+  view,
   calDays,
   onCalDays,
   timeFmt,
   onTimeFmt,
   filterCat,
   onFilterCat,
+  selectedStaff,
+  onToggleStaff,
+  onSelectAllStaff,
 }: {
   open: boolean;
   onClose: () => void;
+  view: string;
   calDays: number;
   onCalDays: (n: number) => void;
   timeFmt: "12h" | "24h";
   onTimeFmt: (f: "12h" | "24h") => void;
   filterCat: string;
   onFilterCat: (c: string) => void;
+  selectedStaff: string[];
+  onToggleStaff: (id: string) => void;
+  onSelectAllStaff: () => void;
 }) {
-  const dots: Record<number, "g" | "a" | "r"> = {
-    1: "r", 2: "g", 3: "a", 5: "g", 6: "g", 7: "r", 8: "a", 9: "g", 10: "g", 11: "g",
-    12: "a", 13: "r", 14: "a", 15: "a", 16: "r", 17: "g", 18: "r", 19: "r", 20: "r",
-    21: "r", 22: "r", 23: "g", 24: "r", 25: "r", 26: "r", 27: "r", 28: "a", 29: "r",
-    30: "g", 31: "a",
-  };
+  const allSelected = selectedStaff.length === teamColumns.length;
   return (
     <Sheet open={open} onClose={onClose} title="Calendar Settings">
-      <div className="flex items-center justify-between pb-4">
-        <span className="flex items-center gap-2 text-[13px] font-medium text-navy">
-          <SlidersHorizontal size={14} strokeWidth={1.75} />
-          Time format
-        </span>
-        <div className="flex rounded-full bg-canvas p-1">
-          {(["12h", "24h"] as const).map((f) => (
+      {/* Calendar view layout — Calendar tab only */}
+      {view === "Calendar" && (
+        <>
+          <p className={SECTION_LABEL}>Calendar view</p>
+          <div className="grid grid-cols-3 gap-2.5 pb-5">
+            {calendarViews.map((l) => {
+              const sel = calDays === l.days;
+              return (
+                <button
+                  key={l.label}
+                  type="button"
+                  onClick={() => onCalDays(l.days)}
+                  className={`flex flex-col items-center gap-2 rounded-2xl border py-4 text-[13px] font-semibold transition-colors ${
+                    sel ? "border-2 border-fg-primary text-navy" : "border border-border text-secondary"
+                  }`}
+                >
+                  <CalendarIcon size={20} strokeWidth={1.75} />
+                  {l.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Team filter — Team tab only */}
+      {view === "Team" && (
+        <>
+          <div className="flex items-center justify-between pb-2">
+            <p className={`${SECTION_LABEL} pb-0`}>
+              Team view <span className="ml-1 normal-case tracking-normal text-secondary">{selectedStaff.length}/{teamColumns.length} selected</span>
+            </p>
             <button
-              key={f}
               type="button"
-              onClick={() => onTimeFmt(f)}
-              className={`rounded-full px-4 py-1.5 text-[12px] font-semibold ${
-                timeFmt === f ? "bg-white text-navy shadow-[0_1px_3px_rgba(8, 7, 6,0.12)]" : "text-muted"
-              }`}
+              onClick={onSelectAllStaff}
+              className="rounded-full bg-canvas px-3 py-1.5 text-[12px] font-semibold text-navy"
             >
-              {f}
+              {allSelected ? "Clear all" : "Select all"}
             </button>
-          ))}
-        </div>
+          </div>
+          <div className="-mx-6 overflow-x-auto pb-5 [scrollbar-width:none]">
+            <div className="flex w-max gap-2.5 px-6">
+              {teamColumns.map((c) => {
+                const sel = selectedStaff.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => onToggleStaff(c.id)}
+                    className={`flex w-[112px] shrink-0 flex-col items-center gap-1.5 rounded-2xl py-4 transition-colors ${
+                      sel ? "border-2 border-fg-primary bg-white" : "border border-border bg-canvas"
+                    }`}
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-[12px] font-bold text-secondary">
+                      {c.initials}
+                    </span>
+                    <span className="text-[13px] font-semibold text-navy">{c.name}</span>
+                    <span className="text-[11px] text-muted">{c.role}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Filter + time format — shared by every view */}
+      <div className="flex items-center justify-between pb-5">
+        <FilterDropdown filterCat={filterCat} onFilterCat={onFilterCat} />
+        <TimeFormatToggle timeFmt={timeFmt} onTimeFmt={onTimeFmt} />
       </div>
 
-      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Filter appointments</p>
-      <div className="flex flex-wrap gap-2 pb-5">
-        {serviceCategories.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onFilterCat(c)}
-            className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
-              filterCat === c ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Calendar layout</p>
-      <div className="flex gap-2 pb-5">
-        {calendarLayouts.map((l) => (
-          <button
-            key={l.label}
-            type="button"
-            onClick={() => onCalDays(l.days)}
-            className={`flex-1 rounded-full border py-2.5 text-[13px] font-semibold transition-colors ${
-              calDays === l.days ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
-            }`}
-          >
-            {l.label}
-          </button>
-        ))}
-      </div>
-
-      <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Jump to date</p>
-      <MiniCalendar selected={10} onSelect={() => onClose()} dots={dots} />
+      <p className={SECTION_LABEL}>Jump to date</p>
+      <MiniCalendar selected={10} onSelect={() => onClose()} dots={JUMP_DOTS} />
       <div className="flex items-center justify-center gap-4 pt-3 text-[11px] text-muted">
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-success" /> Open</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-warning" /> Filling up</span>
@@ -675,6 +791,7 @@ export default function SchedulePage() {
   const [calDays, setCalDays] = useState(3);
   const [timeFmt, setTimeFmt] = useState<"12h" | "24h">("24h");
   const [filterCat, setFilterCat] = useState("All");
+  const [selectedStaff, setSelectedStaff] = useState<string[]>(teamColumns.map((c) => c.id));
 
   return (
     <div className="flex min-h-full flex-col bg-fog">
@@ -743,7 +860,7 @@ export default function SchedulePage() {
           )}
           {view === "My Day" && <MyDayView filterCat={filterCat} timeFmt={timeFmt} />}
           {view === "Calendar" && <CalendarGridView days={calDays} filterCat={filterCat} timeFmt={timeFmt} />}
-          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} timeFmt={timeFmt} />}
+          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} timeFmt={timeFmt} selectedStaff={selectedStaff} />}
         </motion.div>
       </AnimatePresence>
 
@@ -777,16 +894,20 @@ export default function SchedulePage() {
       <SettingsSheet
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        view={view}
         calDays={calDays}
-        onCalDays={(n) => {
-          setCalDays(n);
-          setView("Calendar");
-          setSettingsOpen(false);
-        }}
+        onCalDays={setCalDays}
         timeFmt={timeFmt}
         onTimeFmt={setTimeFmt}
         filterCat={filterCat}
         onFilterCat={setFilterCat}
+        selectedStaff={selectedStaff}
+        onToggleStaff={(id) =>
+          setSelectedStaff((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+        }
+        onSelectAllStaff={() =>
+          setSelectedStaff((s) => (s.length === teamColumns.length ? [] : teamColumns.map((c) => c.id)))
+        }
       />
     </div>
   );
