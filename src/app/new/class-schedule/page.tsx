@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Plus, Repeat, X } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 
 // Class wizard — "Select dates" + times (Figma 12135:47208 / 12135:47381).

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { STATUS_LABEL, ACCESS_LEVELS, initialsOf } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
-import { Toggle } from "@/components/app/WizardChrome";
+import { Toggle } from "@/components/ui";
 import { businessLocations } from "@/lib/data/locations";
 
 // Team member detail — profile, bookability, services, locations, and links

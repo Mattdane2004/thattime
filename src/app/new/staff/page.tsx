@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Search } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { initialsOf } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";

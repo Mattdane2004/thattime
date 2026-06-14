@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { useOffersStore, offerFromDraft } from "@/lib/store/offersStore";
 

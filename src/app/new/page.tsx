@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight, Play, Sparkles, PoundSterling, Users2, ImageIcon } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { ScreenHeader } from "@/components/ui";
 
 // Wizard intro — "Set up your service in a few simple steps" (Figma 12135:46060).
 // Get started → type selector; the tutorial video is backlog.

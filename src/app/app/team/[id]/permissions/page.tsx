@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { Toggle } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { Toggle } from "@/components/ui";
 import { ACCESS_LEVELS } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
 import type { Staff } from "@/lib/types";

@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore, type ClassDraft } from "@/lib/store/wizardStore";
 
 // Class wizard — "Attendees" (Figma 12135:47063): public group vs private

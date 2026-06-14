@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { FieldLabel, fieldInput, Toggle } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { FieldLabel, fieldInput, Toggle } from "@/components/ui";
 import { useTeamStore } from "@/lib/store/teamStore";
 
 // Member pay — employment type, rate, commission and tips. Commission applies

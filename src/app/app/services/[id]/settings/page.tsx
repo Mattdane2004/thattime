@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { Toggle, FieldLabel } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { Toggle, FieldLabel } from "@/components/ui";
 import { useOffersStore } from "@/lib/store/offersStore";
 
 // Offer settings (Figma 12135:50034) — access & visibility, booking rules,

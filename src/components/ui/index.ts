@@ -57,3 +57,6 @@ export { ProgressDashes } from "./molecules/ProgressDashes";
 // ── organisms ──
 export { AppHeader, SectionLabel } from "./organisms/AppHeader";
 export { BackHeader, type BackHeaderProps } from "./organisms/BackHeader";
+// Compact nav-bar header (distinct from the hero BackHeader) + offer-wizard chrome.
+export { ScreenHeader } from "./organisms/ScreenHeader";
+export { TOTAL_STEPS, WizardTitle, WizardFooter, FieldLabel, Toggle, fieldInput } from "./organisms/WizardChrome";

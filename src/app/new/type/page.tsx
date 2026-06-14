@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Scissors, Users, Package, Repeat, ChevronRight } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { ScreenHeader } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import type { OfferType } from "@/lib/types";
 

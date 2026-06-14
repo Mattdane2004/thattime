@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Scissors, CreditCard, TicketPercent, LockKeyhole, Check } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
 
 // Subscription wizard 2/3 — benefits. Ported from that-time-app

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { FieldLabel, fieldInput, Toggle } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { FieldLabel, fieldInput, Toggle } from "@/components/ui";
 import { useTeamStore } from "@/lib/store/teamStore";
 
 // Member schedule — weekly working hours (toggle a day, set start/end) and

@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { useOffersStore, offerFromDraft } from "@/lib/store/offersStore";
 

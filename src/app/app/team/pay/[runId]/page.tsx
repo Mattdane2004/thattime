@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
+import { ScreenHeader } from "@/components/ui";
 import { initialsOf, lineTotal, runTotal } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
 

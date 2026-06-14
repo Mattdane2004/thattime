@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Check, Scissors } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { WizardFooter, WizardTitle, FieldLabel, TOTAL_STEPS } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore, type BundleDraft } from "@/lib/store/wizardStore";
 import { useOffersStore } from "@/lib/store/offersStore";
 import { offerMeta } from "@/lib/data/offers";

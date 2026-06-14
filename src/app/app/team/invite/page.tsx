@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
-import { ScreenHeader } from "@/components/app/ScreenHeader";
-import { FieldLabel, fieldInput, Toggle } from "@/components/app/WizardChrome";
+import { ScreenHeader } from "@/components/ui";
+import { FieldLabel, fieldInput, Toggle } from "@/components/ui";
 import { ACCESS_LEVELS } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
 import type { AccessLevel } from "@/lib/types";

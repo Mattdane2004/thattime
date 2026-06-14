@@ -85,7 +85,7 @@ surface it rather than guess.
 **Foundations / shared**
 - [~] Canonical barrel established; primitives consolidated (Stages A–C done)
 - [ ] Fold `components/client/shared.tsx` (Avatar/Stars=RatingLabel/GridTile) into ui
-- [ ] App chrome organisms: AppHeader✅/SectionLabel✅ done; AppTabBar, ClientTabBar, AppFrame, AppointmentSheet, QuickActions, UpNextCard, WizardChrome → audit/own
+- [~] App chrome organisms: AppHeader✅/SectionLabel✅/BackHeader✅/ScreenHeader✅/WizardChrome✅ now in the barrel (ScreenHeader+WizardChrome relocated to ui/organisms, ~38 importers codemodded). Still: AppTabBar, ClientTabBar, AppFrame, AppointmentSheet, QuickActions, UpNextCard (these import the barrel → relocate carefully to avoid cycles, or leave owned in components/app). NOTE: ScreenHeader (compact nav bar) and BackHeader (hero header) kept SEPARATE per Austin's "separate when use cases differ".
 - [~] Library gaps: StarRating✅, ToggleRow(tone)✅, SettingsGroup✅, Tag✅, BackHeader✅ added. Still: RatingLabel, ChipGroup/SelectablePills, SheetRow/OptionRow, stat/info cards as needed
 
 **Business app `/app`**
