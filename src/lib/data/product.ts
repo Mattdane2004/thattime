@@ -220,6 +220,30 @@ export const clientNotes: Record<string, { allergies?: string[]; formNote?: stri
   "Emily Davis": { formNote: "Aftercare form not sent" },
 };
 
+// Contact details surfaced on the booking page client card (quick call/text).
+export const clientContacts: Record<string, { phone: string; email?: string }> = {
+  "Sarah Johnson": { phone: "(555) 234-5678", email: "sarah.j@email.com" },
+  "Emily Davis": { phone: "(555) 102-4471", email: "emily.d@email.com" },
+  "Jessica Brown": { phone: "(555) 778-1290" },
+  "Amanda White": { phone: "(555) 332-0091" },
+  "Michael Chen": { phone: "(555) 640-2210" },
+  "Lisa Anderson": { phone: "(555) 419-7733" },
+};
+export const contactFor = (name: string) =>
+  clientContacts[name] ?? { phone: "(555) 000-0000" };
+
+// Tag presets offered when tagging a client from the booking page.
+export const tagPresets = ["VIP", "Regular", "New", "Sensitive", "Allergy", "Deposit required"];
+
+// Form templates that can be attached to a booking.
+export const formTemplates = [
+  "Consultation form",
+  "Allergy questionnaire",
+  "Patch test consent",
+  "Aftercare instructions",
+  "Pre-appointment checklist",
+];
+
 // Templates for scheduling a class from the calendar.
 export const classTemplates = [
   { id: "colour-mc", emoji: "🎨", name: "Colour Masterclass", sub: "90m · £65 per seat · 8 seats" },
