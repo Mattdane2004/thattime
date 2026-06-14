@@ -56,6 +56,7 @@ import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating, BackHeader, ScreenHeader, Toggle } from "./src/components/ui";
+import { Avatar as ConsumerAvatar, Stars as ConsumerStars, Toggle as ConsumerToggle, SummaryRow } from "./src/components/ui/consumer";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -335,6 +336,10 @@ check("StarRating renders 5 stars", (() => { const s = h(React.createElement(Sta
 check("BackHeader renders title + sub", (() => { const s = h(React.createElement(BackHeader, { title: "Wallet & loyalty", sub: "Sarah Johnson" })); return s.includes("Wallet &amp; loyalty") && s.includes("Sarah Johnson") && s.includes('aria-label="Back"'); })());
 check("ScreenHeader renders title", h(React.createElement(ScreenHeader, { title: "Permissions", onBack: () => {}, border: true })).includes("Permissions"));
 check("Toggle on renders", h(React.createElement(Toggle, { on: true })).length > 0);
+check("consumer Avatar shows initials", h(React.createElement(ConsumerAvatar, { initials: "VB", category: "Hair" })).includes("VB"));
+check("consumer Stars shows rating", h(React.createElement(ConsumerStars, { rating: "4.8", count: 765 })).includes("4.8"));
+check("consumer Toggle (coral) on", h(React.createElement(ConsumerToggle, { on: true, onToggle: () => {} })).includes("bg-coral"));
+check("SummaryRow shows label + value", (() => { const s = h(React.createElement(SummaryRow, { label: "Total", value: "£42.00" })); return s.includes("Total") && s.includes("£42.00"); })());
 
 // 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
 check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));

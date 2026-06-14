@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { clientUser } from "@/lib/data/b2c";
 import { Sheet, DarkButton, GhostButton } from "@/components/ui";
+import { Toggle } from "@/components/ui/consumer";
 
 function Row({
   icon,
@@ -56,22 +57,6 @@ function Row({
         {sub && <span className="block truncate text-[12px] text-secondary">{sub}</span>}
       </span>
       <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-muted" />
-    </button>
-  );
-}
-
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={onToggle}
-      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${
-        on ? "bg-coral" : "bg-border"
-      }`}
-    >
-      <motion.span layout transition={{ type: "spring", stiffness: 500, damping: 32 }} className={`h-6 w-6 rounded-full bg-white shadow ${on ? "ml-auto" : ""}`} />
     </button>
   );
 }

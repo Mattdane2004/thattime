@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Star, Layers, Repeat, GraduationCap } from "lucide-react";
 import type { OfferType } from "@/lib/types/offer";
 import type { CategoryName } from "@/lib/tokens/categories";
@@ -64,6 +65,35 @@ export function OfferTypeBadge({ type }: { type: OfferType }) {
       {meta.icon}
       {meta.label}
     </span>
+  );
+}
+
+/** Coral toggle switch (consumer settings). Distinct from the business Toggle. */
+export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? "bg-coral" : "bg-border"}`}
+    >
+      <motion.span
+        layout
+        transition={{ type: "spring", stiffness: 500, damping: 32 }}
+        className={`h-6 w-6 rounded-full bg-white shadow ${on ? "ml-auto" : ""}`}
+      />
+    </button>
+  );
+}
+
+/** Label/value summary row (booking & checkout summaries). `accent` highlights coral. */
+export function SummaryRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={`text-[13px] ${accent ? "font-medium text-coral" : "text-secondary"}`}>{label}</span>
+      <span className={`text-[13px] font-medium ${accent ? "text-coral" : "text-navy"}`}>{value}</span>
+    </div>
   );
 }
 

@@ -29,7 +29,7 @@ import {
   MiniCalendar,
   TimeChips,
 } from "@/components/ui";
-import { Avatar } from "@/components/ui/consumer";
+import { Avatar, SummaryRow } from "@/components/ui/consumer";
 import { getBooking, getSalon, type BookingStatus } from "@/lib/data/b2c";
 
 const parsePrice = (p: string) => Number(p.replace(/[^\d.]/g, "")) || 0;
@@ -210,8 +210,8 @@ export default function BookingDetailPage() {
       {/* receipt sheet */}
       <Sheet open={receiptOpen} onClose={() => setReceiptOpen(false)} title="Receipt" sub={`${booking.salonName} · ${booking.date}`}>
         <div className="space-y-2 pt-1">
-          <Line label={booking.offerName} value={gbp(price)} />
-          <Line label="Booking fees" value="£0.00" />
+          <SummaryRow label={booking.offerName} value={gbp(price)} />
+          <SummaryRow label="Booking fees" value="£0.00" />
           <div className="flex items-center justify-between border-t border-border pt-2.5">
             <span className="text-[14px] font-bold text-navy">Total paid</span>
             <span className="text-[15px] font-bold text-navy">{gbp(price)}</span>
@@ -320,11 +320,3 @@ function InfoRow({ icon, children, plainIcon }: { icon: React.ReactNode; childre
   );
 }
 
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[13px] text-secondary">{label}</span>
-      <span className="text-[13px] font-medium text-navy">{value}</span>
-    </div>
-  );
-}

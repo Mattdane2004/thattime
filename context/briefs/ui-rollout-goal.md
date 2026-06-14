@@ -110,7 +110,14 @@ surface it rather than guess.
 - [ ] inbox, inbox/[id], notifications, profile
 - [ ] settings (+ account, notifications, payments, wallet)
 
+## Remaining (polish — increasingly look-and-feel territory)
+- Bordered selectable-pill groups (7 screens) vs library `Chip` (borderless bg-navy): a LOOK decision — migrate to Chip (visual change) or add a bordered `SelectablePill`? Surfaced, not auto-decided.
+- Status tints (#FEF3C7/#B45309 amber, etc.) → tokens: needs hue-matching (design call).
+- `clients/[id]` (1158 lines): mostly layout + one-offs; uses library components already.
+- NOTE: after file moves, the running Turbopack dev server can serve stale 500s — restart (`rm -rf .next`) before treating a route error as real.
+
 ## Decisions / notes log
+- (Wave 5) Consolidated duplicate local components: consumer `Toggle` (coral) + `SummaryRow` (was `Line`×2) → `@/components/ui/consumer`; migrated c/settings, c/settings/notifications, c/checkout, c/bookings/[id].
 - (Stage A–C) Canonical `@/components/ui`; legacy `app/ui.tsx` + `onboarding2/controls.tsx` retired; Radix Sheet replaced by frame-scoped Sheet.
 - (Tokens) PR #7's cool-navy `#14181F` purged via migrate-navy (→ `fg-primary`).
 - StarRating (5-star, business) and RatingLabel (compact "4.8 ★ (n)", consumer) are SEPARATE components — keep both.

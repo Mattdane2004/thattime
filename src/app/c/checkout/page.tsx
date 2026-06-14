@@ -17,7 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { DarkButton, SectionLabel, Sheet } from "@/components/ui";
-import { Avatar } from "@/components/ui/consumer";
+import { Avatar, SummaryRow } from "@/components/ui/consumer";
 import { getSalon, getOffer, clientUser, type PaymentMethod } from "@/lib/data/b2c";
 
 const parsePrice = (p: string) => Number(p.replace(/[^\d.]/g, "")) || 0;
@@ -142,25 +142,25 @@ function Checkout() {
               </div>
             )}
             <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-              <Line label={offer.name} value={gbp(totals.base)} />
+              <SummaryRow label={offer.name} value={gbp(totals.base)} />
               <AnimatePresence>
                 {totals.discount > 0 && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-                    <Line label="Promo FORM10" value={`−${gbp(totals.discount)}`} accent />
+                    <SummaryRow label="Promo FORM10" value={`−${gbp(totals.discount)}`} accent />
                   </motion.div>
                 )}
                 {totals.tip > 0 && (
                   <motion.div key="tip" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-                    <Line label={`Tip (${tipPct}%)`} value={gbp(totals.tip)} />
+                    <SummaryRow label={`Tip (${tipPct}%)`} value={gbp(totals.tip)} />
                   </motion.div>
                 )}
                 {totals.credit > 0 && (
                   <motion.div key="credit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-                    <Line label="Wallet credit" value={`−${gbp(totals.credit)}`} accent />
+                    <SummaryRow label="Wallet credit" value={`−${gbp(totals.credit)}`} accent />
                   </motion.div>
                 )}
               </AnimatePresence>
-              <Line label="Booking fees" value="£0.00" />
+              <SummaryRow label="Booking fees" value="£0.00" />
               <div className="flex items-center justify-between border-t border-border pt-2.5">
                 <span className="text-[14px] font-bold text-navy">Total</span>
                 <span className="text-[15px] font-bold text-navy">{gbp(totals.total)}</span>
@@ -360,11 +360,3 @@ function Checkout() {
   );
 }
 
-function Line({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className={`text-[13px] ${accent ? "font-medium text-coral" : "text-secondary"}`}>{label}</span>
-      <span className={`text-[13px] font-medium ${accent ? "text-coral" : "text-navy"}`}>{value}</span>
-    </div>
-  );
-}

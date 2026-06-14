@@ -4,29 +4,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Moon } from "lucide-react";
 import { Sheet, DarkButton } from "@/components/ui";
-
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={onToggle}
-      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${
-        on ? "bg-coral" : "bg-border"
-      }`}
-    >
-      <motion.span
-        layout
-        transition={{ type: "spring", stiffness: 500, damping: 32 }}
-        className={`h-6 w-6 rounded-full bg-white shadow ${on ? "ml-auto" : ""}`}
-      />
-    </button>
-  );
-}
+import { Toggle } from "@/components/ui/consumer";
 
 function ToggleRow({
   label,
