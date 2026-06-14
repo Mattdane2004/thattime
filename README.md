@@ -7,6 +7,11 @@ The repo also holds the onboarding flow; the consolidation of the original
 prototypes into this single app is tracked in [`context/PORTING.md`](./context/PORTING.md).
 Team workflow and conventions live in [`context/WAYS_OF_WORKING.md`](./context/WAYS_OF_WORKING.md).
 
+**Building or changing any screen?** Read
+[`context/DESIGN_SYSTEM.md`](./context/DESIGN_SYSTEM.md) first — the component-library
+contract: the two surfaces (B2B / B2C) side by side, the full `@/components/ui`
+inventory, token rules, and how to build a new flow or migrate an existing one.
+
 ## Local development
 
 ```bash
