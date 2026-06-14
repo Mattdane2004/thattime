@@ -48,6 +48,17 @@ export interface ApptSheetData {
   status?: string;
   tags?: string[];
   live?: boolean;
+  // A bundle booking opens the same sheet in "bundle mode" (services timeline).
+  kind?: "service" | "bundle";
+  bundleId?: string;
+}
+
+/** A break / blocked-time block being edited via the blocked-time setup sheet. */
+export interface BlockEdit {
+  title: string;
+  blockType: string; // a blockTypes id, or "custom"
+  time: string;
+  duration: string;
 }
 
 type AppState = {
@@ -63,6 +74,11 @@ type AppState = {
   // Appointment details sheet (opened from cards, agenda rows, grid blocks).
   apptSheet: ApptSheetData | null;
   setApptSheet: (a: ApptSheetData | null) => void;
+
+  // A break/blocked block tapped on the calendar — opens the blocked-time setup
+  // sheet pre-filled for editing (null = creating a new block).
+  blockEdit: BlockEdit | null;
+  setBlockEdit: (b: BlockEdit | null) => void;
 
   // Break card: idle → active → ended (ended slides away and stays gone).
   breakActive: boolean;
@@ -126,6 +142,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   apptSheet: null,
   setApptSheet: (a) => set({ apptSheet: a }),
+
+  blockEdit: null,
+  setBlockEdit: (b) => set({ blockEdit: b }),
 
   breakActive: false,
   setBreakActive: (v) => set({ breakActive: v }),

@@ -7,11 +7,16 @@ import {
   ChevronLeft, ChevronRight, Coffee, CalendarCog, SlidersHorizontal,
   MessageSquare, UserPlus, Ban, Play, ChevronDown, Wrench, ListChecks,
   CalendarDays, X, Clock, Check, Calendar as CalendarIcon, Users,
+  Lock, Layers, Pencil, Settings2, CalendarClock, Tag as TagIcon,
 } from "lucide-react";
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar } from "@/components/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
 import { useAppStore } from "@/lib/store/appStore";
-import { myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, services, serviceCategories, type GridBlock } from "@/lib/data/product";
+import {
+  myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, services,
+  serviceCategories, bundleBookings, type GridBlock,
+} from "@/lib/data/product";
+import { defaultCategories } from "@/lib/tokens/categories";
 
 // Schedule — My Day agenda, 3-day calendar grid, and team columns, with the
 // class sheet (attendee check-in) and calendar settings (jump-to-date).
@@ -40,6 +45,7 @@ const fmtT = (t: string | undefined, fmt: string) => (!t ? "" : fmt === "12h" ? 
 const fmtHour = (h: number, fmt: string) =>
   fmt === "12h" ? (h < 12 ? `${h} AM` : `${h === 12 ? 12 : h - 12} PM`) : `${String(h).padStart(2, "0")}:00`;
 const catOf = (svc?: string) => services.find((s) => s.name === svc)?.category ?? "Other";
+const catColor = (svc?: string) => defaultCategories.find((c) => c.name === catOf(svc))?.color ?? "#080706";
 
 function shadeClass(shade: GridBlock["shade"]) {
   switch (shade) {
@@ -54,6 +60,105 @@ function shadeClass(shade: GridBlock["shade"]) {
     default:
       return "bg-[#F0E6DC] text-secondary";
   }
+}
+
+type GBlock = GridBlock & { price?: string };
+type Density = "full" | "compact" | "minimal";
+
+const isAttentionStatus = (s?: string) =>
+  s === "No-show" || s === "Cancelled" || s === "Unconfirmed";
+
+// Tap routing for any calendar block — a class opens the class sheet, a bundle
+// opens the booking sheet in bundle mode, a break/blocked block opens the
+// blocked-time setup sheet for editing, everything else is an appointment.
+function useBlockTap() {
+  const setApptSheet = useAppStore((s) => s.setApptSheet);
+  const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const setBlockEdit = useAppStore((s) => s.setBlockEdit);
+  return (b: GBlock, staff: string, onOpenClass?: () => void) => {
+    if (b.status === "Class") { onOpenClass?.(); return; }
+    if (b.kind === "bundle" && b.bundleId && bundleBookings[b.bundleId]) {
+      const bun = bundleBookings[b.bundleId];
+      setApptSheet({
+        client: bun.client, initials: bun.initials, service: bun.name, staff: bun.staff,
+        time: hhmm(b.start), duration: spanLabel(b.span), status: "Confirmed",
+        kind: "bundle", bundleId: b.bundleId,
+      });
+      return;
+    }
+    if (b.kind === "break" || b.kind === "blocked" || isBreakBlock(b.name)) {
+      setBlockEdit({
+        title: b.name,
+        blockType: b.kind === "blocked" ? "custom" : "break",
+        time: hhmm(b.start),
+        duration: spanLabel(b.span),
+      });
+      setQuickAction("block");
+      return;
+    }
+    setApptSheet({
+      client: b.name, initials: initialsOf(b.name), service: b.service ?? "Appointment",
+      staff, time: hhmm(b.start), duration: b.price ?? spanLabel(b.span), status: b.status ?? "Confirmed",
+    });
+  };
+}
+
+// Systematically scales the information shown per the available space: tall/wide
+// blocks (day view) get the full picture, narrow ones (week, busy team views) the
+// essentials — a category colour bar + name + an attention dot.
+function CalendarBlock({
+  block, density, top, heightPx, shade, status, delay, onTap,
+}: {
+  block: GBlock;
+  density: Density;
+  top: number;
+  heightPx: number;
+  shade: GridBlock["shade"];
+  status?: string;
+  delay: number;
+  onTap: () => void;
+}) {
+  let d: Density = density;
+  if (heightPx < 38) d = "minimal";
+  else if (heightPx < 60 && d === "full") d = "compact";
+
+  const isBreak = block.kind === "break" || isBreakBlock(block.name);
+  const isBlocked = block.kind === "blocked";
+  const isBundle = block.kind === "bundle";
+  const showAccent = !isBreak && !isBlocked;
+  const accent = catColor(block.service);
+  const icon = isBreak ? <Coffee size={10} className="mr-1 inline shrink-0" />
+    : isBlocked ? <Lock size={10} className="mr-1 inline shrink-0" />
+      : isBundle ? <Layers size={10} className="mr-1 inline shrink-0" /> : null;
+
+  return (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay }}
+      onClick={(e) => { e.stopPropagation(); onTap(); }}
+      className={`absolute inset-x-1 overflow-hidden rounded-xl text-left ${shadeClass(shade)} ${d === "minimal" ? "px-1.5 py-1" : "p-2"}`}
+      style={{ top, height: heightPx }}
+    >
+      {showAccent && <span className="absolute inset-y-1 left-1 w-[3px] rounded-full" style={{ background: accent }} />}
+      <div className={showAccent ? "pl-2.5" : ""}>
+        {status && d === "minimal" && isAttentionStatus(status) && (
+          <span className={`float-right mt-0.5 h-1.5 w-1.5 rounded-full ${status === "Unconfirmed" ? "bg-warning" : "bg-danger"}`} />
+        )}
+        {status && d !== "minimal" && (
+          <span className="float-right ml-1">
+            <StatusPill tone={shade === "dark" ? "dark" : isAttentionStatus(status) ? "danger" : "light"}>{status}</StatusPill>
+          </span>
+        )}
+        <p className="truncate text-[11px] font-bold leading-tight">{icon}{block.name}</p>
+        {d !== "minimal" && block.service && heightPx > 46 && (
+          <p className="truncate text-[10px] opacity-75">{block.service}</p>
+        )}
+        {d === "full" && block.price && <p className="pt-0.5 text-[9px] opacity-60">{block.price}</p>}
+      </div>
+    </motion.button>
+  );
 }
 
 function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string }) {
@@ -159,9 +264,10 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
 }
 
 function CalendarGridView({ days, filterCat, timeFmt }: { days: number; filterCat: string; timeFmt: string }) {
-  const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const openBlock = useBlockTap();
   const visibleDays = threeDayGrid.slice(0, days);
+  const density: Density = days === 1 ? "full" : days <= 3 ? "compact" : "minimal";
   return (
     <div className="px-2 pb-6 pt-2">
       <div className="grid" style={{ gridTemplateColumns: `34px repeat(${days}, 1fr)` }}>
@@ -194,36 +300,20 @@ function CalendarGridView({ days, filterCat, timeFmt }: { days: number; filterCa
               <span key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR_PX + 8 }} />
             ))}
             {d.blocks.map((b, i) => {
-              if (!isBreakBlock(b.name) && filterCat !== "All" && catOf(b.service) !== filterCat) return null;
+              const special = b.kind || isBreakBlock(b.name);
+              if (!special && filterCat !== "All" && catOf(b.service) !== filterCat) return null;
               return (
-              <motion.button
-                key={i}
-                type="button"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.03 * i }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isBreakBlock(b.name)) return;
-                  setApptSheet({
-                    client: b.name,
-                    initials: initialsOf(b.name),
-                    service: b.service ?? "Appointment",
-                    staff: "Emma S.",
-                    time: hhmm(b.start),
-                    duration: spanLabel(b.span),
-                    status: "Confirmed",
-                  });
-                }}
-                className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(b.shade)}`}
-                style={{ top: (b.start - 8) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
-              >
-                <p className="truncate text-[11px] font-bold leading-tight">
-                  {b.name === "Lunch Break" && <Coffee size={10} className="mr-1 inline" />}
-                  {b.name}
-                </p>
-                {b.service && <p className="truncate text-[10px] opacity-75">{b.service}</p>}
-              </motion.button>
+                <CalendarBlock
+                  key={i}
+                  block={b}
+                  density={density}
+                  top={(b.start - 8) * HOUR_PX + 8}
+                  heightPx={Math.max(30, b.span * HOUR_PX - 4)}
+                  shade={b.shade}
+                  status={b.status}
+                  delay={0.03 * i}
+                  onTap={() => openBlock(b, "Emma S.")}
+                />
               );
             })}
           </div>
@@ -234,9 +324,10 @@ function CalendarGridView({ days, filterCat, timeFmt }: { days: number; filterCa
 }
 
 function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff }: { onOpenClass: () => void; classCancelled: boolean; timeFmt: string; selectedStaff: string[] }) {
-  const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const openBlock = useBlockTap();
   const visibleColumns = teamColumns.filter((c) => selectedStaff.includes(c.id));
+  const density: Density = visibleColumns.length <= 1 ? "full" : visibleColumns.length <= 3 ? "compact" : "minimal";
 
   if (visibleColumns.length === 0) {
     return (
@@ -287,44 +378,17 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff }: { onO
               const shade = isClass && classCancelled ? "muted" : b.shade;
               const status = isClass && classCancelled ? "Cancelled" : b.status;
               return (
-                <motion.button
+                <CalendarBlock
                   key={i}
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.03 * i }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isClass) {
-                      onOpenClass();
-                      return;
-                    }
-                    if (isBreakBlock(b.name)) return;
-                    setApptSheet({
-                      client: b.name,
-                      initials: initialsOf(b.name),
-                      service: b.service ?? "Appointment",
-                      staff: c.name,
-                      time: hhmm(b.start),
-                      duration: b.price ?? spanLabel(b.span),
-                      status: b.status ?? "Confirmed",
-                    });
-                  }}
-                  className={`absolute inset-x-1 overflow-hidden rounded-xl p-2 text-left ${shadeClass(shade)}`}
-                  style={{ top: (b.start - 9) * HOUR_PX + 8, height: Math.max(30, b.span * HOUR_PX - 4) }}
-                >
-                  {status && (
-                    <span className="float-right ml-1">
-                      <StatusPill tone={shade === "dark" ? "dark" : "light"}>{status}</StatusPill>
-                    </span>
-                  )}
-                  <p className="truncate text-[11px] font-bold leading-tight">
-                    {b.name === "Lunch Break" && <Coffee size={10} className="mr-1 inline" />}
-                    {b.name}
-                  </p>
-                  {b.service && <p className="truncate text-[10px] opacity-75">{b.service}</p>}
-                  {b.price && <p className="pt-0.5 text-[9px] opacity-60">{b.price}</p>}
-                </motion.button>
+                  block={b}
+                  density={density}
+                  top={(b.start - 9) * HOUR_PX + 8}
+                  heightPx={Math.max(30, b.span * HOUR_PX - 4)}
+                  shade={shade}
+                  status={status}
+                  delay={0.03 * i}
+                  onTap={() => openBlock(b, c.name, onOpenClass)}
+                />
               );
             })}
           </div>
@@ -355,6 +419,9 @@ function ClassSheet({
   const m = masterclass;
   const attendees = [...m.attendees, ...extra];
   const booked = m.booked + extra.length;
+  // Editing a class hands off to its offer dashboard (the single source for
+  // schedule, pricing, capacity and the rest).
+  const manage = () => { onClose(); router.push(`/app/services/${m.offerId}`); };
 
   return (
     <>
@@ -378,9 +445,19 @@ function ClassSheet({
                 </span>
                 <span className="block pt-0.5 text-[12px] text-muted">{m.sub}</span>
               </span>
-              <button type="button" aria-label="Close class" onClick={onClose} className="-mr-1 p-2 text-navy">
-                <X size={20} strokeWidth={2} />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Manage class"
+                  onClick={() => manage()}
+                  className="flex h-9 items-center gap-1.5 rounded-full bg-canvas px-3 text-[12px] font-semibold text-navy"
+                >
+                  <Settings2 size={14} strokeWidth={1.9} /> Manage
+                </button>
+                <button type="button" aria-label="Close class" onClick={onClose} className="-mr-1 p-2 text-navy">
+                  <X size={20} strokeWidth={2} />
+                </button>
+              </div>
             </div>
             <div className="flex items-center justify-between pt-3">
               <span className="flex items-center gap-2 text-[13px] font-semibold text-navy">
@@ -407,6 +484,31 @@ function ClassSheet({
       <p className="pt-1.5 text-right text-[11px] text-muted">
         {booked}/{m.capacity} · {m.capacity - booked} left
       </p>
+
+      {/* ── Manage the class — hands off to the class set-up (offer dashboard) ── */}
+      <p className="px-1 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manage class</p>
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+        {[
+          { icon: <CalendarClock size={16} strokeWidth={1.8} />, t: "Schedule & times", s: m.time },
+          { icon: <TagIcon size={16} strokeWidth={1.8} />, t: "Pricing & deposit", s: m.sub },
+          { icon: <Users size={16} strokeWidth={1.8} />, t: "Capacity & participants", s: `${m.capacity} seats` },
+          { icon: <Pencil size={16} strokeWidth={1.8} />, t: "Class details", s: "Name, category, agenda" },
+        ].map((r, i) => (
+          <button
+            key={r.t}
+            type="button"
+            onClick={manage}
+            className={`flex w-full items-center gap-3 px-4 py-3 text-left ${i > 0 ? "border-t border-border" : ""}`}
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas text-secondary">{r.icon}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold text-navy">{r.t}</span>
+              <span className="block truncate text-[12px] text-muted">{r.s}</span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-muted" />
+          </button>
+        ))}
+      </div>
 
       <button
         type="button"

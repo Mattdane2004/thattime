@@ -38,6 +38,7 @@ export const demoOffers: DemoOffer[] = [
   { id: "svc_cut_beard", type: "service", name: "Cut & Beard", category: "Barbering", price: "95", durationMin: 60, status: "published" },
   { id: "cls_beginner_yoga", type: "class", name: "Beginner yoga", category: "Fitness", price: "12", status: "published" },
   { id: "cls_styling_workshop", type: "class", name: "Hair styling workshop", category: "Hair", price: "85", status: "draft" },
+  { id: "cls_colour_masterclass", type: "class", name: "Colour Masterclass", category: "Colour", price: "65", status: "published" },
   { id: "bun_cut_colour", type: "bundle", name: "Cut + colour package", category: "Hair", price: "120", status: "published" },
   { id: "sub_monthly_cuts", type: "subscription", name: "Monthly cuts membership", category: "Hair", price: "45", status: "published" },
 ];

@@ -147,7 +147,42 @@ export interface GridBlock {
   service?: string;
   shade: "dark" | "mid" | "light" | "muted" | "outline";
   status?: string;
+  // Discriminator for non-appointment blocks. Absent = ordinary appointment.
+  kind?: "break" | "blocked" | "bundle";
+  bundleId?: string; // when kind === "bundle"
 }
+
+// ── Bundles (packages of services sold together; the business sets the order
+// and timing) — see the bundle booking page. ──
+export interface BundleStep {
+  service: string;
+  staff: string;
+  durationMin: number;
+}
+export interface BundleBooking {
+  name: string;
+  client: string;
+  initials: string;
+  staff: string; // lead staff (shown on the calendar block)
+  services: BundleStep[];
+  price: number; // bundle price
+  rrp: number; // sum of the services bought separately
+}
+export const bundleBookings: Record<string, BundleBooking> = {
+  "bun-glamour": {
+    name: "Glamour Package",
+    client: "Olivia Bennett",
+    initials: "OB",
+    staff: "Emma S.",
+    services: [
+      { service: "Cut & Colour", staff: "Emma S.", durationMin: 90 },
+      { service: "Blow Dry & Style", staff: "Emma S.", durationMin: 60 },
+      { service: "Gel manicure", staff: "Chris T.", durationMin: 45 },
+    ],
+    price: 200,
+    rrp: 230,
+  },
+};
 
 export const threeDayGrid: { day: string; date: string; blocks: GridBlock[] }[] = [
   {
@@ -178,9 +213,16 @@ export const threeDayGrid: { day: string; date: string; blocks: GridBlock[] }[] 
     blocks: [
       { start: 9, span: 1, name: "Isla Cooper", service: "Cut & Style", shade: "dark" },
       { start: 10.5, span: 1, name: "Max Turner", service: "Haircut", shade: "dark" },
+      { start: 13, span: 1.5, name: "Admin / paperwork", shade: "light", kind: "blocked", status: "Blocked" },
     ],
   },
-  { day: "Sun", date: "15", blocks: [] },
+  {
+    day: "Sun",
+    date: "15",
+    blocks: [
+      { start: 10, span: 3.25, name: "Glamour Package", service: "Olivia Bennett · 3 services", shade: "outline", status: "Bundle", kind: "bundle", bundleId: "bun-glamour" },
+    ],
+  },
   {
     day: "Mon",
     date: "16",
@@ -294,9 +336,10 @@ export const teamColumns = [
     name: "Chris T.",
     role: "Stylist",
     blocks: [
+      { start: 9, span: 2.4, name: "Glamour Package", service: "3 services", shade: "outline", status: "Bundle", kind: "bundle", bundleId: "bun-glamour" },
       { start: 11.5, span: 1.2, name: "Amanda White", shade: "dark", status: "Confirmed" },
       { start: 13, span: 1, name: "David Wilson", shade: "dark", status: "Unconfirmed" },
-      { start: 14.2, span: 0.6, name: "Break", shade: "light" },
+      { start: 14.2, span: 0.6, name: "Break", shade: "light", kind: "break" },
       { start: 15, span: 1.2, name: "Thomas Moore", shade: "dark", status: "Confirmed" },
     ] as (GridBlock & { price?: string })[],
   },
@@ -304,6 +347,7 @@ export const teamColumns = [
 
 export const masterclass = {
   name: "Colour Masterclass",
+  offerId: "cls_colour_masterclass",
   badge: "Scheduled",
   sub: "Seat based class · £65 per seat",
   time: "17:00 – 18:30",
