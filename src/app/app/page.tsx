@@ -131,24 +131,29 @@ function HeroMetricCard({ metric, period, sub, href }: { metric: HeroMetric; per
 }
 
 // ── Horizontal-scroll KPI tiles ──
+// Padding lives on the inner `w-max` block so both the leading AND trailing
+// inset are part of the scroll width (a flex scroll container drops its own
+// trailing padding in most browsers).
 function KpiScroller({ tiles }: { tiles: KpiTile[] }) {
   return (
-    <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-      {tiles.map((t) => {
-        const Icon = kpiIcons[t.icon];
-        return (
-          <div key={t.id} className="w-[140px] shrink-0 snap-start rounded-2xl bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-navy">
-                <Icon size={16} strokeWidth={1.8} />
-              </span>
-              <Delta delta={t.delta} up={t.up} />
+    <div className="overflow-x-auto pb-1 [scrollbar-width:none]">
+      <div className="flex w-max snap-x gap-3 px-4">
+        {tiles.map((t) => {
+          const Icon = kpiIcons[t.icon];
+          return (
+            <div key={t.id} className="w-[140px] shrink-0 snap-start rounded-2xl bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-navy">
+                  <Icon size={16} strokeWidth={1.8} />
+                </span>
+                <Delta delta={t.delta} up={t.up} />
+              </div>
+              <div className="mt-3 text-[22px] font-bold leading-none tracking-tight text-navy">{t.value}</div>
+              <div className="mt-1 text-[12px] text-muted">{t.label}</div>
             </div>
-            <div className="mt-3 text-[22px] font-bold leading-none tracking-tight text-navy">{t.value}</div>
-            <div className="mt-1 text-[12px] text-muted">{t.label}</div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -620,7 +625,7 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
           <div className="mt-5">
             <HeroMetricCard metric={staffEarningsHero} sub={staffEarningsSub} href="/app/schedule" />
           </div>
-          <div className="mt-3 px-4">
+          <div className="mt-3">
             <KpiScroller tiles={staffKpis} />
           </div>
           <YourShiftsSection />
@@ -635,7 +640,7 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
 
           <HeroMetricCard metric={revenueHero} period={period} href="/app/hub" />
 
-          <div className="mt-3 px-4">
+          <div className="mt-3">
             <KpiScroller tiles={businessKpis} />
           </div>
 
