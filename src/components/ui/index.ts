@@ -60,3 +60,9 @@ export { BackHeader, type BackHeaderProps } from "./organisms/BackHeader";
 // Compact nav-bar header (distinct from the hero BackHeader) + offer-wizard chrome.
 export { ScreenHeader } from "./organisms/ScreenHeader";
 export { TOTAL_STEPS, WizardTitle, WizardFooter, FieldLabel, Toggle, fieldInput } from "./organisms/WizardChrome";
+export { ClientTabBar } from "./organisms/ClientTabBar";
+
+// Consumer surface (coral) components live in ./consumer — import them from
+// "@/components/ui/consumer". Kept as a namespaced sub-module so its
+// category-tinted Avatar / compact Stars stay distinct from the business
+// primitives in this barrel.

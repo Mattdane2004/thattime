@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppFrame } from "@/components/app/AppFrame";
-import { ClientTabBar } from "@/components/client/ClientTabBar";
+import { ClientTabBar } from "@/components/ui";
 
 // Consumer app shell: same device frame as the B2B product surface, with the
 // social-first client tab bar. Focused flows hide the bar via ClientTabBar.

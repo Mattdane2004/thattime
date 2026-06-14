@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { clientUser, feedPosts, getSalon, type UserPost } from "@/lib/data/b2c";
 import { Sheet, DarkButton, GhostButton } from "@/components/ui";
-import { Avatar, Stars, GridTile, OfferTypeBadge } from "@/components/client/shared";
+import { Avatar, Stars, GridTile, OfferTypeBadge } from "@/components/ui/consumer";
 
 type Tab = "posts" | "saved" | "following";
 

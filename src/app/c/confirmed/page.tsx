@@ -15,7 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { DarkButton, GhostButton } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 import { getSalon, getOffer } from "@/lib/data/b2c";
 
 export default function ConfirmedPage() {

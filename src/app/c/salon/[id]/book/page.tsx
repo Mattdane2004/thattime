@@ -28,7 +28,7 @@ import {
   TimeChips,
   timeSlots,
 } from "@/components/ui";
-import { Avatar, Stars, OfferTypeBadge } from "@/components/client/shared";
+import { Avatar, Stars, OfferTypeBadge } from "@/components/ui/consumer";
 import { getSalon, type ClientOffer } from "@/lib/data/b2c";
 
 /* ── helpers ─────────────────────────────────────────────────────── */

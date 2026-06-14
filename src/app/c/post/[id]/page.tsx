@@ -10,7 +10,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Bookmark, ChevronLeft, Heart, MessageCircle, Send } from "lucide-react";
 import { getFeedPost, getSalon } from "@/lib/data/b2c";
-import { Avatar, GridTile } from "@/components/client/shared";
+import { Avatar, GridTile } from "@/components/ui/consumer";
 
 const spring = { type: "spring", stiffness: 420, damping: 34 } as const;
 

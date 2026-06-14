@@ -29,7 +29,7 @@ import {
   MiniCalendar,
   TimeChips,
 } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 import { getBooking, getSalon, type BookingStatus } from "@/lib/data/b2c";
 
 const parsePrice = (p: string) => Number(p.replace(/[^\d.]/g, "")) || 0;

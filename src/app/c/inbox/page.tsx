@@ -6,7 +6,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { SquarePen, Search, MessageCircle } from "lucide-react";
 import { conversations, getSalon } from "@/lib/data/b2c";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 
 export default function InboxPage() {
   const [query, setQuery] = useState("");

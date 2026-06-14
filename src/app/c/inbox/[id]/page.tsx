@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { getConversation, getSalon, getBooking, type ChatMessage } from "@/lib/data/b2c";
 import { Sheet } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 
 const QUICK_REPLIES = ["Thanks!", "Can I reschedule?", "Running 5 min late"];
 

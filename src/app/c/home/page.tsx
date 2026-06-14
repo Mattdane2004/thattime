@@ -24,7 +24,7 @@ import {
 import { feedPosts, type FeedPost } from "@/lib/data/b2c";
 import { stories } from "@/lib/data/b2c";
 import { Sheet } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 
 const spring = { type: "spring", stiffness: 420, damping: 34 } as const;
 

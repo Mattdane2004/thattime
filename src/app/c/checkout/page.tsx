@@ -17,7 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { DarkButton, SectionLabel, Sheet } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 import { getSalon, getOffer, clientUser, type PaymentMethod } from "@/lib/data/b2c";
 
 const parsePrice = (p: string) => Number(p.replace(/[^\d.]/g, "")) || 0;

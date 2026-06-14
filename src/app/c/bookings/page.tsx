@@ -18,7 +18,7 @@ import {
   MiniCalendar,
   TimeChips,
 } from "@/components/ui";
-import { Avatar, OfferTypeBadge } from "@/components/client/shared";
+import { Avatar, OfferTypeBadge } from "@/components/ui/consumer";
 import { clientBookings, clientUser, getSalon, type ClientBookingItem } from "@/lib/data/b2c";
 
 const statusTone = (s: ClientBookingItem["status"]) =>

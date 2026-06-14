@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, MapPin, Clock, TrendingUp, ChevronRight } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, Segmented, SectionLabel, StatusPill } from "@/components/ui";
-import { Avatar, Stars, OfferTypeBadge } from "@/components/client/shared";
+import { Avatar, Stars, OfferTypeBadge } from "@/components/ui/consumer";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
 import type { CategoryName } from "@/lib/tokens/categories";
 import { salons, explorePosts, getOffer } from "@/lib/data/b2c";

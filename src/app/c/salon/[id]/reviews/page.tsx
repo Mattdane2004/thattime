@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, Star } from "lucide-react";
 import { StatusPill } from "@/components/ui";
-import { Avatar } from "@/components/client/shared";
+import { Avatar } from "@/components/ui/consumer";
 import { salons, getSalon } from "@/lib/data/b2c";
 
 const SORTS = ["Newest", "Highest", "Lowest"] as const;
