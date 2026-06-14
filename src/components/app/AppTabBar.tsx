@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { House, Calendar, Users, MessageSquare, Plus, X } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
+import { useRoleStore } from "@/lib/store/roleStore";
 import "@/components/onboarding2/motion-test-hook";
 
 // Bottom navigation for the product surfaces. The fifth tab opens the Quick
@@ -19,14 +20,17 @@ const TABS = [
 export function AppTabBar() {
   const pathname = usePathname();
   const { quickAction, setQuickAction, setApptSheet } = useAppStore();
+  const role = useRoleStore((s) => s.role);
   const menuOpen = quickAction !== null;
+  // Staff are stripped back to their own day — no business creation toolbar.
+  const showAdd = role !== "staff";
 
   // Checkout is a focused flow — the back arrow in its header is the only
   // way out, so the tab bar stays hidden.
   if (pathname.startsWith("/app/checkout")) return null;
 
   return (
-    <nav className="z-50 grid shrink-0 grid-cols-5 border-t border-border bg-surface px-2 pb-3 pt-2">
+    <nav className={`z-50 grid shrink-0 ${showAdd ? "grid-cols-5" : "grid-cols-4"} border-t border-border bg-surface px-2 pb-3 pt-2`}>
       {TABS.map(({ key, label, icon: Icon, href }) => {
         const active = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
         return (
@@ -47,6 +51,7 @@ export function AppTabBar() {
           </Link>
         );
       })}
+      {showAdd && (
       <button
         type="button"
         aria-label={menuOpen ? "Close quick actions" : "Open quick actions"}
@@ -68,6 +73,7 @@ export function AppTabBar() {
           {menuOpen ? "Actions" : "Add"}
         </span>
       </button>
+      )}
     </nav>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
+import { useRoleStore } from "@/lib/store/roleStore";
+import { weekPerformance } from "@/lib/data/dashboard";
 import {
   Scissors, Package, Users, MapPin, Wallet, BarChart3, Box, FileText,
   Building2, Settings2, Plug, Megaphone, ClipboardCheck, Database,
@@ -110,16 +112,16 @@ function ThisWeekCard() {
       <div className="mt-4 flex">
         <div className="flex-1">
           <div className="text-[12px] text-secondary">Revenue</div>
-          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">£4,280</div>
+          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">{weekPerformance.revenue}</div>
           <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-            <TrendingUp size={12} />+12% vs last week
+            <TrendingUp size={12} />{weekPerformance.revenueDelta}
           </div>
         </div>
         <div className="flex-1">
           <div className="text-[12px] text-secondary">Bookings</div>
-          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">87</div>
+          <div className="mt-1 text-[20px] font-bold tracking-tight text-navy">{weekPerformance.bookings}</div>
           <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-            <TrendingUp size={12} />+8% vs last week
+            <TrendingUp size={12} />{weekPerformance.bookingsDelta}
           </div>
         </div>
       </div>
@@ -132,7 +134,14 @@ function ThisWeekCard() {
 
 export default function HubPage() {
   const router = useRouter();
+  const role = useRoleStore((s) => s.role);
   const [tab, setTab] = useState<"business" | "profile">("business");
+
+  // Staff can't reach business settings/setup — bounce them home.
+  useEffect(() => {
+    if (role === "staff") router.replace("/app");
+  }, [role, router]);
+  if (role === "staff") return null;
 
   return (
     <div className="flex h-full flex-col bg-canvas">

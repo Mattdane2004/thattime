@@ -76,6 +76,16 @@ renderContains("Home", React.createElement(HomePage), [
   "Check In", "Lunch Break",
 ]);
 
+// 1b) Staff role — stripped dashboard: own earnings, no business analytics/team.
+renderContains("Home (staff)", React.createElement(HomePage, { role: "staff" }), [
+  "Up Next", "Your earnings", "Upcoming Shifts",
+]);
+{
+  const staffHome = renderToString(React.createElement(HomePage, { role: "staff" }));
+  check("Staff home hides Team Today", !staffHome.includes("Team Today"));
+  check("Staff home hides business revenue", !staffHome.includes("£4,280"));
+}
+
 // 2) Hub "Menu" (Figma 11988:90748).
 renderContains("Hub", React.createElement(HubPage), [
   "Menu", "This week", "Revenue", "View analytics", "Operations", "Offerings", "Team", "Marketing", "Setup",
@@ -326,6 +336,7 @@ check("MiniCalendar renders month", h(React.createElement(MiniCalendar, { select
 check("TimeChips renders slots", h(React.createElement(TimeChips, { value: null, onSelect: () => {} })).includes("09:00"));
 check("PasswordField renders hint", h(React.createElement(PasswordField, { value: "", onChange: () => {} })).includes("characters"));
 check("AppHeader renders title", h(React.createElement(AppHeader, { title: "Schedule" })).includes("Schedule"));
+check("AppHeader renders center slot", h(React.createElement(AppHeader, { title: "Home", center: "ROLE", avatarHref: null })).includes("ROLE"));
 check("SectionLabel renders heading", h(React.createElement(SectionLabel, { children: "Team Today", count: 4 })).includes("Team Today"));
 check("Tag emphasis uses ink", h(React.createElement(Tag, { label: "Allergy", emphasis: true })).includes("bg-fg-primary"));
 check("Tag default is quiet", h(React.createElement(Tag, { label: "Regular" })).includes("bg-canvas"));
