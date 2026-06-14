@@ -86,12 +86,12 @@ surface it rather than guess.
 - [~] Canonical barrel established; primitives consolidated (Stages A–C done)
 - [ ] Fold `components/client/shared.tsx` (Avatar/Stars=RatingLabel/GridTile) into ui
 - [ ] App chrome organisms: AppHeader✅/SectionLabel✅ done; AppTabBar, ClientTabBar, AppFrame, AppointmentSheet, QuickActions, UpNextCard, WizardChrome → audit/own
-- [~] Library gaps: StarRating✅, ToggleRow(tone)✅, SettingsGroup✅, Tag✅ added. Still: RatingLabel, ChipGroup/SelectablePills, SheetRow/OptionRow, stat/info cards as needed
+- [~] Library gaps: StarRating✅, ToggleRow(tone)✅, SettingsGroup✅, Tag✅, BackHeader✅ added. Still: RatingLabel, ChipGroup/SelectablePills, SheetRow/OptionRow, stat/info cards as needed
 
 **Business app `/app`**
 - [ ] Home (`app/page.tsx`)
 - [ ] Schedule (`schedule`)
-- [~] Clients — done: `clients/page` (Tag), `[id]/reviews` (StarRating), `[id]/settings` (ToggleRow+SettingsGroup). Todo: `clients/[id]` (1158 lines), `[id]/wallet`
+- [~] Clients — done: `clients/page` (Tag), `[id]/reviews` (StarRating+BackHeader), `[id]/settings` (ToggleRow+SettingsGroup+BackHeader), `[id]/wallet` (BackHeader; reward cards/sheets still inline). Todo: `clients/[id]` (1158 lines), wallet reward internals
 - [ ] Messages (`messages`, `messages/[id]`)
 - [ ] Checkout (`checkout`)
 - [ ] Hub + Marketing + Alerts + Setup (`hub`, `marketing`, `alerts`, `setup`, `setup/import`)

@@ -55,7 +55,7 @@ import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
-import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating } from "./src/components/ui";
+import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating, BackHeader } from "./src/components/ui";
 
 let failures = 0;
 const check = (name: string, cond: boolean) => {
@@ -332,6 +332,7 @@ check("ToggleRow ink on", h(React.createElement(ToggleRow, { title: "Online book
 check("ToggleRow coral on", h(React.createElement(ToggleRow, { title: "Push", tone: "coral", on: true, onToggle: () => {} })).includes("bg-coral"));
 check("SettingsGroup renders label", h(React.createElement(SettingsGroup, { label: "Booking", children: "x" })).includes("Booking"));
 check("StarRating renders 5 stars", (() => { const s = h(React.createElement(StarRating, { value: 3 })); return (s.match(/lucide-star/g) || []).length === 5; })());
+check("BackHeader renders title + sub", (() => { const s = h(React.createElement(BackHeader, { title: "Wallet & loyalty", sub: "Sarah Johnson" })); return s.includes("Wallet &amp; loyalty") && s.includes("Sarah Johnson") && s.includes('aria-label="Back"'); })());
 
 // 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
 check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));

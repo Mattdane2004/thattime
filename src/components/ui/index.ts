@@ -56,3 +56,4 @@ export { ProgressDashes } from "./molecules/ProgressDashes";
 
 // ── organisms ──
 export { AppHeader, SectionLabel } from "./organisms/AppHeader";
+export { BackHeader, type BackHeaderProps } from "./organisms/BackHeader";
