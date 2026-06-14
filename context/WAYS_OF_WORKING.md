@@ -145,8 +145,8 @@ src/lib/
   store/        ← Zustand stores (one per concern)
   tokens/       ← design tokens (category palette)
 tailwind.config.ts  ← brand/surface tokens + fonts (Austin)
-context/        ← shared docs: this file, PORTING.md, atomic-design.md,
-                  matt-status.md (Matt's latest handoff)
+context/        ← shared docs: this file, DESIGN_SYSTEM.md (the component-library
+                  contract — read before building screens), PORTING.md
 logs/           ← dated session logs + handovers (newest file = current status)
 ```
 
