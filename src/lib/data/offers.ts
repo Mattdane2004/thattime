@@ -13,6 +13,8 @@ export interface DemoOffer {
   price: string;
   durationMin?: number;
   status: "published" | "draft";
+  /** Optional glyph key (lib/data/serviceIcons) chosen in the wizard. */
+  icon?: string;
 }
 
 export const demoOffers: DemoOffer[] = [

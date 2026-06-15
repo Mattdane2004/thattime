@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useOffersStore } from "@/lib/store/offersStore";
 import { statusLabel } from "@/lib/data/offers";
+import { iconFor } from "@/lib/data/serviceIcons";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
 
 // Offer dashboard — "Edit Service" (Figma 12135:44528) and the class variant
@@ -50,7 +51,7 @@ function OfferDashboard({ id }: { id: string }) {
     );
   }
 
-  const Icon = TYPE_ICON[offer.type];
+  const Icon = offer.icon ? iconFor(offer.icon) : TYPE_ICON[offer.type];
   const color = defaultCategories.find((c) => c.name === offer.category)?.color ?? "#9CA3AF";
   const isClass = offer.type === "class";
 

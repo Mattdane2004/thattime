@@ -42,5 +42,6 @@ export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): Dem
     price: price || "0",
     durationMin: type === "service" ? draft.durationMin : undefined,
     status: "draft",
+    icon: draft.icon,
   };
 }

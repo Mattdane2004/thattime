@@ -224,13 +224,13 @@ renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
   "What are you adding", "Service", "Class", "Bundle", "Subscription",
 ]);
 renderContains("Wizard/basics", React.createElement(BasicsPage), [
-  "The basics", "Name", "Category", "Description", "Next", "Hair",
+  "The basics", "Name", "Category", "Choose a category", "Tap to change icon", "Description", "Next",
 ]);
 renderContains("Wizard/locations", React.createElement(LocationsPage), [
-  "Where is it offered", "All locations", "Salon Soho", "Next",
+  "Where is it offered", "In-salon", "Mobile", "Remote", "All locations", "Edit settings", "Next",
 ]);
 renderContains("Wizard/staff", React.createElement(StaffPage), [
-  "Who can deliver", "Alex Morgan", "Search team",
+  "Who offers it", "Alex Morgan", "Search staff",
 ]);
 renderContains("Wizard/sub-type", React.createElement(SubscriptionTypePage), [
   "Subscription type", "Service frequency", "Store credit", "Membership", "Next",
@@ -257,7 +257,7 @@ renderContains("Wizard/class-pricing", React.createElement(ClassPricingPage), [
   "Price", "Deposit", "Create class",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
-  "Price", "duration", "Require a deposit", "Create service",
+  "Price", "duration", "Deposit", "Create service",
 ]);
 
 // 8) Consumer app (/c — social-first B2C marketplace).

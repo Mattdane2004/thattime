@@ -9,18 +9,48 @@ import type { OfferType } from "@/lib/types";
 export interface ServiceDraft {
   type: OfferType | null;
   name: string;
+  icon: string; // lucide icon key — see lib/data/serviceIcons
   category: string;
   description: string;
   price: string;
   durationMin: number;
   depositEnabled: boolean;
   depositAmount: string;
-  locationIds: string[];
+  // Where it's offered — modes (multi-select) + per-mode settings.
+  locationModes: LocationModes;
+  locationIds: string[]; // in-salon salons; empty = all locations
+  mobile: MobileSettings;
   staffIds: string[];
   subscription: SubscriptionDraft;
   bundle: BundleDraft;
   classDetails: ClassDraft;
 }
+
+// "Where is it offered?" — modes can be combined (in-salon + mobile, etc.).
+export interface LocationModes {
+  inSalon: boolean;
+  mobile: boolean;
+  remote: boolean;
+}
+
+// Mobile (travels-to-client) settings, edited from the location-step sheet.
+export interface MobileSettings {
+  travelFee: boolean;
+  feeType: "flat" | "per_mile";
+  feeAmount: string;
+  radiusMiles: number;
+  noticeValue: number;
+  noticeUnit: "Hours" | "Days";
+}
+
+export const emptyMobile: MobileSettings = {
+  travelFee: true,
+  feeType: "flat",
+  feeAmount: "15",
+  radiusMiles: 10,
+  noticeValue: 2,
+  noticeUnit: "Hours",
+};
 
 // Class-branch fields (wizard: participants → schedule → pricing).
 export interface ClassDraft {
@@ -96,13 +126,16 @@ export const emptySubscription: SubscriptionDraft = {
 export const emptyDraft: ServiceDraft = {
   type: null,
   name: "",
+  icon: "scissors",
   category: "",
   description: "",
   price: "",
   durationMin: 60,
   depositEnabled: false,
   depositAmount: "",
+  locationModes: { inSalon: true, mobile: false, remote: false },
   locationIds: [],
+  mobile: emptyMobile,
   staffIds: [],
   subscription: emptySubscription,
   bundle: emptyBundle,
@@ -112,6 +145,7 @@ export const emptyDraft: ServiceDraft = {
 interface WizardState {
   draft: ServiceDraft;
   updateDraft: (patch: Partial<ServiceDraft>) => void;
+  updateMobile: (patch: Partial<MobileSettings>) => void;
   updateSubscription: (patch: Partial<SubscriptionDraft>) => void;
   updateBundle: (patch: Partial<BundleDraft>) => void;
   updateClass: (patch: Partial<ClassDraft>) => void;
@@ -121,6 +155,8 @@ interface WizardState {
 export const useWizardStore = create<WizardState>((set) => ({
   draft: emptyDraft,
   updateDraft: (patch) => set((state) => ({ draft: { ...state.draft, ...patch } })),
+  updateMobile: (patch) =>
+    set((state) => ({ draft: { ...state.draft, mobile: { ...state.draft.mobile, ...patch } } })),
   updateSubscription: (patch) =>
     set((state) => ({ draft: { ...state.draft, subscription: { ...state.draft.subscription, ...patch } } })),
   updateBundle: (patch) =>
