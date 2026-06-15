@@ -146,7 +146,7 @@ export default function ClientWalletPage() {
               Add reward
             </button>
           </div>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
             {rewards.map((r, i) => (
               <div key={r.id} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
@@ -175,7 +175,7 @@ export default function ClientWalletPage() {
         {/* Activity */}
         <div>
           <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Recent activity</p>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
             {activity.map((a, i) => (
               <div key={a.id} className={`flex items-center justify-between px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
                 <span className="text-[13px] font-medium text-navy">{a.label}</span>

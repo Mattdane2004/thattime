@@ -81,13 +81,13 @@ export default function MessagesPage() {
                 {c.kind === "group" ? (
                   <span className="relative block h-12 w-12">
                     <span className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-canvas text-[8px] font-bold text-secondary">
-                      SJ
+                      ES
                     </span>
                     <span className="absolute bottom-0 left-3.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-canvas text-[8px] font-bold text-secondary">
-                      AB
+                      AM
                     </span>
                     <span className="absolute right-0 top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-canvas text-[7px] font-bold text-secondary">
-                      MD
+                      CT
                     </span>
                   </span>
                 ) : c.kind === "business" ? (

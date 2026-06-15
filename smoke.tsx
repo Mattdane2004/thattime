@@ -93,7 +93,7 @@ renderContains("Hub", React.createElement(HubPage), [
 
 // 3) Ported Clients directory.
 renderContains("Clients", React.createElement(ClientsPage), [
-  "Clients", "Search by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
+  "Clients", "Search clients by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
 ]);
 
 // 3b) Client profile detail (Overview tab renders by default).

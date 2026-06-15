@@ -13,6 +13,11 @@ import {
   services, serviceCategories, staffMembers, clientRows, blockTypes, classTemplates,
 } from "@/lib/data/product";
 
+// Weekday for a day-of-month in the demo's reference month (1 March 2026 = Sun),
+// so confirmations show the real day instead of a hardcoded "Fri".
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const dowMar = (d: number | null) => (d == null ? "" : `${DOW[(d - 1) % 7]} ${d} Mar`);
+
 /**
  * Quick Actions: the "+" tab opens a menu sheet; each row launches a flow.
  * New Appointment is a 4-step sheet (service → client → time → review → done).
@@ -309,7 +314,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
               ["Client", client],
               ["Service", service?.name],
               ["Staff", staff],
-              ["Day", `Fri ${day} Mar`],
+              ["Day", dowMar(day)],
               ["Time", time],
               ["Duration", service?.duration],
               ["Price", `£${service?.price}`],
@@ -353,7 +358,7 @@ function NewAppointmentFlow({ open, onClose }: { open: boolean; onClose: () => v
             {client} · {service?.name}
           </p>
           <p className="pt-1 text-[13px] text-secondary">
-            Fri {day} Mar at {time} with {staff}.
+            {dowMar(day)} at {time} with {staff}.
           </p>
           <div className="w-full pt-6">
             <DarkButton
@@ -415,7 +420,7 @@ function NewClassSheet({ open, onClose }: { open: boolean; onClose: () => void }
           </motion.span>
           <p className="pt-5 text-[16px] font-bold text-navy">{template.name}</p>
           <p className="pt-1 text-[13px] text-secondary">
-            Fri {day} Mar at {time} with {staff} · {template.sub}
+            {dowMar(day)} at {time} with {staff} · {template.sub}
           </p>
           <div className="w-full pt-6">
             <DarkButton

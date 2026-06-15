@@ -601,7 +601,9 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
   const storeRole = useRoleStore((s) => s.role);
   const role = roleProp ?? storeRole;
   const [location, setLocation] = useState(homeHeader.location);
+  const [locations, setLocations] = useState(["Salon Soho", "Salon Shoreditch"]);
   const [locOpen, setLocOpen] = useState(false);
+  const extraLocations = ["Salon Notting Hill", "Salon Camden", "Salon Hackney"];
   const [period, setPeriod] = useState<Period>("This week");
 
   const avatarHref = role === "staff" ? null : "/app/hub";
@@ -671,7 +673,7 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
 
       {/* Location switcher */}
       <Sheet open={locOpen} onClose={() => setLocOpen(false)} title="Your locations">
-        {["Salon Soho", "Salon Shoreditch"].map((loc) => (
+        {locations.map((loc) => (
           <button
             key={loc}
             type="button"
@@ -693,7 +695,19 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
             {location === loc && <Check size={16} className="text-navy" strokeWidth={2.25} />}
           </button>
         ))}
-        <button type="button" className="flex w-full items-center gap-3 py-4 text-left">
+        <button
+          type="button"
+          disabled={locations.length >= 2 + extraLocations.length}
+          onClick={() => {
+            const next = extraLocations.find((l) => !locations.includes(l));
+            if (next) {
+              setLocations((ls) => [...ls, next]);
+              setLocation(next);
+            }
+            setLocOpen(false);
+          }}
+          className="flex w-full items-center gap-3 py-4 text-left disabled:opacity-40"
+        >
           <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-border text-secondary">
             <Plus size={16} strokeWidth={1.75} />
           </span>

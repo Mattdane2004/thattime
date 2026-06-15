@@ -324,7 +324,7 @@ export function UpNextSection() {
             <Pause size={15} className="text-secondary" strokeWidth={1.75} />
             <div className="flex-1">
               <p className="text-[13px] font-semibold text-navy">Lunch Break</p>
-              <p className="text-[11px] text-muted">{breakActive ? "10:00 – 11:00 · 34 Min" : "12:00 – 13:00 · 60m"}</p>
+              <p className="text-[11px] text-muted">12:00 – 13:00 · 60m</p>
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -345,9 +345,7 @@ export function UpNextSection() {
         className="mt-1 flex w-full items-center justify-between pt-3 text-[13px] text-secondary"
       >
         See your Schedule
-        <span className="flex items-center gap-1 font-semibold text-navy">
-          3 <ChevronRight size={14} strokeWidth={1.75} />
-        </span>
+        <ChevronRight size={14} strokeWidth={1.75} className="text-navy" />
       </button>
     </div>
   );

@@ -24,7 +24,7 @@ export default function ClientReviewsPage() {
 
       <div className="flex flex-col gap-5 px-4 pt-4">
         {/* Summary */}
-        <div className="flex items-center gap-5 rounded-3xl bg-white p-5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+        <div className="flex items-center gap-5 rounded-3xl bg-white p-5 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
           <span>
             <span className="block text-[34px] font-bold leading-none text-navy">4.7</span>
             <span className="block pt-1.5"><StarRating value={5} size={12} /></span>
@@ -46,7 +46,7 @@ export default function ClientReviewsPage() {
         {/* Reviews */}
         <div className="flex flex-col gap-3">
           {clientReviews.map((r) => (
-            <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+            <div key={r.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
               <div className="flex items-center gap-2.5">
                 <StarRating value={r.stars} />
                 <span className="text-[11px] text-muted">{r.date}</span>

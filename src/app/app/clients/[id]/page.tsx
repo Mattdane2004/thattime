@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, Star, CalendarPlus, MessageSquare, Phone, Plus,
   RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell,
-  MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2, Merge,
+  MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
-import { pastAppointments, clientForms, staffMembers, tagPresets } from "@/lib/data/product";
+import { pastAppointments, clientForms, staffMembers, tagPresets, clientRows, contactFor } from "@/lib/data/product";
 
 // Client detail, organised by job-to-be-done:
 //   Overview     — the dashboard: safety strip, next appointment, a
@@ -26,7 +26,7 @@ import { pastAppointments, clientForms, staffMembers, tagPresets } from "@/lib/d
 /** Compact next-appointment card — actions live behind the dots, not on the card. */
 function NextAppointmentCard({ onMenu, moved }: { onMenu: () => void; moved: string | null }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
       <div className="flex items-start justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
           Next appointment
@@ -117,6 +117,13 @@ export default function ClientDetailPage() {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
   const [tab, setTab] = useState("Overview");
 
+  // Seed the profile from the real client row so every client opens their own
+  // record (not a hardcoded Sarah).
+  const record = clientRows.find((c) => c.id === clientId);
+  const seedName = record?.name ?? "Sarah Johnson";
+  const seedContact = contactFor(seedName);
+  const seedEmail = seedContact.email ?? `${seedName.split(" ")[0].toLowerCase()}@email.com`;
+
   // Next-appointment actions
   const [nextApptMenu, setNextApptMenu] = useState(false);
   const [resched, setResched] = useState(false);
@@ -136,17 +143,18 @@ export default function ClientDetailPage() {
 
   // 3-dot actions
   const [actionsOpen, setActionsOpen] = useState(false);
-  const [blocked, setBlocked] = useState(false);
-  const [tags, setTags] = useState<string[]>(["Regular"]);
+  const [blocked, setBlocked] = useState(record?.tags.includes("Blocked") ?? false);
+  const [tags, setTags] = useState<string[]>(record?.tags.filter((t) => t !== "Blocked") ?? ["Regular"]);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Editable client details
-  const [details, setDetails] = useState({ name: "Sarah Johnson", phone: "(555) 234-5678", email: "sarah.j@email.com" });
+  const [details, setDetails] = useState({ name: seedName, phone: seedContact.phone, email: seedEmail });
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState(details.name);
   const [editPhone, setEditPhone] = useState(details.phone);
   const [editEmail, setEditEmail] = useState(details.email);
   const initials = details.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const firstName = details.name.split(" ")[0];
 
   // Tag picker (search + create + toggle)
   const [tagSheetOpen, setTagSheetOpen] = useState(false);
@@ -314,7 +322,7 @@ export default function ClientDetailPage() {
           {tab === "Overview" && (
             <div className="flex flex-col gap-3">
               {/* Allergies & care notes — each one its own clear line */}
-              <div className={`overflow-hidden rounded-2xl border bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${severe ? "border-danger/40" : "border-border"}`}>
+              <div className={`overflow-hidden rounded-2xl border bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)] ${severe ? "border-danger/40" : "border-border"}`}>
                 <button
                   type="button"
                   onClick={() => setTab("Record")}
@@ -363,7 +371,7 @@ export default function ClientDetailPage() {
               {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
 
               {/* The numbers, one quiet row */}
-              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                 {[
                   ["Last Visit", "3 Mar 2026"],
                   ["Total Bookings", "24"],
@@ -384,7 +392,7 @@ export default function ClientDetailPage() {
                   </p>
                   <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
                     {attention.map((a) => (
-                      <div key={a.id} className="flex w-[185px] shrink-0 flex-col rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                      <div key={a.id} className="flex w-[185px] shrink-0 flex-col rounded-2xl bg-white p-3.5 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-canvas">{a.icon}</span>
                         <span className="block pt-2.5 text-[13px] font-semibold leading-tight text-navy">{a.title}</span>
                         <span className="block flex-1 pt-1 text-[11px] leading-snug text-muted">{a.sub}</span>
@@ -412,12 +420,12 @@ export default function ClientDetailPage() {
               {/* Wallet, reviews and settings are full pages now; contact stays a sheet */}
               <div>
                 <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manage</p>
-                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                   {[
                     { icon: <Wallet size={15} strokeWidth={1.75} />, t: "Wallet & loyalty", s: "£25 credit · 320 pts · 2 rewards", run: () => router.push(`/app/clients/${clientId}/wallet`) },
                     { icon: <Star size={15} strokeWidth={1.75} />, t: "Reviews", s: "4.7 · 3 reviews · 1 awaiting reply", run: () => router.push(`/app/clients/${clientId}/reviews`) },
                     { icon: <Settings size={15} strokeWidth={1.75} />, t: "Settings & policies", s: "Booking rules, payments, marketing", run: () => router.push(`/app/clients/${clientId}/settings`) },
-                    { icon: <Phone size={15} strokeWidth={1.75} />, t: "Contact details", s: "(555) 234-5678 · sarah.j@email.com", run: () => { setNumberCopied(false); setContactOpen(true); } },
+                    { icon: <Phone size={15} strokeWidth={1.75} />, t: "Contact details", s: `${details.phone} · ${details.email}`, run: () => { setNumberCopied(false); setContactOpen(true); } },
                   ].map((r, i) => (
                     <button key={r.t} type="button" onClick={r.run} className={`flex w-full items-center gap-3 px-4 py-4 text-left ${i > 0 ? "border-t border-border" : ""}`}>
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-secondary">{r.icon}</span>
@@ -438,7 +446,7 @@ export default function ClientDetailPage() {
             <div className="flex flex-col gap-3">
               <RecordHeading>Upcoming</RecordHeading>
               {cancelled ? (
-                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                   <span className="text-[13px] text-muted">No upcoming appointments.</span>
                   <button onClick={() => setQuickAction("appointment")} className="rounded-full bg-fg-primary px-3.5 py-2 text-[12px] font-semibold text-white">
                     Book
@@ -456,7 +464,7 @@ export default function ClientDetailPage() {
                     value={apptSearch}
                     onChange={(e) => setApptSearch(e.target.value)}
                     placeholder="Search service, date, staff..."
-                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] focus:outline-none"
+                    className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-[13px] text-navy placeholder:text-muted shadow-[0_1px_4px_rgba(8,7,6,0.04)] focus:outline-none"
                   />
                 </div>
                 <div className="relative shrink-0">
@@ -465,7 +473,7 @@ export default function ClientDetailPage() {
                     onClick={() => setApptFilterOpen((o) => !o)}
                     aria-haspopup="menu"
                     aria-expanded={apptFilterOpen}
-                    className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-semibold shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
+                    className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-semibold shadow-[0_1px_4px_rgba(8,7,6,0.04)] ${
                       apptFilter !== "All" ? "bg-fg-primary text-white" : "bg-white text-navy"
                     }`}
                   >
@@ -499,12 +507,12 @@ export default function ClientDetailPage() {
                   (p) => (apptFilter === "All" || p.status === apptFilter) && (!q || `${p.name} ${p.meta}`.toLowerCase().includes(q)),
                 );
                 if (filtered.length === 0) {
-                  return <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">No appointments match.</p>;
+                  return <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8,7,6,0.04)]">No appointments match.</p>;
                 }
                 return filtered.map((p) => {
                 const isUnpaid = p.id === "p3";
                 return (
-                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                  <button key={p.id} type="button" onClick={() => setBookingSel(p)} className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                     <div className="flex items-center justify-between">
                       <p className="text-[15px] font-semibold text-navy">{p.name}</p>
                       <span className="flex gap-1.5">
@@ -548,7 +556,7 @@ export default function ClientDetailPage() {
                       setAlName(""); setAlType("Non-drug"); setAlReaction(null); setAlSeverity("Mild"); setAlNote("");
                       setAllergyOpen(true);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-navy shadow-[0_1px_4px_rgba(8,7,6,0.04)]"
                   >
                     <Plus size={14} strokeWidth={2} />
                   </button>
@@ -557,7 +565,7 @@ export default function ClientDetailPage() {
                 Allergies
               </RecordHeading>
               {allergies.length === 0 && (
-                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">No known allergies.</p>
+                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8,7,6,0.04)]">No known allergies.</p>
               )}
               {allergies.map((al) => {
                 const expandedNow = expandedAllergy === al.name;
@@ -566,7 +574,7 @@ export default function ClientDetailPage() {
                     key={al.name}
                     type="button"
                     onClick={() => setExpandedAllergy(expandedNow ? null : al.name)}
-                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
+                    className="rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)]"
                   >
                     <span className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
@@ -619,7 +627,7 @@ export default function ClientDetailPage() {
                 Patch tests
               </RecordHeading>
               {patchTests.map((pt, i) => (
-                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[14px] font-semibold text-navy">
                       <FlaskConical size={14} strokeWidth={1.75} className="text-secondary" />
@@ -646,7 +654,7 @@ export default function ClientDetailPage() {
                 Notes & images
               </RecordHeading>
               {notes.map((n, i) => (
-                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                <div key={i} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[12px] font-semibold text-navy">
                       <StickyNote size={13} strokeWidth={1.75} className="text-secondary" />
@@ -689,7 +697,7 @@ export default function ClientDetailPage() {
                 </span>
               </div>
               {clientForms.map((f) => (
-                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+                <div key={f.id} className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
                     <FileText size={17} strokeWidth={1.6} />
                   </span>
@@ -728,12 +736,11 @@ export default function ClientDetailPage() {
       {/* ── Sheets ── */}
 
       {/* 3-dot: profile-level actions only */}
-      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Sarah Johnson" sub="Profile actions">
+      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title={details.name} sub="Profile actions">
         <div className="flex flex-col gap-2 pt-1">
           {[
             { icon: <Pencil size={15} />, t: "Edit details", run: () => { setEditName(details.name); setEditPhone(details.phone); setEditEmail(details.email); setActionsOpen(false); setEditOpen(true); } },
             { icon: <TagIcon size={15} />, t: "Add tags", run: () => { setActionsOpen(false); setTagQuery(""); setTagSheetOpen(true); } },
-            { icon: <Merge size={15} />, t: "Merge duplicate profile", run: () => setActionsOpen(false) },
             { icon: <Ban size={15} />, t: blocked ? "Unblock client" : "Block client", run: () => { setBlocked((b) => !b); setActionsOpen(false); } },
           ].map((a) => (
             <button key={a.t} onClick={a.run} className="flex w-full items-center gap-2.5 rounded-2xl border border-border bg-white px-4 py-3.5 text-left text-[13px] font-semibold text-navy">
@@ -825,7 +832,7 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Delete confirm */}
-      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Sarah Johnson?">
+      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title={`Delete ${details.name}?`}>
         <p className="pb-5 text-[14px] leading-relaxed text-secondary">
           Their bookings, notes and documents will be removed after 30 days. This can be undone from Settings until then.
         </p>
@@ -976,7 +983,7 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Record a patch test — title, date, tester, status, notes */}
-      <Sheet open={ptOpen} onClose={() => setPtOpen(false)} title="Record a patch test" sub="Kept on Sarah's record with the result" full>
+      <Sheet open={ptOpen} onClose={() => setPtOpen(false)} title="Record a patch test" sub={`Kept on ${firstName}'s record with the result`} full>
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">What was tested?</p>
         <input
           value={ptTitle}
@@ -1081,7 +1088,7 @@ export default function ClientDetailPage() {
             {
               icon: <CalendarPlus size={16} strokeWidth={1.8} />, t: "Open booking",
               run: () => setApptSheet({
-                client: "Sarah Johnson", initials: "SJ", service: "Cut & Style",
+                client: details.name, initials, service: "Cut & Style",
                 staff: "Emma S.", time: "10:00 AM", duration: "60m", price: 85, status: "Confirmed",
               }),
             },
@@ -1158,7 +1165,7 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Add clinical note */}
-      <Sheet open={noteOpen} onClose={() => setNoteOpen(false)} title="Add note" sub="Timestamped on Sarah's record">
+      <Sheet open={noteOpen} onClose={() => setNoteOpen(false)} title="Add note" sub={`Timestamped on ${firstName}'s record`}>
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Linked to</p>
         <div className="relative">
           <button
@@ -1266,7 +1273,7 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Reschedule */}
-      <Sheet open={resched} onClose={() => setResched(false)} title="Reschedule" sub="Sarah Johnson · Cut & Style · Emma S." full>
+      <Sheet open={resched} onClose={() => setResched(false)} title="Reschedule" sub={`${details.name} · Cut & Style · Emma S.`} full>
         <p className="pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a day</p>
         <MiniCalendar selected={day} onSelect={setDay} />
         <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Pick a time</p>
@@ -1287,7 +1294,7 @@ export default function ClientDetailPage() {
       {/* Cancel */}
       <Sheet open={cancel} onClose={() => setCancel(false)} title="Cancel this appointment?">
         <p className="pb-5 text-[14px] leading-relaxed text-secondary">
-          Sarah Johnson · Cut & Style · Emma S. on 18 Mar. We&rsquo;ll let them know and free up the slot.
+          {details.name} · Cut & Style · Emma S. on 18 Mar. We&rsquo;ll let them know and free up the slot.
         </p>
         <DarkButton
           onClick={() => {
@@ -1303,11 +1310,11 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Contact — info + actions in one place */}
-      <Sheet open={contactOpen} onClose={() => setContactOpen(false)} title="Contact Sarah">
+      <Sheet open={contactOpen} onClose={() => setContactOpen(false)} title={`Contact ${firstName}`}>
         <div className="rounded-2xl bg-canvas p-1">
           {[
-            [<Phone key="p" size={14} strokeWidth={1.75} />, "(555) 234-5678"],
-            [<Mail key="m" size={14} strokeWidth={1.75} />, "sarah.j@email.com"],
+            [<Phone key="p" size={14} strokeWidth={1.75} />, details.phone],
+            [<Mail key="m" size={14} strokeWidth={1.75} />, details.email],
             [<MapPin key="a" size={14} strokeWidth={1.75} />, "14 Maple Lane, London"],
           ].map(([icon, v], i) => (
             <p key={i} className={`flex items-center gap-3 px-3.5 py-3 text-[14px] text-navy ${i > 0 ? "border-t border-border" : ""}`}>
@@ -1319,7 +1326,7 @@ export default function ClientDetailPage() {
         <div className="flex flex-col gap-2.5 pt-4">
           <DarkButton onClick={() => setContactOpen(false)}>
             <Phone size={15} />
-            Call (555) 234-5678
+            Call {details.phone}
           </DarkButton>
           <GhostButton onClick={() => setNumberCopied(true)}>
             {numberCopied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} />}
@@ -1338,7 +1345,7 @@ export default function ClientDetailPage() {
       </Sheet>
 
       {/* Send new form */}
-      <Sheet open={formOpen} onClose={() => setFormOpen(false)} title="Send a form" sub="Sarah will get it by SMS and email">
+      <Sheet open={formOpen} onClose={() => setFormOpen(false)} title="Send a form" sub={`${firstName} will get it by SMS and email`}>
         {formTemplates.map((t) => {
           const sent = formSent.includes(t);
           return (

@@ -102,7 +102,7 @@ export default function ClientsPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, phone, or email"
+              placeholder="Search clients by name"
               className="h-11 w-full rounded-full bg-canvas pl-10 pr-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
             />
           </div>
@@ -117,7 +117,7 @@ export default function ClientsPage() {
           <button
             type="button"
             aria-label="Client tools"
-            onClick={() => setSheet("tools")}
+            onClick={() => { setExported(null); setSheet("tools"); }}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-navy"
           >
             <MoreVertical size={16} strokeWidth={1.75} />
@@ -175,7 +175,7 @@ export default function ClientsPage() {
               <button
                 type="button"
                 onClick={() => (selectMode ? toggleSel(c.id) : router.push(`/app/clients/${c.id}`))}
-                className={`flex w-full items-center gap-3.5 rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
+                className={`flex w-full items-center gap-3.5 rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)] ${
                   blocked && !selectMode ? "opacity-55" : ""
                 } ${isSel ? "ring-2 ring-fg-primary" : ""}`}
               >
@@ -225,7 +225,7 @@ export default function ClientsPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
-              className="pointer-events-auto flex items-center gap-2 rounded-full bg-fg-primary p-1.5 pl-4 text-white shadow-[0_6px_20px_rgba(8, 7, 6,0.35)]"
+              className="pointer-events-auto flex items-center gap-2 rounded-full bg-fg-primary p-1.5 pl-4 text-white shadow-[0_6px_20px_rgba(8,7,6,0.35)]"
             >
               <span className="text-[12px] font-semibold">{selected.length}</span>
               {[

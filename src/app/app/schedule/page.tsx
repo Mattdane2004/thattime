@@ -182,7 +182,7 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
               status: "Confirmed",
             })
           }
-          className="flex w-full items-center gap-3 rounded-2xl border border-fg-primary/20 bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]"
+          className="flex w-full items-center gap-3 rounded-2xl border border-fg-primary/20 bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)]"
         >
           <span className="w-12 shrink-0">
             <span className="block text-[14px] font-bold text-navy">{fmtT(a.time ?? "", timeFmt)}</span>
@@ -243,7 +243,7 @@ function MyDayView({ filterCat, timeFmt }: { filterCat: string; timeFmt: string 
                     status: row.past ? "Done" : "Confirmed",
                   })
                 }
-                className={`flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] ${
+                className={`flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)] ${
                   row.past ? "opacity-50" : ""
                 }`}
               >
@@ -488,7 +488,7 @@ function ClassSheet({
 
       {/* ── Manage the class — hands off to the class set-up (offer dashboard) ── */}
       <p className="px-1 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manage class</p>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
         {[
           { icon: <CalendarClock size={16} strokeWidth={1.8} />, t: "Schedule & times", s: m.time },
           { icon: <TagIcon size={16} strokeWidth={1.8} />, t: "Pricing & deposit", s: m.sub },
@@ -577,7 +577,7 @@ function ClassSheet({
         {[
           {
             icon: <MessageSquare size={17} strokeWidth={1.7} />, label: "Message all",
-            run: () => { onClose(); router.push("/app/messages/team"); },
+            run: () => { onClose(); router.push("/app/messages"); },
           },
           { icon: <UserPlus size={17} strokeWidth={1.7} />, label: "Add attendee", run: () => setAddOpen(true) },
           { icon: <Ban size={17} strokeWidth={1.7} />, label: "Cancel class", run: () => setCancelOpen(true) },
@@ -587,7 +587,7 @@ function ClassSheet({
             whileTap={{ scale: 0.96 }}
             onClick={a.run}
             disabled={cancelled && a.label !== "Message all"}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8, 7, 6,0.04)] disabled:opacity-40"
+            className="flex flex-col items-center gap-2 rounded-2xl bg-white px-2 py-4 text-[12px] font-medium text-navy shadow-[0_1px_4px_rgba(8,7,6,0.04)] disabled:opacity-40"
           >
             {a.icon}
             {a.label}
@@ -598,7 +598,7 @@ function ClassSheet({
       <p className="flex items-center gap-1.5 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
         <ListChecks size={12} /> Agenda
       </p>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
         {m.agenda.map((step, i) => (
           <div key={step} className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">
@@ -608,7 +608,7 @@ function ClassSheet({
           </div>
         ))}
       </div>
-      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3.5 text-[12px] leading-snug text-secondary shadow-[0_1px_4px_rgba(8, 7, 6,0.04)]">
+      <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white px-4 py-3.5 text-[12px] leading-snug text-secondary shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
         <Wrench size={13} className="mt-0.5 shrink-0" strokeWidth={1.75} />
         {m.note}
       </p>
@@ -776,6 +776,8 @@ function SettingsSheet({
   selectedStaff,
   onToggleStaff,
   onSelectAllStaff,
+  selectedDay,
+  onJumpDate,
 }: {
   open: boolean;
   onClose: () => void;
@@ -789,6 +791,8 @@ function SettingsSheet({
   selectedStaff: string[];
   onToggleStaff: (id: string) => void;
   onSelectAllStaff: () => void;
+  selectedDay: number;
+  onJumpDate: (d: number) => void;
 }) {
   const allSelected = selectedStaff.length === teamColumns.length;
   return (
@@ -866,7 +870,7 @@ function SettingsSheet({
       </div>
 
       <p className={SECTION_LABEL}>Jump to date</p>
-      <MiniCalendar selected={10} onSelect={() => onClose()} dots={JUMP_DOTS} />
+      <MiniCalendar selected={selectedDay} onSelect={(d) => onJumpDate(d)} dots={JUMP_DOTS} />
       <div className="flex items-center justify-center gap-4 pt-3 text-[11px] text-muted">
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-success" /> Open</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-warning" /> Filling up</span>
@@ -979,7 +983,7 @@ export default function SchedulePage() {
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
               whileTap={{ scale: 0.94 }}
               onClick={() => setDayIdx(TODAY_IDX)}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-fg-primary px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_6px_20px_rgba(8, 7, 6,0.35)]"
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-fg-primary px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_6px_20px_rgba(8,7,6,0.35)]"
             >
               <CalendarDays size={13} strokeWidth={2} />
               Back to today
@@ -1011,6 +1015,11 @@ export default function SchedulePage() {
         onSelectAllStaff={() =>
           setSelectedStaff((s) => (s.length === teamColumns.length ? [] : teamColumns.map((c) => c.id)))
         }
+        selectedDay={dayIdx + 2}
+        onJumpDate={(d) => {
+          setDayIdx(Math.min(Math.max(0, d - 2), dayLabels.length - 1));
+          setSettingsOpen(false);
+        }}
       />
     </div>
   );

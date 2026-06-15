@@ -54,6 +54,8 @@ export const clientRows = [
   { id: "patricia", name: "Patricia Taylor", rating: 0, meta: "Last: 5 Feb 2026", tags: [] },
   { id: "chris-g", name: "Christopher Garcia", rating: 0, meta: "Last: 2 Jan 2026", tags: ["Inactive"] },
   { id: "sarah", name: "Sarah Johnson", rating: 4.8, meta: "Next: 18 Mar, 11:00", tags: ["Regular"] },
+  { id: "lisa", name: "Lisa Anderson", rating: 4.6, meta: "Next: 14 Apr, 13:00", tags: ["Regular"] },
+  { id: "robert", name: "Robert Lee", rating: 4.4, meta: "Last: 2 Mar 2026", tags: [] },
 ];
 
 export const clientDetailTabs = ["Overview", "Bookings", "Forms", "Reviews"] as const;
@@ -376,6 +378,7 @@ export const conversations = [
   { id: "salon", name: "Hair saloon", preview: "Perfect lets collaborate on Monday", time: "3 Mar, 14:30", unread: 0, kind: "business" },
   { id: "lisa", name: "Lisa Anderson", preview: "Perfect, see you there!", time: "27 Feb, 12:18", unread: 0, kind: "client" },
   { id: "robert", name: "Robert Lee", preview: "Yes definitely! Can I come in next week", time: "2 Mar, 14:22", unread: 1, kind: "client" },
+  { id: "amanda", name: "Amanda White", preview: "Looking forward to my appointment!", time: "1 Mar, 16:40", unread: 0, kind: "client" },
 ];
 
 export const notificationGroups = [

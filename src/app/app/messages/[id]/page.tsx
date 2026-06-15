@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Sheet, DarkButton, MiniCalendar, TimeChips } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
-import { conversations } from "@/lib/data/product";
+import { conversations, contactFor } from "@/lib/data/product";
 
 // Conversation thread — pinned appointment card, SMS bubbles, inline
 // "Select a date" action, reschedule event, suggestion chips, composer with
@@ -31,9 +31,12 @@ export default function ConversationPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const convo = conversations.find((c) => c.id === params?.id) ?? conversations[2];
+  const isClient = convo.kind === "client";
+  const phone = isClient ? contactFor(convo.name).phone : null;
 
   const [thread, setThread] = useState<Bubble[]>(initialThread);
   const [rescheduled, setRescheduled] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
   const [resched, setResched] = useState(false);
   const [actions, setActions] = useState(false);
   const [draft, setDraft] = useState("");
@@ -57,30 +60,35 @@ export default function ConversationPage() {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-bold text-navy">{convo.name}</p>
-          <p className="text-[12px] text-muted">(555) 012-3456</p>
+          <p className="truncate text-[12px] text-muted">{phone ?? convo.preview}</p>
         </div>
-        <button aria-label="Call" className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy">
-          <Phone size={15} strokeWidth={1.75} />
-        </button>
-        <button
-          aria-label="View client"
-          onClick={() => router.push("/app/clients/sarah")}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy"
-        >
-          <UserRound size={15} strokeWidth={1.75} />
-        </button>
+        {phone && (
+          <a aria-label={`Call ${convo.name}`} href={`tel:${phone.replace(/[^0-9+]/g, "")}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy">
+            <Phone size={15} strokeWidth={1.75} />
+          </a>
+        )}
+        {isClient && (
+          <button
+            aria-label="View client"
+            onClick={() => router.push(`/app/clients/${convo.id}`)}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy"
+          >
+            <UserRound size={15} strokeWidth={1.75} />
+          </button>
+        )}
       </div>
 
-      {/* Pinned upcoming appointment */}
+      {/* Pinned upcoming appointment — client conversations only */}
+      {isClient && (
       <div className="border-b border-border px-4 py-3">
         <p className="pb-2 text-[12px] font-medium text-muted">Upcoming Appointment</p>
-        {rescheduled && (
-          <p className="mb-2.5 flex items-center gap-2 rounded-lg bg-canvas px-3 py-2 text-[12px] font-medium text-navy">
+        {(rescheduled || cancelled) && (
+          <p className={`mb-2.5 flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-medium ${cancelled ? "bg-danger/10 text-danger" : "bg-canvas text-navy"}`}>
             <AlertTriangle size={13} strokeWidth={1.75} />
-            Appointment Rescheduled
+            {cancelled ? "Appointment cancelled" : "Appointment rescheduled"}
           </p>
         )}
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${cancelled ? "opacity-50" : ""}`}>
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas text-navy">
             <Scissors size={17} strokeWidth={1.6} />
           </span>
@@ -98,20 +106,29 @@ export default function ConversationPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2.5 pt-3">
-          <button className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-border text-[13px] font-semibold text-navy">
-            <X size={14} />
-            Cancel
-          </button>
-          <button
-            onClick={() => setResched(true)}
-            className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-canvas text-[13px] font-semibold text-navy"
-          >
-            <RotateCcw size={13} />
-            Reschedule
-          </button>
-        </div>
+        {!cancelled && (
+          <div className="flex gap-2.5 pt-3">
+            <button
+              onClick={() => {
+                setCancelled(true);
+                setThread((t) => [...t, { kind: "action", text: "Appointment cancelled — the slot has been freed up.", meta: "Today, 09:52 · SMS" }]);
+              }}
+              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full border border-border text-[13px] font-semibold text-navy"
+            >
+              <X size={14} />
+              Cancel
+            </button>
+            <button
+              onClick={() => setResched(true)}
+              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-canvas text-[13px] font-semibold text-navy"
+            >
+              <RotateCcw size={13} />
+              Reschedule
+            </button>
+          </div>
+        )}
       </div>
+      )}
 
       {/* Thread */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
@@ -157,7 +174,7 @@ export default function ConversationPage() {
           // event
           return (
             <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-border p-4">
-              <p className="border-b border-border pb-2 text-[12px] font-medium text-muted">Appointment Rescheduled !</p>
+              <p className="border-b border-border pb-2 text-[12px] font-medium text-muted">Appointment rescheduled</p>
               <div className="flex items-center gap-3 pt-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-navy">
                   <Scissors size={15} strokeWidth={1.6} />
@@ -267,7 +284,7 @@ export default function ConversationPage() {
             disabled={!day || !time}
             onClick={() => {
               setRescheduled(true);
-              setThread((t) => [...t, { kind: "event" }, { kind: "business", text: "Perfect see you then !", meta: "Today, 09:52 · SMS" }]);
+              setThread((t) => [...t, { kind: "event" }, { kind: "business", text: "Perfect, see you then!", meta: "Today, 09:52 · SMS" }]);
               setResched(false);
             }}
           >
