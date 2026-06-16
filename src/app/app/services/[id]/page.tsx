@@ -9,9 +9,10 @@ import {
   Settings2, CheckCircle2, CalendarDays, GraduationCap, ClipboardList, BookOpen, Award,
 } from "lucide-react";
 import { useOffersStore } from "@/lib/store/offersStore";
-import { statusLabel } from "@/lib/data/offers";
+import { statusLabel, type DemoOffer } from "@/lib/data/offers";
 import { iconFor } from "@/lib/data/serviceIcons";
 import { defaultCategories, tintFromHex } from "@/lib/tokens/categories";
+import { SummaryRow } from "@/components/ui";
 
 // Offer dashboard — "Edit Service" (Figma 12135:44528) and the class variant
 // (12135:47527). Summary card, photos strip, Advanced module list, and a
@@ -57,14 +58,14 @@ function OfferDashboard({ id }: { id: string }) {
 
   const advanced: ModuleRow[] = isClass
     ? [
-        { key: "requirements", label: "Requirements & prerequisites", desc: "Age, eligibility, qualifications and what to bring", icon: GraduationCap },
+        { key: "requirements", label: "Requirements & prerequisites", desc: "Age, eligibility, qualifications and what to bring", icon: GraduationCap, href: `/app/services/${offer.id}/requirements` },
         { key: "forms", label: "Forms & waivers", desc: "Consent forms, waivers, health checks", icon: FileText, href: `/app/services/${offer.id}/forms` },
-        { key: "agenda", label: "Agenda & syllabus", desc: "Modules, breaks, day-by-day timetable", icon: ClipboardList },
-        { key: "materials", label: "Materials", desc: "PDFs, pre-reads and after-class resources", icon: BookOpen },
-        { key: "certificates", label: "Completion & certificates", desc: "Pass/fail rules and certificate templates", icon: Award },
+        { key: "agenda", label: "Agenda & syllabus", desc: "Modules, breaks, day-by-day timetable", icon: ClipboardList, href: `/app/services/${offer.id}/agenda` },
+        { key: "materials", label: "Materials", desc: "PDFs, pre-reads and after-class resources", icon: BookOpen, href: `/app/services/${offer.id}/materials` },
+        { key: "certificates", label: "Completion & certificates", desc: "Pass/fail rules and certificate templates", icon: Award, href: `/app/services/${offer.id}/certificates` },
         { key: "resources", label: "Resources, rooms & equipment", desc: "Rooms, setup needs and internal notes", icon: Box, href: `/app/services/${offer.id}/resources` },
         { key: "products", label: "Products & kits", desc: "Student kits and optional add-ons", icon: Package, href: `/app/services/${offer.id}/products` },
-        { key: "notifications", label: "Notifications", desc: "Class reminders and student updates", icon: Bell },
+        { key: "notifications", label: "Notifications", desc: "Class reminders and student updates", icon: Bell, href: `/app/services/${offer.id}/notifications` },
         { key: "settings", label: "Policies, payments & rules", desc: "Lead time, cancellation, deposits", icon: Settings2, href: `/app/services/${offer.id}/settings` },
       ]
     : [
@@ -73,7 +74,7 @@ function OfferDashboard({ id }: { id: string }) {
         { key: "upsells", label: "Upsells and suggestions", desc: "Upsell or suggest a service to include in the booking", icon: ArrowUpRight, href: `/app/services/${offer.id}/related` },
         { key: "resources", label: "Resources", desc: "Add resources", icon: Box, href: `/app/services/${offer.id}/resources` },
         { key: "forms", label: "Forms", desc: "Add forms", icon: FileText, href: `/app/services/${offer.id}/forms` },
-        { key: "notifications", label: "Notifications", desc: "Set notification preferences", icon: Bell },
+        { key: "notifications", label: "Notifications", desc: "Set notification preferences", icon: Bell, href: `/app/services/${offer.id}/notifications` },
         { key: "settings", label: "Settings", desc: "Using defaults", icon: Settings2, href: `/app/services/${offer.id}/settings` },
       ];
 
@@ -110,47 +111,7 @@ function OfferDashboard({ id }: { id: string }) {
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-2xl bg-canvas">
-          <button className="flex w-full items-center justify-between px-4 py-4 text-left hover:bg-border/30">
-            <span className="text-[20px] font-bold text-navy">
-              {offer.price === "0" ? "Free" : `£${offer.price}`}
-              <span className="ml-1.5 text-[13px] font-normal text-muted">
-                {isClass ? "per attendee" : offer.durationMin ? `for ${offer.durationMin >= 60 ? `${offer.durationMin / 60}h${offer.durationMin % 60 ? ` ${offer.durationMin % 60}m` : ""}` : `${offer.durationMin}m`}` : ""}
-              </span>
-            </span>
-            <ChevronRight size={16} className="text-muted" />
-          </button>
-          {isClass && (
-            <button className="flex w-full items-center gap-3 border-t border-border/60 px-4 py-3.5 text-left hover:bg-border/30">
-              <CalendarDays size={16} className="shrink-0 text-secondary" strokeWidth={1.75} />
-              <span className="flex-1">
-                <span className="block text-[14px] font-medium text-navy">Schedule</span>
-                <span className="block text-[12px] text-muted">Sessions & repeats</span>
-              </span>
-              <ChevronRight size={16} className="text-muted" />
-            </button>
-          )}
-          <button className="flex w-full items-center gap-3 border-t border-border/60 px-4 py-3.5 text-left hover:bg-border/30">
-            <MapPin size={16} className="shrink-0 text-secondary" strokeWidth={1.75} />
-            <span className="flex-1 text-[14px] font-medium text-navy">In-salon · Mobile</span>
-            <ChevronRight size={16} className="text-muted" />
-          </button>
-          <button className="flex w-full items-center gap-3 border-t border-border/60 px-4 py-3.5 text-left hover:bg-border/30">
-            <Users size={16} className="shrink-0 text-secondary" strokeWidth={1.75} />
-            <span className="flex-1 text-[14px] font-medium text-navy">{isClass ? "Instructors" : "Staff members"}</span>
-            <ChevronRight size={16} className="text-muted" />
-          </button>
-          <div className="flex border-t border-border/60">
-            <div className="flex-1 px-4 py-3">
-              <div className="text-[11px] text-muted">Deposit</div>
-              <div className="mt-0.5 text-[14px] font-semibold text-navy">£20</div>
-            </div>
-            <div className="flex-1 border-l border-border/60 px-4 py-3">
-              <div className="text-[11px] text-muted">Cancellation</div>
-              <div className="mt-0.5 text-[14px] font-semibold text-navy">24h</div>
-            </div>
-          </div>
-        </div>
+        <SummaryCard offer={offer} allOffers={offers} />
 
         <div className="flex items-center justify-between pb-2 pt-5">
           <span className="text-[15px] font-semibold text-navy">Photos</span>
@@ -208,5 +169,169 @@ function OfferDashboard({ id }: { id: string }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// ── Summary card ────────────────────────────────────────────────────────────
+// One shared card shell; the body rows are type-specific compositions on
+// SummaryRow (screen-local, not barrel). Every value derives from the persisted
+// offer (Stage 1 data seam); seed offers without the optional fields fall back.
+
+function durationLabel(min: number): string {
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h${m ? ` ${m}m` : ""}`;
+}
+
+function priceSuffix(offer: DemoOffer): string {
+  switch (offer.type) {
+    case "class": return "per attendee";
+    case "subscription": return offer.subscription ? `/ ${offer.subscription.billingPeriod}` : "";
+    case "bundle": return offer.bundle?.serviceIds.length ? `${offer.bundle.serviceIds.length} services` : "";
+    default: return offer.durationMin ? `for ${durationLabel(offer.durationMin)}` : "";
+  }
+}
+
+function DepositTiles({ offer }: { offer: DemoOffer }) {
+  const deposit = offer.deposit?.enabled ? `£${offer.deposit.amount}` : "—";
+  return (
+    <div className="flex border-t border-border/60">
+      <div className="flex-1 px-4 py-3">
+        <div className="text-[11px] text-muted">Deposit</div>
+        <div className="mt-0.5 text-[14px] font-semibold text-navy">{deposit}</div>
+      </div>
+      <div className="flex-1 border-l border-border/60 px-4 py-3">
+        <div className="text-[11px] text-muted">Cancellation</div>
+        <div className="mt-0.5 text-[14px] font-semibold text-navy">—</div>
+      </div>
+    </div>
+  );
+}
+
+function locationLabel(offer: DemoOffer): string {
+  const m = offer.locationModes;
+  if (!m) return "Location not set";
+  const parts = [m.inSalon && "In-salon", m.mobile && "Mobile", m.remote && "Remote"].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "Location not set";
+}
+
+function SummaryCard({ offer, allOffers }: { offer: DemoOffer; allOffers: DemoOffer[] }) {
+  const suffix = priceSuffix(offer);
+  return (
+    <div className="overflow-hidden rounded-2xl bg-canvas">
+      <button className="flex w-full items-center justify-between px-4 py-4 text-left hover:bg-border/30">
+        <span className="text-[20px] font-bold text-navy">
+          {offer.price === "0" ? "Free" : `£${offer.price}`}
+          {suffix && <span className="ml-1.5 text-[13px] font-normal text-muted">{suffix}</span>}
+        </span>
+        <ChevronRight size={16} className="text-muted" />
+      </button>
+      {offer.type === "class" && <ClassSummary offer={offer} />}
+      {offer.type === "bundle" && <BundleSummary offer={offer} allOffers={allOffers} />}
+      {offer.type === "subscription" && <SubscriptionSummary offer={offer} />}
+      {(offer.type === "service" || offer.type === undefined) && <ServiceSummary offer={offer} />}
+    </div>
+  );
+}
+
+function ServiceSummary({ offer }: { offer: DemoOffer }) {
+  const byLoc = offer.staffByLocation ? new Set(Object.values(offer.staffByLocation).flat()).size : 0;
+  const count = Math.max(offer.staffIds?.length ?? 0, byLoc);
+  const staff = count > 0 ? `${count} staff member${count > 1 ? "s" : ""}` : "Staff members";
+  return (
+    <>
+      <SummaryRow className="border-t border-border/60" icon={<MapPin size={16} strokeWidth={1.75} />} label={locationLabel(offer)} />
+      <SummaryRow className="border-t border-border/60" icon={<Users size={16} strokeWidth={1.75} />} label={staff} />
+      <DepositTiles offer={offer} />
+    </>
+  );
+}
+
+function ClassSummary({ offer }: { offer: DemoOffer }) {
+  const cd = offer.classDetails;
+  const count = offer.staffIds?.length ?? 0;
+  const instructors = count > 0 ? `${count} instructor${count > 1 ? "s" : ""}` : "Instructors";
+
+  const schedule = (() => {
+    if (!cd) return "Schedule not set";
+    const sessions = cd.dates.length || (cd.scheduleMode === "single" ? 1 : 0);
+    const head = sessions ? `${sessions} session${sessions > 1 ? "s" : ""}` : "Schedule not set";
+    const time = cd.startTime && cd.endTime ? ` · ${cd.startTime}–${cd.endTime}` : "";
+    const repeat = cd.repeat === "weekly" ? ` · weekly ×${cd.repeatWeeks}` : "";
+    return `${head}${time}${repeat}`;
+  })();
+
+  const attendees = (() => {
+    if (!cd) return "Attendees not set";
+    if (cd.bookingStructure === "private_group") return "Private booking";
+    return `${cd.capacity} seats · min ${cd.minParticipants}`;
+  })();
+
+  return (
+    <>
+      <SummaryRow className="border-t border-border/60" icon={<CalendarDays size={16} strokeWidth={1.75} />} label={schedule} />
+      <SummaryRow className="border-t border-border/60" icon={<Users size={16} strokeWidth={1.75} />} label={attendees} />
+      <SummaryRow className="border-t border-border/60" icon={<GraduationCap size={16} strokeWidth={1.75} />} label={instructors} />
+      <SummaryRow className="border-t border-border/60" icon={<MapPin size={16} strokeWidth={1.75} />} label={locationLabel(offer)} />
+      <DepositTiles offer={offer} />
+    </>
+  );
+}
+
+function BundleSummary({ offer, allOffers }: { offer: DemoOffer; allOffers: DemoOffer[] }) {
+  const b = offer.bundle;
+  const names = (b?.serviceIds ?? [])
+    .map((id) => allOffers.find((o) => o.id === id)?.name)
+    .filter(Boolean) as string[];
+  const included = names.length ? names.join(", ") : "No services yet";
+  const pricing = !b
+    ? "Pricing not set"
+    : b.priceMode === "discount"
+    ? `${b.discountPercent || "0"}% package discount`
+    : "Fixed price";
+  const includedValue = names.length
+    ? b?.kind === "flexible" ? `choose ${b.chooseCount} of ${names.length}` : `${names.length}`
+    : undefined;
+  return (
+    <>
+      <SummaryRow
+        className="border-t border-border/60"
+        icon={<Package size={16} strokeWidth={1.75} />}
+        label={included}
+        value={includedValue}
+      />
+      <SummaryRow className="border-t border-border/60" icon={<Layers size={16} strokeWidth={1.75} />} label={pricing} />
+    </>
+  );
+}
+
+function SubscriptionSummary({ offer }: { offer: DemoOffer }) {
+  const s = offer.subscription;
+  const benefit = (() => {
+    if (!s) return "Benefit not set";
+    switch (s.benefitType) {
+      case "sessions": return s.unlimitedUsage ? "Unlimited sessions" : `${s.includedSessions} session${s.includedSessions > 1 ? "s" : ""} / period`;
+      case "credit": return s.storeCreditAmount ? `£${s.storeCreditAmount} store credit` : "Store credit";
+      case "discount": return s.memberDiscountPercent ? `${s.memberDiscountPercent}% member discount` : "Member discount";
+      case "access": return "Access pass";
+      default: return "Benefit not set";
+    }
+  })();
+  const billing = s ? `Billed per ${s.billingPeriod}` : "Billing not set";
+  const extras = (() => {
+    if (!s) return null;
+    const bits = [
+      s.joiningFee ? `£${s.joiningFee} joining fee` : null,
+      s.minimumTermMonths ? `${s.minimumTermMonths}-month term` : null,
+    ].filter(Boolean) as string[];
+    return bits.length ? bits.join(" · ") : null;
+  })();
+  return (
+    <>
+      <SummaryRow className="border-t border-border/60" icon={<Award size={16} strokeWidth={1.75} />} label={benefit} />
+      <SummaryRow className="border-t border-border/60" icon={<Repeat size={16} strokeWidth={1.75} />} label={billing} />
+      {extras && <SummaryRow className="border-t border-border/60" icon={<Settings2 size={16} strokeWidth={1.75} />} label={extras} />}
+    </>
   );
 }

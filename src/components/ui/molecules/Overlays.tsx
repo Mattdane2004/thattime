@@ -22,6 +22,7 @@ export function Sheet({
   sub,
   full,
   aboveNav,
+  footer,
 }: {
   open: boolean;
   onClose: () => void;
@@ -30,6 +31,8 @@ export function Sheet({
   sub?: string;
   full?: boolean;
   aboveNav?: boolean;
+  /** Pinned action area rendered below the scroll region — never overlaps content. */
+  footer?: ReactNode;
 }) {
   return (
     <AnimatePresence>
@@ -65,7 +68,10 @@ export function Sheet({
                 </div>
               )}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">{children}</div>
+            <div className={`min-h-0 flex-1 overflow-y-auto px-6 ${footer ? "pb-4" : "pb-8"}`}>{children}</div>
+            {footer && (
+              <div className="shrink-0 border-t border-border/60 bg-white px-6 pb-7 pt-3">{footer}</div>
+            )}
           </motion.div>
         </>
       )}

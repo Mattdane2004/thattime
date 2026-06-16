@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronLeft, Star, CalendarPlus, MessageSquare, Phone, Plus,
-  RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell,
+  ChevronLeft, Star, CalendarPlus, MessageSquare, MessageCircle, Phone, Plus,
+  RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell, Download,
   MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
   Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
@@ -256,51 +256,57 @@ export default function ClientDetailPage() {
   ];
 
   return (
-    <div className="min-h-full bg-fog pb-6">
-      {/* ── Header: identity front and centre, actions on one clean row ── */}
-      <div className="bg-white px-5 pb-7">
+    <div className="min-h-full bg-fog">
+      {/* ── Header: centred profile (Figma 12273:24328) ── */}
+      <div className="bg-white px-5 pb-5">
         <div className="-mx-1 flex items-center justify-between pt-4">
           <button type="button" aria-label="Back" onClick={() => router.back()} className="p-1 text-navy">
             <ChevronLeft size={22} strokeWidth={2} />
           </button>
+          <button type="button" aria-label="Client actions" onClick={() => setActionsOpen(true)} className="p-1 text-navy">
+            <MoreVertical size={20} strokeWidth={1.9} />
+          </button>
         </div>
 
-        <div className="flex flex-col items-center pt-1 text-center">
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-canvas text-[24px] font-semibold text-muted">
-            {initials}
-          </span>
-          <div className="flex items-center gap-2.5 pt-4">
-            <h1 className="text-[24px] font-bold tracking-tight text-navy">{details.name}</h1>
-            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-fg-primary text-white"}`}>
+        {/* Avatar with the status badge on its lower edge */}
+        <div className="flex flex-col items-center pt-1">
+          <div className="relative">
+            <span className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-canvas text-[24px] font-semibold text-muted">
+              {initials}
+            </span>
+            <span className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${blocked ? "bg-danger text-white" : "bg-fg-primary text-white"}`}>
               {blocked ? "Blocked" : "Active"}
             </span>
           </div>
-          <p className="pt-1.5 text-[14px] text-secondary">{details.phone} · {details.email}</p>
-          <span className="flex items-center gap-2 pt-2.5 text-[13px] font-medium text-navy">
-            <span className="flex items-center gap-1"><Star size={13} className="fill-current" /> 4.8</span>
+          <h1 className="pt-4 text-[22px] font-bold tracking-tight text-navy">{details.name}</h1>
+
+          {/* Tags + add-a-tag chip */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
             {tags.map((t) => (
-              <span key={t} className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-secondary">{t}</span>
+              <span key={t} className="rounded-full bg-canvas px-2.5 py-1 text-[10px] font-semibold text-secondary">{t}</span>
             ))}
-          </span>
+            <button
+              type="button"
+              onClick={() => setTagSheetOpen(true)}
+              className="flex items-center gap-0.5 rounded-full border border-dashed border-border px-2.5 py-1 text-[10px] font-semibold text-secondary"
+            >
+              Add <Plus size={10} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
-        {/* Secondary actions hide behind the dots; two calls to action stay */}
-        <div className="flex gap-2.5 pt-6">
-          <GhostButton
-            className="!h-12 !w-12 shrink-0"
-            ariaLabel="Client actions"
-            onClick={() => setActionsOpen(true)}
-          >
-            <MoreVertical size={17} strokeWidth={1.75} />
-          </GhostButton>
-          <GhostButton className="!h-12 flex-1 !text-[14px]" onClick={() => router.push("/app/messages/sarah")}>
-            <MessageSquare size={15} />
-            Message
-          </GhostButton>
-          <DarkButton className="!h-12 flex-1 !text-[14px]" onClick={() => setQuickAction("appointment")}>
-            <CalendarPlus size={15} />
-            Book now
-          </DarkButton>
+        {/* Stats — a bordered, three-column card */}
+        <div className="mt-5 flex divide-x divide-border overflow-hidden rounded-2xl border border-border">
+          {[
+            ["Total Bookings", "24"],
+            ["Total Sales", "£1,870"],
+            ["Rating", "4.8"],
+          ].map(([k, v]) => (
+            <div key={k} className="flex-1 bg-white px-2 py-3.5 text-center">
+              <p className="text-[11px] text-muted">{k}</p>
+              <p className="pt-1 text-[15px] font-bold text-navy">{v}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -367,24 +373,7 @@ export default function ClientDetailPage() {
                 )}
               </div>
 
-              {/* What's next, right under safety */}
-              {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
-
-              {/* The numbers, one quiet row */}
-              <div className="flex divide-x divide-border rounded-2xl bg-white px-2 py-3.5 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
-                {[
-                  ["Last Visit", "3 Mar 2026"],
-                  ["Total Bookings", "24"],
-                  ["Total Sales", "£1,870"],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex-1 text-center">
-                    <p className="text-[11px] text-muted">{k}</p>
-                    <p className="pt-1 text-[14px] font-bold text-navy">{v}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Needs attention: a glanceable horizontal rail, one card per item */}
+              {/* Needs attention — surfaced right under the safety flags, above the fold */}
               {attention.length > 0 && (
                 <div>
                   <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
@@ -416,6 +405,9 @@ export default function ClientDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* What's next */}
+              {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
 
               {/* Wallet, reviews and settings are full pages now; contact stays a sheet */}
               <div>
@@ -591,17 +583,22 @@ export default function ClientDetailPage() {
                         : `${al.type} allergy${al.reaction !== "—" ? ` · Reaction: ${al.reaction.toLowerCase()}` : ""}`}
                     </span>
                     {expandedNow && (
-                      <span className="mt-2 flex items-center justify-between border-t border-border pt-2">
-                        <span className="text-[11px] text-muted">Added 15 Jan 2024 · flagged on every booking</span>
-                        <span
-                          role="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAllergies((a) => a.filter((x) => x.name !== al.name));
-                          }}
-                          className="text-[11px] font-semibold text-danger"
-                        >
-                          Remove
+                      <span className="mt-2 block border-t border-border pt-2">
+                        {al.note && al.type !== "Note" && (
+                          <span className="block pb-2 text-[12px] leading-snug text-secondary">{al.note}</span>
+                        )}
+                        <span className="flex items-center justify-between">
+                          <span className="text-[11px] text-muted">Added 15 Jan 2024 · flagged on every booking</span>
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAllergies((a) => a.filter((x) => x.name !== al.name));
+                            }}
+                            className="text-[11px] font-semibold text-danger"
+                          >
+                            Remove
+                          </span>
                         </span>
                       </span>
                     )}
@@ -707,9 +704,14 @@ export default function ClientDetailPage() {
                     <span className="block pt-1 text-[11px] text-muted">⎘ {f.appt}</span>
                   </span>
                   {f.state === "view" && (
-                    <button className="flex shrink-0 items-center gap-1.5 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-semibold text-navy">
-                      <Eye size={12} strokeWidth={2} /> View
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button className="flex items-center gap-1.5 rounded-full bg-canvas px-3.5 py-1.5 text-[12px] font-semibold text-navy">
+                        <Eye size={12} strokeWidth={2} /> View
+                      </button>
+                      <button aria-label={`Download ${f.name}`} className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-navy">
+                        <Download size={13} strokeWidth={2} />
+                      </button>
+                    </div>
                   )}
                   {f.state === "remind" && (
                     <button
@@ -732,6 +734,18 @@ export default function ClientDetailPage() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* ── Pinned action bar (Figma): Contact opens the sheet, Book is the CTA ── */}
+      <div className="sticky bottom-0 z-20 mt-3 flex gap-2.5 border-t border-border bg-white px-4 pb-4 pt-3">
+        <GhostButton className="!h-12 flex-1 !text-[14px]" onClick={() => { setNumberCopied(false); setContactOpen(true); }}>
+          <MessageSquare size={15} />
+          Contact
+        </GhostButton>
+        <DarkButton className="!h-12 flex-1 !text-[14px]" onClick={() => setQuickAction("appointment")}>
+          <CalendarPlus size={15} />
+          Book now
+        </DarkButton>
+      </div>
 
       {/* ── Sheets ── */}
 
@@ -955,6 +969,14 @@ export default function ClientDetailPage() {
                 </span>
               ))}
             </div>
+
+            <p className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Notes (optional)</p>
+            <textarea
+              value={alNote}
+              onChange={(e) => setAlNote(e.target.value)}
+              placeholder="Products to avoid, last reaction, anything the team should know..."
+              className="h-20 w-full resize-none rounded-xl bg-canvas p-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+            />
           </>
         )}
 
@@ -969,7 +991,7 @@ export default function ClientDetailPage() {
                   type: alType,
                   reaction: alType === "Note" ? "—" : alReaction ?? "—",
                   severity: alType === "Note" ? "Mild" : alSeverity,
-                  note: alType === "Note" ? alNote.trim() || undefined : undefined,
+                  note: alNote.trim() || undefined,
                 },
               ]);
               setAllergyOpen(false);
@@ -1328,9 +1350,9 @@ export default function ClientDetailPage() {
             <Phone size={15} />
             Call {details.phone}
           </DarkButton>
-          <GhostButton onClick={() => setNumberCopied(true)}>
-            {numberCopied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} />}
-            {numberCopied ? "Number copied" : "Copy number"}
+          <GhostButton onClick={() => setContactOpen(false)}>
+            <MessageCircle size={15} />
+            WhatsApp {firstName}
           </GhostButton>
           <GhostButton
             onClick={() => {
@@ -1340,6 +1362,10 @@ export default function ClientDetailPage() {
           >
             <MessageSquare size={15} />
             Send a message
+          </GhostButton>
+          <GhostButton onClick={() => setNumberCopied(true)}>
+            {numberCopied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} />}
+            {numberCopied ? "Number copied" : "Copy number"}
           </GhostButton>
         </div>
       </Sheet>

@@ -21,6 +21,12 @@ const sortOptions = ["Recent booking", "Name A–Z", "Rating"];
 const filterTags = ["All", "Regular", "VIP", "New", "Allergy", "Blocked", "Inactive"];
 const assignableTags = ["VIP", "Regular", "New", "Inactive"];
 const blockReasons = ["No-shows", "Repeated late cancellations", "Rude or abusive", "Payment issues", "Other"];
+// A possible-duplicate group: the variants share a number but have slightly
+// different names, so the user chooses which to keep as the primary profile.
+const mergeGroup = [
+  { id: "sj-full", name: "Sarah Johnson", meta: "(555) 234-5678 · 24 bookings", initials: "SJ" },
+  { id: "sj-short", name: "S. Johnson", meta: "(555) 234-5678 · 2 bookings", initials: "SJ" },
+];
 
 type Row = (typeof clientRows)[number];
 
@@ -34,12 +40,15 @@ export default function ClientsPage() {
   const [sheet, setSheet] = useState<null | "add" | "tools" | "import" | "merge" | "filter" | "sort" | "bulk-tag" | "bulk-block" | "bulk-delete">(null);
   const [imported, setImported] = useState<"idle" | "picked" | "done">("idle");
   const [merged, setMerged] = useState(false);
+  const [mergePrimary, setMergePrimary] = useState(mergeGroup[0].id);
   const [exported, setExported] = useState<string | null>(null);
 
   // Multi-select mode for bulk actions.
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkTags, setBulkTags] = useState<string[]>([]);
+  const [bulkTagQuery, setBulkTagQuery] = useState("");
+  const [customTags, setCustomTags] = useState<string[]>([]);
   const [blockReason, setBlockReason] = useState<string | null>(null);
   const [blockNote, setBlockNote] = useState("");
   const toggleSel = (id: string) =>
@@ -229,7 +238,7 @@ export default function ClientsPage() {
             >
               <span className="text-[12px] font-semibold">{selected.length}</span>
               {[
-                { icon: <TagIcon size={14} />, label: "Tag", run: () => { setBulkTags([]); setSheet("bulk-tag"); } },
+                { icon: <TagIcon size={14} />, label: "Tag", run: () => { setBulkTags([]); setBulkTagQuery(""); setSheet("bulk-tag"); } },
                 allBlocked
                   ? { icon: <Ban size={14} />, label: "Unblock", run: applyUnblock }
                   : { icon: <Ban size={14} />, label: "Block", run: () => { setBlockReason(null); setBlockNote(""); setSheet("bulk-block"); } },
@@ -274,7 +283,7 @@ export default function ClientsPage() {
           {[
             { icon: <CheckSquare size={17} strokeWidth={1.7} />, t: "Select clients", s: "Bulk block, tag or delete", run: () => { setSheet(null); setSelectMode(true); } },
             { icon: <Upload size={17} strokeWidth={1.7} />, t: "Import from CSV", s: "Upload a spreadsheet of clients", run: () => { setImported("idle"); setSheet("import"); } },
-            { icon: <Merge size={17} strokeWidth={1.7} />, t: "Merge duplicates", s: "Find and combine duplicate profiles", run: () => { setMerged(false); setSheet("merge"); } },
+            { icon: <Merge size={17} strokeWidth={1.7} />, t: "Merge duplicates", s: "Find and combine duplicate profiles", run: () => { setMerged(false); setMergePrimary(mergeGroup[0].id); setSheet("merge"); } },
             { icon: <FileSpreadsheet size={17} strokeWidth={1.7} />, t: "Export as Excel", s: ".xlsx — opens in Excel or Numbers", run: () => setExported("Excel") },
             { icon: <FileText size={17} strokeWidth={1.7} />, t: "Export as CSV", s: ".csv — works everywhere", run: () => setExported("CSV") },
           ].map((a) => (
@@ -350,7 +359,7 @@ export default function ClientsPage() {
             <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }} className="flex h-16 w-16 items-center justify-center rounded-full bg-fg-primary text-white">
               <Merge size={24} strokeWidth={1.8} />
             </motion.span>
-            <p className="pt-5 text-[16px] font-bold text-navy">1 pair merged</p>
+            <p className="pt-5 text-[16px] font-bold text-navy">Merged into {mergeGroup.find((c) => c.id === mergePrimary)?.name}</p>
             <p className="pt-1 text-[13px] text-secondary">Bookings, notes and forms were combined.</p>
             <div className="w-full pt-6">
               <DarkButton onClick={() => setSheet(null)}>Done</DarkButton>
@@ -358,25 +367,41 @@ export default function ClientsPage() {
           </div>
         ) : (
           <>
-            <p className="pb-3 text-[13px] text-secondary">1 possible duplicate found:</p>
+            <p className="pb-3 text-[13px] text-secondary">
+              1 possible duplicate found. Pick the profile to keep — the other merges into it.
+            </p>
             <div className="overflow-hidden rounded-2xl border border-border">
-              {[
-                ["Sarah Johnson", "(555) 234-5678 · 24 bookings"],
-                ["S. Johnson", "(555) 234-5678 · 2 bookings"],
-              ].map(([n, m], i) => (
-                <div key={n} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">SJ</span>
-                  <span className="flex-1">
-                    <span className="block text-[14px] font-semibold text-navy">{n}</span>
-                    <span className="block text-[12px] text-muted">{m}</span>
-                  </span>
-                </div>
-              ))}
+              {mergeGroup.map((c, i) => {
+                const isPrimary = mergePrimary === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setMergePrimary(c.id)}
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left ${i > 0 ? "border-t border-border" : ""} ${isPrimary ? "bg-canvas" : ""}`}
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas text-[11px] font-bold text-secondary">{c.initials}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-[14px] font-semibold text-navy">{c.name}</span>
+                        {isPrimary && <span className="shrink-0 rounded-full bg-fg-primary px-2 py-0.5 text-[10px] font-semibold text-white">Primary</span>}
+                      </span>
+                      <span className="block text-[12px] text-muted">{c.meta}</span>
+                    </span>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isPrimary ? "border-fg-primary bg-fg-primary text-white" : "border-border"}`}>
+                      {isPrimary && <Check size={12} strokeWidth={3} />}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="pt-5">
+            <p className="pt-3 text-[12px] leading-snug text-muted">
+              All bookings, notes and forms combine into the profile you keep. You can edit the name afterwards.
+            </p>
+            <div className="pt-4">
               <DarkButton onClick={() => setMerged(true)}>
                 <Merge size={15} />
-                Merge into Sarah Johnson
+                Merge into {mergeGroup.find((c) => c.id === mergePrimary)?.name}
               </DarkButton>
               <GhostButton className="mt-3" onClick={() => setSheet(null)}>Not duplicates</GhostButton>
             </div>
@@ -401,29 +426,67 @@ export default function ClientsPage() {
         ))}
       </Sheet>
 
-      {/* Bulk: tag selected */}
+      {/* Bulk: tag selected — pick from the set or create a new tag */}
       <Sheet open={sheet === "bulk-tag"} onClose={() => setSheet(null)} title={`Tag ${selected.length} client${selected.length > 1 ? "s" : ""}`} sub="Tags show on the list and on each profile">
-        <div className="flex flex-wrap gap-2 pt-1">
-          {assignableTags.map((t) => {
-            const on = bulkTags.includes(t);
-            return (
-              <button
-                key={t}
-                onClick={() => setBulkTags((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
-                className={`rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-                  on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
-                }`}
-              >
-                {t}
-              </button>
-            );
-          })}
-        </div>
-        <div className="pt-5">
-          <DarkButton disabled={bulkTags.length === 0} onClick={applyTags}>
-            {bulkTags.length ? `Apply ${bulkTags.join(" + ")}` : "Pick at least one tag"}
-          </DarkButton>
-        </div>
+        {(() => {
+          const options = Array.from(new Set([...assignableTags, ...customTags, ...bulkTags]));
+          const q = bulkTagQuery.trim();
+          const matches = options.filter((t) => t.toLowerCase().includes(q.toLowerCase()));
+          const canCreate = q.length > 0 && !options.some((t) => t.toLowerCase() === q.toLowerCase());
+          const createTag = () => {
+            setCustomTags((c) => (c.includes(q) ? c : [...c, q]));
+            setBulkTags((x) => (x.includes(q) ? x : [...x, q]));
+            setBulkTagQuery("");
+          };
+          return (
+            <>
+              <div className="relative pb-3">
+                <TagIcon size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  value={bulkTagQuery}
+                  onChange={(e) => setBulkTagQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && canCreate) createTag(); }}
+                  placeholder="Search or create a tag..."
+                  className="h-11 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-[14px] text-navy placeholder:text-muted focus:outline-none"
+                />
+              </div>
+              {canCreate && (
+                <button
+                  type="button"
+                  onClick={createTag}
+                  className="mb-2 flex w-full items-center gap-2 rounded-xl border border-dashed border-border py-3 pl-4 text-left"
+                >
+                  <Check size={15} strokeWidth={2} className="text-navy" />
+                  <span className="text-[14px] font-semibold text-navy">Create &ldquo;{q}&rdquo;</span>
+                </button>
+              )}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {matches.map((t) => {
+                  const on = bulkTags.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setBulkTags((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
+                      className={`rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                        on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+                {matches.length === 0 && !canCreate && (
+                  <p className="py-4 text-center text-[13px] text-muted">No tags found</p>
+                )}
+              </div>
+              <div className="pt-5">
+                <DarkButton disabled={bulkTags.length === 0} onClick={applyTags}>
+                  {bulkTags.length ? `Apply ${bulkTags.join(" + ")}` : "Pick at least one tag"}
+                </DarkButton>
+              </div>
+            </>
+          );
+        })()}
       </Sheet>
 
       {/* Bulk: block with a required reason */}

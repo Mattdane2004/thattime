@@ -106,7 +106,7 @@ export default function BasicsPage() {
               onChange={(e) => updateDraft({ description: e.target.value })}
               placeholder="Short description shown to clients"
               rows={4}
-              className="w-full resize-none rounded-xl bg-canvas px-4 py-3 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+              className="w-full resize-none rounded-xl border border-border bg-canvas px-4 py-3 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
             />
           </label>
         </div>
@@ -179,7 +179,20 @@ function IconSheet({
   const Preview = iconFor(picked);
 
   return (
-    <Sheet open={open} onClose={onClose} title="Icons">
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Icons"
+      footer={
+        <button
+          type="button"
+          onClick={() => onSave(picked)}
+          className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white"
+        >
+          Save
+        </button>
+      }
+    >
       <div className="flex flex-col gap-4">
         <span
           className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
@@ -238,16 +251,6 @@ function IconSheet({
             </div>
           )}
         </div>
-
-        <div className="sticky bottom-0 -mx-6 -mb-8 bg-white px-6 pb-8 pt-2">
-          <button
-            type="button"
-            onClick={() => onSave(picked)}
-            className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white"
-          >
-            Save
-          </button>
-        </div>
       </div>
     </Sheet>
   );
@@ -288,7 +291,20 @@ function CategorySheet({
 
   return (
     <>
-      <Sheet open={open} onClose={onClose} title="Category">
+      <Sheet
+        open={open}
+        onClose={onClose}
+        title="Category"
+        footer={
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white"
+          >
+            Done
+          </button>
+        }
+      >
         <div className="flex flex-col gap-3">
           <div className="relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -296,7 +312,7 @@ function CategorySheet({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search categories…"
-              className="h-11 w-full rounded-xl bg-canvas pl-10 pr-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+              className="h-11 w-full rounded-xl border border-border bg-canvas pl-10 pr-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
             />
           </div>
 
@@ -330,20 +346,24 @@ function CategorySheet({
           >
             <Plus size={16} /> New category
           </button>
-
-          <div className="sticky bottom-0 -mx-6 -mb-8 bg-white px-6 pb-8 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white"
-            >
-              Done
-            </button>
-          </div>
         </div>
       </Sheet>
 
-      <Sheet open={newSheet} onClose={() => setNewSheet(false)} title="New category">
+      <Sheet
+        open={newSheet}
+        onClose={() => setNewSheet(false)}
+        title="New category"
+        footer={
+          <button
+            type="button"
+            onClick={createCategory}
+            disabled={!name.trim()}
+            className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white disabled:opacity-40"
+          >
+            Add category
+          </button>
+        }
+      >
         <div className="flex flex-col gap-5">
           <label className="block">
             <FieldLabel>Name</FieldLabel>
@@ -371,15 +391,6 @@ function CategorySheet({
               ))}
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={createCategory}
-            disabled={!name.trim()}
-            className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white disabled:opacity-40"
-          >
-            Add category
-          </button>
         </div>
       </Sheet>
     </>

@@ -3,16 +3,16 @@
 import { useRouter } from "next/navigation";
 import { Repeat, CreditCard, BadgePercent, Check } from "lucide-react";
 import { ScreenHeader } from "@/components/ui";
-import { WizardFooter, TOTAL_STEPS } from "@/components/ui";
+import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
 
-// Subscription wizard 1/3 — type. Ported from that-time-app
-// /routes/wizard/SubscriptionType.jsx.
+// Subscription wizard 1/3 — type. The card picks a starting `benefitType`
+// (the single driver); the benefits step then refines it.
 
-const TYPES: { key: SubscriptionDraft["subType"]; benefit: SubscriptionDraft["benefitType"]; label: string; desc: string; Icon: typeof Repeat }[] = [
-  { key: "frequency", benefit: "sessions", label: "Service frequency", desc: "Clients pay a fixed fee and redeem services on a set or unlimited frequency.", Icon: Repeat },
-  { key: "credit", benefit: "credit", label: "Store credit", desc: "Clients receive recurring credit to spend on services or products.", Icon: CreditCard },
-  { key: "membership", benefit: "discount", label: "Membership benefits", desc: "Clients pay for discounts, member access, and perks.", Icon: BadgePercent },
+const TYPES: { benefit: SubscriptionDraft["benefitType"]; label: string; desc: string; Icon: typeof Repeat }[] = [
+  { benefit: "sessions", label: "Service frequency", desc: "Clients pay a fixed fee and redeem services on a set or unlimited frequency.", Icon: Repeat },
+  { benefit: "credit", label: "Store credit", desc: "Clients receive recurring credit to spend on services or products.", Icon: CreditCard },
+  { benefit: "discount", label: "Membership benefits", desc: "Clients pay for discounts, member access, and perks.", Icon: BadgePercent },
 ];
 
 export default function SubscriptionTypePage() {
@@ -24,17 +24,14 @@ export default function SubscriptionTypePage() {
     <>
       <ScreenHeader onBack={() => router.push("/new/basics")} />
       <div className="flex-1 overflow-y-auto px-5">
-        <div className="pb-6 pt-2">
-          <div className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Subscription type</div>
-          <div className="mt-1 text-[14px] text-muted">Choose the membership model. You can refine limits and rules after setup.</div>
-        </div>
+        <WizardTitle title="Subscription type" subtitle="Choose the membership model. You can refine limits and rules after setup." />
         <div className="space-y-2 pb-6">
-          {TYPES.map(({ key, benefit, label, desc, Icon }) => {
-            const active = sub.subType === key;
+          {TYPES.map(({ benefit, label, desc, Icon }) => {
+            const active = sub.benefitType === benefit;
             return (
               <button
-                key={key}
-                onClick={() => updateSubscription({ subType: key, benefitType: benefit })}
+                key={benefit}
+                onClick={() => updateSubscription({ benefitType: benefit })}
                 className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-colors ${active ? "bg-navy text-white" : "bg-canvas text-navy hover:bg-border/40"}`}
               >
                 <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-white/10" : "bg-surface"}`}>

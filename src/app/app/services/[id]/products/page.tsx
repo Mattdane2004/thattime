@@ -2,67 +2,141 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Check, Plus } from "lucide-react";
+import { ChevronLeft, Check, Plus, Package, Trash2 } from "lucide-react";
 import { productsCatalog, productCategories } from "@/lib/data/products";
+import { useOffersStore } from "@/lib/store/offersStore";
 
-// Products module editor — a functional port of the legacy that-time-app
-// service "Products" module. Attach retail products to an offer; selection is
-// local state (persisting to the offer is backlog).
+// Products module — a setup flow (empty → pick from catalogue → list), not a
+// bare tick list. Selection persists to offer.productIds via updateOffer.
 
-export default function ProductsModulePage() {
+export default function ProductsModulePage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const offer = useOffersStore((s) => s.offers.find((o) => o.id === params.id));
+  const updateOffer = useOffersStore((s) => s.updateOffer);
+  const [picking, setPicking] = useState(false);
   const [category, setCategory] = useState<string>("All");
-  const [selected, setSelected] = useState<string[]>([]);
 
+  if (!offer) {
+    return (
+      <div className="flex h-full flex-col bg-surface">
+        <Header title="Products" onBack={() => router.push("/app/services")} />
+        <div className="pt-12 text-center text-[13px] text-muted">Offer not found</div>
+      </div>
+    );
+  }
+
+  const selected = offer.productIds ?? [];
+  const toggle = (id: string) =>
+    updateOffer(offer.id, { productIds: selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id] });
+  const chosen = productsCatalog.filter((p) => selected.includes(p.id));
   const visible = category === "All" ? productsCatalog : productsCatalog.filter((p) => p.category === category);
-  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
+  // ---- Picker view ----
+  if (picking) {
+    return (
+      <div className="flex h-full flex-col bg-surface">
+        <Header title="Add products" onBack={() => setPicking(false)} />
+        <div className="px-4 pb-2 pt-1">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {["All", ...productCategories].map((c) => (
+              <button
+                key={c}
+                onClick={() => setCategory(c)}
+                className={`shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium ${category === c ? "bg-navy text-white" : "bg-canvas text-secondary"}`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-6">
+          {visible.map((p) => {
+            const isSel = selected.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => toggle(p.id)}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left ${isSel ? "border-navy" : "border-border hover:bg-canvas"}`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-medium text-navy">{p.name}</span>
+                  <span className="block text-[12px] text-muted">{p.category} · £{p.basePrice}</span>
+                </span>
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${isSel ? "bg-navy text-white" : "bg-canvas text-muted"}`}>
+                  {isSel ? <Check size={15} /> : <Plus size={15} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="shrink-0 border-t border-border px-5 pb-5 pt-3">
+          <button onClick={() => setPicking(false)} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
+            Done{selected.length ? ` · ${selected.length} added` : ""}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- List / empty view ----
   return (
     <div className="flex h-full flex-col bg-surface">
-      <div className="flex h-16 items-center px-5">
-        <button type="button" aria-label="Back" onClick={() => router.back()} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
+      <Header
+        title="Products"
+        onBack={() => router.push(`/app/services/${offer.id}`)}
+        action={
+          chosen.length > 0 ? (
+            <button onClick={() => setPicking(true)} className="flex h-9 items-center gap-1.5 rounded-full bg-navy px-3.5 text-[13px] font-semibold text-white">
+              <Plus size={15} strokeWidth={1.75} />Add
+            </button>
+          ) : undefined
+        }
+      />
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
+        {chosen.length === 0 ? (
+          <div className="flex flex-col items-center px-6 pt-20 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-canvas">
+              <Package size={28} className="text-muted" strokeWidth={1.5} />
+            </span>
+            <div className="mt-4 text-[16px] font-semibold text-navy">No product preferences yet</div>
+            <div className="mt-1 text-[13px] text-muted">Add retail products clients can buy with this service.</div>
+            <button onClick={() => setPicking(true)} className="mt-5 inline-flex h-11 items-center gap-1.5 rounded-full bg-navy px-5 text-[14px] font-semibold text-white">
+              <Plus size={16} strokeWidth={1.75} />Set up products
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2 pt-2">
+            {chosen.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-border px-4 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas">
+                  <Package size={16} className="text-navy" strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold text-navy">{p.name}</span>
+                  <span className="block text-[12px] text-muted">{p.category} · £{p.basePrice}</span>
+                </span>
+                <button onClick={() => toggle(p.id)} aria-label="Remove product" className="shrink-0 text-muted hover:text-danger">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Header({ title, onBack, action }: { title: string; onBack: () => void; action?: React.ReactNode }) {
+  return (
+    <div className="flex h-16 items-center justify-between px-5">
+      <div className="flex items-center">
+        <button type="button" aria-label="Back" onClick={onBack} className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-navy hover:bg-canvas">
           <ChevronLeft size={22} />
         </button>
-        <span className="ml-1 text-[17px] font-semibold text-navy">Products</span>
+        <span className="ml-1 text-[17px] font-semibold text-navy">{title}</span>
       </div>
-
-      <div className="px-4 pb-2">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {["All", ...productCategories].map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`shrink-0 rounded-full px-3.5 py-2 text-[12px] font-medium transition-colors ${
-                category === c ? "bg-navy text-white" : "bg-canvas text-secondary"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-        <div className="mt-1 text-[12px] text-muted">{selected.length} added to this offer</div>
-      </div>
-
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-6">
-        {visible.map((p) => {
-          const isSel = selected.includes(p.id);
-          return (
-            <button
-              key={p.id}
-              onClick={() => toggle(p.id)}
-              className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${isSel ? "border-navy" : "border-border hover:bg-canvas"}`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-medium text-navy">{p.name}</span>
-                <span className="block text-[12px] text-muted">{p.category} · £{p.basePrice}</span>
-              </span>
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${isSel ? "bg-navy text-white" : "bg-canvas text-muted"}`}>
-                {isSel ? <Check size={15} /> : <Plus size={15} />}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {action}
     </div>
   );
 }

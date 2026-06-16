@@ -5,21 +5,21 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ChevronDown, ChevronRight, Clock, AlertTriangle, CalendarDays, Calendar,
-  Plane, Stethoscope, CirclePlus, Check, MapPin, Plus, TrendingUp, TrendingDown,
+  Plane, Stethoscope, CirclePlus, Check, MapPin, Plus, X, TrendingUp, TrendingDown,
   Banknote, UserPlus, Gauge, Scissors, Star, Users, ArrowUpRight,
 } from "lucide-react";
 import { AppHeader, SectionLabel, Sheet, DarkButton, MiniCalendar } from "@/components/ui";
 import { UpNextSection } from "@/components/app/UpNextCard";
 import { RoleSwitcher } from "@/components/app/RoleSwitcher";
-import { Sparkline, MiniBarLine, BenchmarkCurve } from "@/components/app/charts";
+import { Sparkline, MiniBarLine } from "@/components/app/charts";
 import { useRoleStore, type AppRole } from "@/lib/store/roleStore";
 import {
   homeHeader, needsAttention, teamToday, upcomingShifts, timeOff,
   type Shift, type TimeOffItem,
 } from "@/lib/data/home";
 import {
-  periods, type Period, revenueHero, staffEarningsHero, staffEarningsSub, businessKpis,
-  staffKpis, activitySeries, weekPerformance, benchmark, topServices, clientSplit, growAddTeam,
+  periods, type Period, revenueProgress, staffEarningsHero, staffEarningsSub, businessKpis,
+  staffKpis, activitySeries, weekPerformance, topServices, clientSplit, growAddTeam,
   type HeroMetric, type KpiTile,
 } from "@/lib/data/dashboard";
 
@@ -185,16 +185,34 @@ function ActivityCard() {
   );
 }
 
-// ── Peer benchmark ──
-function BenchmarkCard() {
+// ── Revenue — collected vs estimated as a progress bar (owner/solo) ──
+function RevenueProgressCard({ period }: { period: Period }) {
   return (
-    <div className="mx-4 rounded-3xl bg-white p-5 shadow-sm">
-      <span className="text-[15px] font-bold text-navy">{benchmark.headline}</span>
-      <p className="mt-0.5 text-[12px] text-muted">{benchmark.sub}</p>
-      <div className="mt-3 text-navy">
-        <BenchmarkCurve you={benchmark.you} className="text-navy" />
+    <Link href="/app/hub" className="mx-4 block">
+      <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between">
+          <span className="text-[12px] font-medium text-muted">Revenue · {period.toLowerCase()}</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-muted">
+            <ArrowUpRight size={16} strokeWidth={2} />
+          </span>
+        </div>
+        <div className="mt-1 flex items-end gap-2">
+          <span className="text-[32px] font-bold leading-none tracking-tight text-navy">{revenueProgress.collected}</span>
+          <span className="pb-1 text-[13px] font-medium text-muted">collected</span>
+        </div>
+        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-canvas">
+          <div className="h-full rounded-full bg-fg-primary" style={{ width: `${revenueProgress.pct}%` }} />
+        </div>
+        <div className="mt-2.5 flex justify-between text-[12px]">
+          <span className="flex items-center gap-1.5 text-navy">
+            <span className="h-2 w-2 rounded-full bg-fg-primary" /> {revenueProgress.collected} collected
+          </span>
+          <span className="flex items-center gap-1.5 text-muted">
+            <span className="h-2 w-2 rounded-full bg-fg-primary/25" /> {revenueProgress.estimated} estimated
+          </span>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -244,16 +262,26 @@ function InsightGrid() {
   );
 }
 
-// ── Solo: grow / add your team ──
+// ── Solo: grow / add your team (dismissable — the slot rotates other upsells) ──
 function GrowAddTeamCard() {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <div className="mx-4">
-      <div className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+    <div className="px-4 pt-6">
+      <div className="relative rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <button
+          type="button"
+          aria-label="Dismiss"
+          onClick={() => setDismissed(true)}
+          className="absolute right-3.5 top-3.5 flex h-7 w-7 items-center justify-center rounded-full text-muted"
+        >
+          <X size={15} strokeWidth={2} />
+        </button>
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-navy">
           <Users size={18} strokeWidth={1.8} />
         </span>
         <h3 className="mt-3 text-[16px] font-bold text-navy">{growAddTeam.title}</h3>
-        <p className="mt-1 text-[13px] leading-snug text-secondary">{growAddTeam.body}</p>
+        <p className="mt-1 pr-6 text-[13px] leading-snug text-secondary">{growAddTeam.body}</p>
         <Link
           href={growAddTeam.href}
           className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-fg-primary text-[14px] font-semibold text-white"
@@ -635,12 +663,18 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
       ) : (
         // Owner & solo — business dashboard.
         <>
+          {/* Needs Attention sits above the analytics so it's never below the fold. */}
+          <div className="pt-6">
+            <SectionLabel count={needsAttention.length}>Needs Attention</SectionLabel>
+            <NeedsAttentionList />
+          </div>
+
           <div className="flex items-center justify-between px-4 pb-2 pt-6">
             <span className="text-[15px] font-bold text-navy">Overview</span>
             <PeriodPill value={period} onChange={setPeriod} />
           </div>
 
-          <HeroMetricCard metric={revenueHero} period={period} href="/app/hub" />
+          <RevenueProgressCard period={period} />
 
           <div className="mt-3">
             <KpiScroller tiles={businessKpis} />
@@ -650,22 +684,11 @@ export default function HomePage({ role: roleProp }: { role?: AppRole }) {
             <ActivityCard />
           </div>
 
-          {role === "owner" && (
-            <div className="mt-3">
-              <BenchmarkCard />
-            </div>
-          )}
-
           <div className="mt-3">
             <InsightGrid />
           </div>
 
-          <div className="pt-6">
-            <SectionLabel count={needsAttention.length}>Needs Attention</SectionLabel>
-            <NeedsAttentionList />
-          </div>
-
-          {role === "owner" ? <TeamTodaySection /> : <div className="pt-6"><GrowAddTeamCard /></div>}
+          {role === "owner" ? <TeamTodaySection /> : <GrowAddTeamCard />}
 
           <YourShiftsSection />
         </>

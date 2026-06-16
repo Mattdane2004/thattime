@@ -21,6 +21,11 @@ import FormsModulePage from "./src/app/app/services/[id]/forms/page";
 import ResourcesModulePage from "./src/app/app/services/[id]/resources/page";
 import VariantsModulePage from "./src/app/app/services/[id]/variants/page";
 import RelatedModulePage from "./src/app/app/services/[id]/related/page";
+import NotificationsModulePage from "./src/app/app/services/[id]/notifications/page";
+import RequirementsModulePage from "./src/app/app/services/[id]/requirements/page";
+import AgendaModulePage from "./src/app/app/services/[id]/agenda/page";
+import MaterialsModulePage from "./src/app/app/services/[id]/materials/page";
+import CertificatesModulePage from "./src/app/app/services/[id]/certificates/page";
 import SetupGuidePage from "./src/app/app/setup/page";
 import AlertsPage from "./src/app/app/alerts/page";
 import ImportDataPage from "./src/app/app/setup/import/page";
@@ -33,6 +38,7 @@ import TeamPage from "./src/app/app/team/page";
 import TeamInvitePage from "./src/app/app/team/invite/page";
 import MessagesPage from "./src/app/app/messages/page";
 import ConversationPage from "./src/app/app/messages/[id]/page";
+import CheckoutPage from "./src/app/app/checkout/page";
 import SchedulePage from "./src/app/app/schedule/page";
 import WizardIntroPage from "./src/app/new/page";
 import TypeSelectorPage from "./src/app/new/type/page";
@@ -55,6 +61,10 @@ import BundlePricingPage from "./src/app/new/bundle-pricing/page";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
+import { SummaryRow as OfferSummaryRow } from "./src/components/ui";
+import { offerFromDraft } from "./src/lib/store/offersStore";
+import { demoOffers } from "./src/lib/data/offers";
+import { emptyDraft, emptyClassDraft, emptySubscription } from "./src/lib/store/wizardStore";
 import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating, BackHeader, ScreenHeader, Toggle } from "./src/components/ui";
 import { Avatar as ConsumerAvatar, Stars as ConsumerStars, Toggle as ConsumerToggle, SummaryRow } from "./src/components/ui/consumer";
 
@@ -96,10 +106,11 @@ renderContains("Clients", React.createElement(ClientsPage), [
   "Clients", "Search clients by name", "Emily Davis", "Jessica Brown", "VIP", "Allergy",
 ]);
 
-// 3b) Client profile detail (Overview tab renders by default).
+// 3b) Client profile detail (Overview tab renders by default; Instagram-style
+// header carries the stats — Bookings / Spent / Rating — and a Contact action).
 renderContains("ClientDetail", React.createElement(ClientDetailPage), [
-  "Sarah Johnson", "Active", "Book", "Message", "Last Visit", "Total Bookings",
-  "Allergies", "PPD", "Contact", "Next appointment",
+  "Sarah Johnson", "Active", "Book now", "Contact", "Total Bookings", "Total Sales", "Rating",
+  "Allergies", "PPD", "Needs attention", "Next appointment",
 ]);
 
 // 3b-ii) Client sub-pages: wallet, reviews, settings.
@@ -128,6 +139,27 @@ renderContains("Marketing", React.createElement(MarketingPage), [
 renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }), [
   "Classic haircut", "Edit service", "Advanced", "Variants", "Settings", "Unpublish", "Preview",
 ]);
+{
+  const dash = renderToString(React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }));
+  check("OfferDashboard drops hardcoded location", !dash.includes("In-salon · Mobile"));
+  check("OfferDashboard drops hardcoded £20 deposit", !dash.includes(">£20<"));
+  check("OfferDashboard drops hardcoded 24h", !dash.includes(">24h<"));
+  check("OfferDashboard shows location fallback for bare seed", dash.includes("Location not set"));
+}
+// 3e-ii) Per-type dashboard summaries render for each type's seed (fallbacks, no crash).
+{
+  const bundle = renderToString(React.createElement(OfferDashboardPage, { params: { id: "bun_cut_colour" } }));
+  check("Bundle dashboard renders summary", bundle.includes("Edit") && bundle.includes("Pricing not set"));
+  check("Bundle dashboard omits location/staff rows", !bundle.includes("Location not set"));
+
+  const sub = renderToString(React.createElement(OfferDashboardPage, { params: { id: "sub_monthly_cuts" } }));
+  check("Subscription dashboard renders summary", sub.includes("Billing not set") && sub.includes("Benefit not set"));
+  check("Subscription dashboard omits location/staff rows", !sub.includes("Location not set"));
+
+  const cls = renderToString(React.createElement(OfferDashboardPage, { params: { id: "cls_beginner_yoga" } }));
+  check("Class dashboard renders schedule + attendees", cls.includes("Schedule not set") && cls.includes("Attendees not set"));
+  check("Class dashboard shows per-attendee price", cls.includes("per attendee"));
+}
 renderContains("OfferSettings", React.createElement(OfferSettingsPage, { params: { id: "svc_classic_haircut" } }), [
   "Online booking", "Who can book", "Lead time", "cancellation window", "Delete permanently",
 ]);
@@ -141,7 +173,7 @@ renderContains("SetupGuide", React.createElement(SetupGuidePage), [
 
 // 3h) Products module editor.
 renderContains("Products", React.createElement(ProductsModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Products", "Oils", "Moroccanoil Treatment", "added to this offer",
+  "Products", "No product preferences yet", "Set up products",
 ]);
 
 // 3i) Service preview + photos module.
@@ -149,18 +181,18 @@ renderContains("ServicePreview", React.createElement(ServicePreviewPage, { param
   "Client preview", "Classic haircut", "Book now",
 ]);
 renderContains("Photos", React.createElement(PhotosModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Photos", "Add",
+  "Photos", "No photos yet", "Add photos",
 ]);
 
 // 3j) Module editors: forms, resources, variants.
 renderContains("Forms", React.createElement(FormsModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Forms", "Health questionnaire", "Consent form", "attached to this offer",
+  "Forms", "No forms yet", "Add forms",
 ]);
 renderContains("Resources", React.createElement(ResourcesModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Resources", "Spaces", "Equipment", "Treatment room A",
+  "Resources", "No resources yet", "Add a room",
 ]);
 renderContains("Variants", React.createElement(VariantsModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Variants", "Duration", "Staff", "Standard",
+  "Variants", "No variants yet", "Start with a type",
 ]);
 
 // 3k) Team invite.
@@ -178,7 +210,24 @@ renderContains("ImportData", React.createElement(ImportDataPage), [
 
 // 3m) Related services module.
 renderContains("Related", React.createElement(RelatedModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Related", "suggested at checkout", "Beard trim",
+  "Related", "No related services yet", "Add suggestions",
+]);
+
+// 3n) Phase 4 advanced module pages (notifications + class modules).
+renderContains("Notifications", React.createElement(NotificationsModulePage, { params: { id: "svc_classic_haircut" } }), [
+  "Notifications", "Booking confirmation", "24-hour reminder",
+]);
+renderContains("Requirements", React.createElement(RequirementsModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Requirements", "Minimum age", "Prerequisites", "What to bring",
+]);
+renderContains("Agenda", React.createElement(AgendaModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Agenda &amp; syllabus", "Add an agenda item",
+]);
+renderContains("Materials", React.createElement(MaterialsModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Materials", "Add a material",
+]);
+renderContains("Certificates", React.createElement(CertificatesModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Completion &amp; certificates", "Issue a certificate",
 ]);
 
 // 4) Team section (Members tab default).
@@ -204,11 +253,17 @@ renderContains("PayRun", React.createElement(PayRunPage, { params: { runId: "run
 // 5) Ported Messages.
 renderContains("Messages", React.createElement(MessagesPage), [
   "Messages", "Search conversations", "Emily Davis", "Sarah Johnson", "Robert Lee",
+  "Colour Masterclass", "Salon team", "Ended",
 ]);
 
 // 5b) Conversation thread.
 renderContains("Conversation", React.createElement(ConversationPage), [
   "Emily Davis", "Upcoming Appointment", "Blow Dry &amp; Style", "Select a date", "Type a message",
+]);
+
+// 5c) Checkout — appointment entry lands on the Review step.
+renderContains("Checkout", React.createElement(CheckoutPage), [
+  "Checkout", "Sarah Johnson", "Cut &amp; Colour", "Deposit paid at booking", "Platform fee", "Take payment",
 ]);
 
 // 6) Ported Schedule agenda.
@@ -351,6 +406,7 @@ check("consumer Avatar shows initials", h(React.createElement(ConsumerAvatar, { 
 check("consumer Stars shows rating", h(React.createElement(ConsumerStars, { rating: "4.8", count: 765 })).includes("4.8"));
 check("consumer Toggle (coral) on", h(React.createElement(ConsumerToggle, { on: true, onToggle: () => {} })).includes("bg-coral"));
 check("SummaryRow shows label + value", (() => { const s = h(React.createElement(SummaryRow, { label: "Total", value: "£42.00" })); return s.includes("Total") && s.includes("£42.00"); })());
+check("OfferSummaryRow (B2B) shows label + value + chevron", (() => { const s = h(React.createElement(OfferSummaryRow, { label: "In-salon · Mobile", value: "2 staff members" })); return s.includes("In-salon · Mobile") && s.includes("2 staff members") && s.includes("lucide-chevron-right"); })());
 
 // 13) Ported onboarding/form molecules (canonical ui/, identical APIs).
 check("CheckCircle on uses fg-primary", h(React.createElement(CheckCircle, { on: true })).includes("bg-fg-primary"));
@@ -361,6 +417,70 @@ check("CheckRow shows title", h(React.createElement(CheckRow, { checked: false, 
 check("SocialButtons render Apple/Google", (() => { const s = h(React.createElement(SocialButtons, { onPick: () => {} })); return s.includes("Apple") && s.includes("Google"); })());
 check("OrDivider shows label", h(React.createElement(OrDivider, {})).includes("Or"));
 check("ProgressDashes renders total dashes", (() => { const s = h(React.createElement(ProgressDashes, { total: 4, active: 2 })); return (s.match(/rounded-full/g) || []).length >= 4; })());
+
+// 14) offerFromDraft round-trip (Stage 1 data seam) — pure function, no render.
+{
+  const base = { ...emptyDraft, name: "  Test offer  ", category: "Hair", icon: "scissors", description: " desc " };
+
+  const svc = offerFromDraft(
+    { ...base, type: "service", price: "65", durationMin: 90, depositEnabled: true, depositAmount: "20",
+      locationModes: { inSalon: true, mobile: true, remote: false }, locationIds: ["loc1"], staffIds: ["s1", "s2"] },
+    demoOffers,
+  );
+  check("offerFromDraft service: trims name", svc.name === "Test offer");
+  check("offerFromDraft service: carries description", svc.description === "desc");
+  check("offerFromDraft service: carries deposit", svc.deposit?.enabled === true && svc.deposit?.amount === "20");
+  check("offerFromDraft service: carries locationModes", svc.locationModes?.mobile === true);
+  check("offerFromDraft service: carries mobile (mobile mode on)", !!svc.mobile);
+  check("offerFromDraft service: carries staffIds", svc.staffIds?.length === 2);
+  check("offerFromDraft service: carries durationMin", svc.durationMin === 90);
+  check("offerFromDraft service: status draft", svc.status === "draft");
+  check("offerFromDraft service: id prefix", svc.id.startsWith("svc_"));
+
+  const cls = offerFromDraft(
+    { ...base, type: "class", price: "12", staffIds: ["s1"],
+      classDetails: { ...emptyClassDraft, capacity: 8, minParticipants: 2 } },
+    demoOffers,
+  );
+  check("offerFromDraft class: carries classDetails", cls.classDetails?.capacity === 8);
+  check("offerFromDraft class: carries staffIds", cls.staffIds?.length === 1);
+  check("offerFromDraft class: no durationMin", cls.durationMin === undefined);
+  check("offerFromDraft class: id prefix", cls.id.startsWith("cls_"));
+
+  const bun = offerFromDraft(
+    { ...base, type: "bundle", price: "120",
+      bundle: { kind: "flexible", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], chooseCount: 1, priceMode: "fixed", discountPercent: "" } },
+    demoOffers,
+  );
+  check("offerFromDraft bundle: carries bundle snapshot", bun.bundle?.serviceIds.length === 2);
+  check("offerFromDraft bundle: carries chooseCount", bun.bundle?.chooseCount === 1);
+  check("offerFromDraft bundle: id prefix", bun.id.startsWith("bun_"));
+
+  const bunDisc = offerFromDraft(
+    { ...base, type: "bundle", price: "",
+      bundle: { kind: "fixed", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], chooseCount: 2, priceMode: "discount", discountPercent: "10" } },
+    demoOffers,
+  );
+  // svc_classic_haircut (35) + svc_beard_trim (15) = 50; -10% = 45.
+  check("offerFromDraft bundle: discount price math", bunDisc.price === "45");
+
+  const sub = offerFromDraft(
+    { ...base, type: "subscription", price: "45",
+      subscription: { ...emptySubscription, benefitType: "sessions", includedSessions: 4 } },
+    demoOffers,
+  );
+  check("offerFromDraft subscription: carries subscription snapshot", sub.subscription?.includedSessions === 4);
+  check("offerFromDraft subscription: id prefix", sub.id.startsWith("sub_"));
+
+  // Empty draft must not crash and must omit optional fields cleanly.
+  const empty = offerFromDraft({ ...emptyDraft, type: "service", name: "X", category: "Hair" }, demoOffers);
+  check("offerFromDraft empty: no description", empty.description === undefined);
+  check("offerFromDraft empty: no deposit when disabled", empty.deposit === undefined);
+  check("offerFromDraft empty: no mobile when mobile mode off", empty.mobile === undefined);
+
+  // Ids are unique across calls (SSR-safe counter, no Math.random).
+  check("offerFromDraft: unique ids", new Set([svc.id, cls.id, bun.id, sub.id, empty.id]).size === 5);
+}
 
 console.log(failures === 0 ? "\n✅ SMOKE PASS" : `\n❌ ${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

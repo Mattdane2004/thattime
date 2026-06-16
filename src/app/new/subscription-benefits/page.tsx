@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Scissors, CreditCard, TicketPercent, LockKeyhole, Check } from "lucide-react";
 import { ScreenHeader } from "@/components/ui";
-import { WizardFooter, TOTAL_STEPS } from "@/components/ui";
+import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore, type SubscriptionDraft } from "@/lib/store/wizardStore";
 
 // Subscription wizard 2/3 — benefits. Ported from that-time-app
@@ -31,10 +31,7 @@ export default function SubscriptionBenefitsPage() {
     <>
       <ScreenHeader onBack={() => router.push("/new/subscription-type")} />
       <div className="flex-1 overflow-y-auto px-5">
-        <div className="pb-6 pt-2">
-          <div className="text-[26px] font-semibold leading-tight tracking-tight text-navy">What do members get?</div>
-          <div className="mt-1 text-[14px] text-muted">Pick the benefit and set its limit.</div>
-        </div>
+        <WizardTitle title="What do members get?" subtitle="Pick the benefit and set its limit." />
 
         <div className="space-y-2 pb-4">
           {BENEFITS.map(({ key, label, Icon }) => (
@@ -55,7 +52,7 @@ export default function SubscriptionBenefitsPage() {
             <>
               <button
                 onClick={() => updateSubscription({ unlimitedUsage: !sub.unlimitedUsage })}
-                className="flex w-full items-center justify-between rounded-xl bg-canvas px-4 py-3 text-left"
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-canvas px-4 py-3 text-left"
               >
                 <span className="text-[14px] font-medium text-navy">Unlimited sessions</span>
                 <span className={`relative h-6 w-10 rounded-full ${sub.unlimitedUsage ? "bg-navy" : "bg-border"}`}>
@@ -67,7 +64,7 @@ export default function SubscriptionBenefitsPage() {
                   <span className="mb-2 block text-[13px] font-medium text-secondary">Sessions per billing period</span>
                   <input type="number" inputMode="numeric" value={sub.includedSessions}
                     onChange={(e) => updateSubscription({ includedSessions: Number(e.target.value) || 0 })}
-                    className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none focus:ring-1 focus:ring-navy" />
+                    className="h-12 w-full rounded-xl border border-border bg-canvas px-4 text-[14px] text-navy outline-none focus:ring-1 focus:ring-navy" />
                 </label>
               )}
             </>
@@ -77,7 +74,7 @@ export default function SubscriptionBenefitsPage() {
               <span className="mb-2 block text-[13px] font-medium text-secondary">Store credit per period (£)</span>
               <input type="number" inputMode="decimal" value={sub.storeCreditAmount} placeholder="50"
                 onChange={(e) => updateSubscription({ storeCreditAmount: e.target.value })}
-                className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
+                className="h-12 w-full rounded-xl border border-border bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
             </label>
           )}
           {sub.benefitType === "discount" && (
@@ -85,11 +82,11 @@ export default function SubscriptionBenefitsPage() {
               <span className="mb-2 block text-[13px] font-medium text-secondary">Member discount (%)</span>
               <input type="number" inputMode="numeric" value={sub.memberDiscountPercent} placeholder="10"
                 onChange={(e) => updateSubscription({ memberDiscountPercent: e.target.value })}
-                className="h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
+                className="h-12 w-full rounded-xl border border-border bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy" />
             </label>
           )}
           {sub.benefitType === "access" && (
-            <div className="rounded-xl bg-canvas px-4 py-3 text-[13px] text-secondary">Members get access to member-only services and perks. No numeric limit needed.</div>
+            <div className="rounded-xl border border-border bg-canvas px-4 py-3 text-[13px] text-secondary">Members get access to member-only services and perks. No numeric limit needed.</div>
           )}
         </div>
       </div>

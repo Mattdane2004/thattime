@@ -29,6 +29,7 @@ export { ListRow, type ListRowProps } from "./molecules/ListRow";
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from "./molecules/SegmentedControl";
 export { EmptyState, type EmptyStateProps } from "./molecules/EmptyState";
 export { StatTile, type StatTileProps } from "./molecules/StatTile";
+export { SummaryRow, type SummaryRowProps } from "./molecules/SummaryRow";
 export { RadioGroup, RadioGroupItem } from "./molecules/RadioGroup";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./molecules/Tabs";
 export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogTitle, DialogDescription } from "./molecules/Dialog";

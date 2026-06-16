@@ -4,28 +4,20 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Calendar, Camera, Check, CheckCircle2, ChevronRight, Clock, CreditCard,
+  Camera, Check, CheckCircle2, ChevronRight, Clock, CreditCard,
   FileText, Image as ImageIcon, MapPin, MessageSquare, Phone, Play, Plus,
-  Repeat, RotateCcw, Search, ShieldCheck, StickyNote, UserRound, Users, X,
-  AlertTriangle, Bell, Flag, Tag as TagIcon,
+  RotateCcw, Search, ShieldCheck, StickyNote, UserRound, Users, X,
+  AlertTriangle, Bell, Flag, Tag as TagIcon, Pencil, Scale, MoreVertical,
 } from "lucide-react";
 import {
   Sheet, DarkButton, GhostButton, Avatar, MiniCalendar, TimeChips, StatusPill,
 } from "@/components/ui";
 import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
 import {
-  clientNotes, clientRows, contactFor, formCategories, formTemplates, services,
+  clientNotes, clientRows, contactFor, disputedClients, formCategories, formTemplates, services,
   serviceCategories, tagPresets,
 } from "@/lib/data/product";
 import { defaultCategories } from "@/lib/tokens/categories";
-
-// The booking lifecycle reads as a progress timeline — tap a step to move it along.
-const lifecycle: { label: string; live: ApptStatus }[] = [
-  { label: "Upcoming", live: "upcoming" },
-  { label: "Arrived", live: "arrived" },
-  { label: "In progress", live: "in-progress" },
-  { label: "Done", live: "done" },
-];
 
 // Category colour for the service accent bar. Aliases bridge the legacy
 // category names until offers.ts becomes the single catalogue (PR #3).
@@ -59,6 +51,8 @@ export function AppointmentSheetHost() {
   const pathname = usePathname();
   const {
     apptSheet, setApptSheet, apptStatus, setApptStatus, movedTo, setMovedTo,
+    lateBy: storeLateBy, setLateBy: setStoreLateBy,
+    readySent: storeReadySent, setReadySent: setStoreReadySent,
   } = useAppStore();
   // The route the sheet was opened on. Detours (client profile, messages)
   // navigate without closing — the sheet hides while the path differs and
@@ -70,6 +64,17 @@ export function AppointmentSheetHost() {
   const [localStatus, setLocalStatus] = useState<string | null>(null);
   const [svcOverride, setSvcOverride] = useState<string | null>(null);
   const [extras, setExtras] = useState<string[]>([]);
+  // Running late / I'm ready — store-backed for live bookings, local otherwise.
+  const [localLateBy, setLocalLateBy] = useState<number | null>(null);
+  const [localReadySent, setLocalReadySent] = useState(false);
+  const [latePicker, setLatePicker] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  // Edit the booked service's price / duration on the fly.
+  const [priceOverride, setPriceOverride] = useState<number | null>(null);
+  const [durationOverride, setDurationOverride] = useState<string | null>(null);
+  const [editSvcOpen, setEditSvcOpen] = useState(false);
+  const [editPriceDraft, setEditPriceDraft] = useState("");
+  const [editDurationDraft, setEditDurationDraft] = useState("");
   // Save only shows after an actual edit this session.
   const [dirty, setDirty] = useState(false);
   // Notes & photos attached to this booking (saved to the client record).
@@ -110,6 +115,15 @@ export function AppointmentSheetHost() {
       setLocalStatus(null);
       setSvcOverride(null);
       setExtras([]);
+      setLocalLateBy(null);
+      setLocalReadySent(false);
+      setLatePicker(false);
+      setActionsOpen(false);
+      setPriceOverride(null);
+      setDurationOverride(null);
+      setEditSvcOpen(false);
+      setEditPriceDraft("");
+      setEditDurationDraft("");
       setDirty(false);
       setBookingNotes([]);
       setNoteDraft("");
@@ -150,19 +164,30 @@ export function AppointmentSheetHost() {
       : apptStatus === "in-progress" ? "In progress"
       : "Done"
     : localStatus ?? (a.status === "Confirmed" ? "Upcoming" : a.status ?? "Upcoming");
-  const phaseIdx = lifecycle.findIndex((s) => s.label === status);
 
   // Edited booking: service can be swapped and extras added on the fly.
   const svcName = svcOverride ?? a.service;
   const findSvc = (name: string) => services.find((s) => s.name === name);
   const priceOf = (name: string) => findSvc(name)?.price ?? 0;
-  const basePrice = svcOverride ? priceOf(svcOverride) : a.price ?? priceOf(a.service);
+  const basePrice = priceOverride ?? (svcOverride ? priceOf(svcOverride) : a.price ?? priceOf(a.service));
+  const baseDuration = durationOverride ?? findSvc(svcName)?.duration ?? a.duration;
   const totalPrice = basePrice + extras.reduce((sum, e) => sum + priceOf(e), 0);
 
   // Client identity (can be swapped from the booking page).
   const clientName = clientOverride?.name ?? a.client;
   const clientInitials = clientOverride?.initials ?? a.initials;
   const firstName = clientName.split(" ")[0];
+
+  // Active payment dispute on this booking (prototype: keyed by client name).
+  const disputed = disputedClients.includes(clientName);
+
+  // Running late / I'm ready — store-backed when tied to the live Up Next queue.
+  const lateBy = a.live ? storeLateBy : localLateBy;
+  const setLateBy = a.live ? setStoreLateBy : setLocalLateBy;
+  const readySent = a.live ? storeReadySent : localReadySent;
+  const setReadySent = a.live ? setStoreReadySent : setLocalReadySent;
+  const lateClients = lateBy ? lateBy / 5 : 0;
+  const showSignals = status === "Upcoming" || status === "Arrived";
   const slug = firstName.toLowerCase();
   const contact = contactFor(clientName);
   const notes = clientNotes[clientName];
@@ -191,7 +216,7 @@ export function AppointmentSheetHost() {
           ? { label: "Mark done", icon: <Check size={16} strokeWidth={2.5} />, run: () => markStatus("done", "Done") }
           : null;
 
-  const goPay = () => { close(); router.push("/app/checkout"); };
+  const goPay = () => { close(); useAppStore.getState().startAppointmentCheckout(); router.push("/app/checkout"); };
 
   const openService = (mode: "add" | "change") => { setSvcQuery(""); setSvcCat("All"); setServiceSheet(mode); };
   const openManage = (mode: ManageMode) => { setManageOpen(false); setManageDraft(""); setClientQuery(""); setTagQuery(""); setManageMode(mode); };
@@ -205,7 +230,7 @@ export function AppointmentSheetHost() {
     setLocalTags((x) => (x.includes(t) ? x.filter((y) => y !== t) : [...x, t]));
   };
 
-  const ServiceRow = ({ name, price, removable }: { name: string; price: number; removable?: boolean }) => (
+  const ServiceRow = ({ name, price, removable, durationLabel, onEdit }: { name: string; price: number; removable?: boolean; durationLabel?: string; onEdit?: () => void }) => (
     <div className="flex items-stretch gap-3.5 rounded-2xl bg-white p-4 shadow-sm">
       <span className="w-1 shrink-0 rounded-full" style={{ background: catColor(findSvc(name)?.category) }} />
       <button
@@ -219,9 +244,19 @@ export function AppointmentSheetHost() {
           <span className="shrink-0 text-[15px] font-semibold text-navy">£{price}</span>
         </span>
         <span className="block pt-0.5 text-[12px] text-muted">
-          {a.time} · {findSvc(name)?.duration ?? a.duration} · {a.staff}
+          {a.time} · {durationLabel ?? findSvc(name)?.duration ?? a.duration} · {a.staff}
         </span>
       </button>
+      {onEdit && (
+        <button
+          type="button"
+          aria-label={`Edit ${name} price and duration`}
+          onClick={onEdit}
+          className="self-center p-1 text-muted"
+        >
+          <Pencil size={15} strokeWidth={1.9} />
+        </button>
+      )}
       {removable && (
         <button
           type="button"
@@ -259,7 +294,7 @@ export function AppointmentSheetHost() {
       transition={{ type: "spring", stiffness: 380, damping: 38 }}
       className="absolute inset-0 z-[80] flex flex-col bg-fog"
     >
-      {/* ── Header: the service, when, and the lifecycle timeline ── */}
+      {/* ── Header: the service title + actions (⋮) ── */}
       <div className="shrink-0 bg-white px-4 pb-4 pt-4">
         <div className="flex items-start justify-between gap-3">
           <span className="min-w-0">
@@ -269,55 +304,69 @@ export function AppointmentSheetHost() {
               {moved && <StatusPill tone="amber">moved</StatusPill>}
             </span>
           </span>
-          <button type="button" aria-label="Close booking" onClick={close} className="-mr-1 -mt-1 p-2 text-navy">
+          <button type="button" aria-label="Close booking" onClick={close} className="-mr-1 -mt-1 shrink-0 p-2 text-navy">
             <X size={20} strokeWidth={2} />
           </button>
         </div>
 
-        {/* Lifecycle as a tappable progress timeline */}
-        {status === "No-show" ? (
-          <div className="flex items-center gap-2 pt-4 text-[13px] font-semibold text-danger">
-            <AlertTriangle size={15} strokeWidth={2} /> Marked as no-show
-          </div>
-        ) : (
-          <div className="relative pt-5">
-            <div className="absolute left-8 right-8 top-[13px] h-[2px] rounded-full bg-canvas" />
-            <div
-              className="absolute left-8 top-[13px] h-[2px] rounded-full bg-fg-primary transition-all duration-300"
-              style={{ width: `calc((100% - 4rem) * ${Math.max(0, phaseIdx) / (lifecycle.length - 1)})` }}
-            />
-            <div className="relative flex justify-between">
-              {lifecycle.map((s, i) => {
-                const done = phaseIdx > i;
-                const active = phaseIdx === i;
-                return (
-                  <button
-                    key={s.label}
-                    type="button"
-                    onClick={() => markStatus(s.live, s.label)}
-                    className="flex w-16 flex-col items-center gap-1.5"
-                  >
-                    <span
-                      className={`flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 transition-colors ${
-                        done || active
-                          ? "border-fg-primary bg-fg-primary text-white"
-                          : "border-border bg-white text-transparent"
-                      }`}
-                    >
-                      {done ? <Check size={13} strokeWidth={3} /> : <span className={`h-2 w-2 rounded-full ${active ? "bg-white" : "bg-border"}`} />}
-                    </span>
-                    <span className={`text-center text-[10.5px] font-semibold leading-tight ${active || done ? "text-navy" : "text-muted"}`}>
-                      {s.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Slim status note — only when there's something to flag */}
+        {(status === "No-show" || lateBy || readySent) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 text-[12px] font-medium">
+            {status === "No-show" && (
+              <span className="flex items-center gap-1.5 text-danger"><AlertTriangle size={13} strokeWidth={2} /> Marked as no-show</span>
+            )}
+            {lateBy ? (
+              <span className="flex items-center gap-1.5 text-warning">
+                <Clock size={13} strokeWidth={2} /> Running {lateBy} min late · next {lateClients} {lateClients === 1 ? "client" : "clients"} notified
+              </span>
+            ) : null}
+            {readySent && (
+              <span className="flex items-center gap-1.5 text-secondary"><Check size={13} strokeWidth={2.5} /> {firstName} notified — can come in</span>
+            )}
           </div>
         )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        {/* ── Active dispute — urgent, sits above everything ── */}
+        {disputed && (
+          <div className="mb-3 flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger text-white">
+              <Scale size={17} strokeWidth={2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-bold text-danger">Active payment dispute</p>
+              <p className="pt-0.5 text-[12px] leading-snug text-secondary">
+                {firstName} has disputed a charge on this booking. Resolve before taking further payment.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/app/messages")}
+                className="mt-2.5 flex h-9 items-center gap-1.5 rounded-full bg-danger px-3.5 text-[12px] font-semibold text-white"
+              >
+                Review dispute
+                <ChevronRight size={14} strokeWidth={2.25} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── At a glance — three-column summary (date/time already in the header) ── */}
+        <div className="mb-3 grid grid-cols-3 divide-x divide-border rounded-2xl bg-white shadow-sm">
+          <div className="px-3 py-3.5">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted"><UserRound size={12} strokeWidth={1.8} /> With</span>
+            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{a.staff}</span>
+          </div>
+          <div className="px-3 py-3.5">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted"><Clock size={12} strokeWidth={1.8} /> Duration</span>
+            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{baseDuration}</span>
+          </div>
+          <div className="px-3 py-3.5">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted"><MapPin size={12} strokeWidth={1.8} /> Location</span>
+            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">Salon Soho</span>
+          </div>
+        </div>
+
         {/* ── Client card: identity, quick contact, profile edits ── */}
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -375,53 +424,19 @@ export function AppointmentSheetHost() {
           </div>
         </div>
 
-        {/* ── When and where ── */}
-        <div className="mt-3 rounded-2xl bg-white shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3.5">
-            <span className="flex items-center gap-3 text-[14px] font-semibold text-navy">
-              <Calendar size={15} strokeWidth={1.8} className="text-secondary" />
-              {moved ?? "Wed 10 Jun"}
-            </span>
-            <span className="flex items-center gap-2.5 text-[14px] font-semibold text-navy">
-              <Clock size={15} strokeWidth={1.8} className="text-secondary" />
-              {a.time}
-            </span>
-          </div>
-          <div className="mx-4 border-t border-border" />
-          <div className="flex items-center justify-between px-4 py-3.5">
-            <span className="flex items-center gap-3 text-[14px] text-navy">
-              <Repeat size={15} strokeWidth={1.8} className="text-secondary" />
-              Doesn&rsquo;t repeat
-            </span>
-            <span className="flex items-center gap-2.5 text-[14px] text-navy">
-              <MapPin size={15} strokeWidth={1.8} className="text-secondary" />
-              Salon Soho
-            </span>
-          </div>
-        </div>
-
-        {/* ── Reschedule / cancel the appointment ── */}
-        <div className="grid grid-cols-2 gap-2.5 pt-3">
-          {[
-            { icon: <RotateCcw size={16} strokeWidth={1.7} />, label: "Reschedule", run: () => { setDay(null); setTime(null); setRescheduleSheet(true); } },
-            { icon: <X size={16} strokeWidth={1.9} />, label: "Cancel", run: () => setCancelSheet(true) },
-          ].map((t) => (
-            <motion.button
-              key={t.label}
-              whileTap={{ scale: 0.97 }}
-              onClick={t.run}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-[13px] font-semibold text-navy shadow-sm"
-            >
-              {t.icon}
-              {t.label}
-            </motion.button>
-          ))}
-        </div>
-
         {/* ── Services ── */}
         <p className="px-1 pb-2.5 pt-6 text-[16px] font-bold text-navy">Services</p>
         <div className="flex flex-col gap-2.5">
-          <ServiceRow name={svcName} price={basePrice} />
+          <ServiceRow
+            name={svcName}
+            price={basePrice}
+            durationLabel={baseDuration}
+            onEdit={() => {
+              setEditPriceDraft(String(basePrice));
+              setEditDurationDraft(baseDuration ?? "");
+              setEditSvcOpen(true);
+            }}
+          />
           {extras.map((e) => (
             <ServiceRow key={e} name={e} price={priceOf(e)} removable />
           ))}
@@ -523,7 +538,15 @@ export function AppointmentSheetHost() {
         {dirty ? (
           <DarkButton onClick={() => { setDirty(false); close(); }}>Save changes</DarkButton>
         ) : (
-          <div className="flex gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              aria-label="Booking actions"
+              onClick={() => setActionsOpen(true)}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-border bg-white text-navy"
+            >
+              <MoreVertical size={18} strokeWidth={2} />
+            </button>
             {lifeAction && (
               <DarkButton className="flex-1" onClick={lifeAction.run}>
                 {lifeAction.icon}
@@ -536,7 +559,7 @@ export function AppointmentSheetHost() {
               className={`flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-colors ${
                 lifeAction
                   ? "flex-1 border border-border bg-white text-navy"
-                  : "w-full bg-fg-primary text-white"
+                  : "flex-1 bg-fg-primary text-white"
               }`}
             >
               <CreditCard size={16} strokeWidth={1.9} />
@@ -658,6 +681,98 @@ export function AppointmentSheetHost() {
         </DarkButton>
         <div className="pt-3">
           <GhostButton onClick={() => setCancelSheet(false)}>Keep it</GhostButton>
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
+      {/* ── Booking actions (⋮) — running late, ready, reschedule, cancel, message ── */}
+      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Booking actions" sub={`${clientName} · ${svcName}`}>
+        <div className="flex flex-col pt-1">
+          {[
+            ...(showSignals
+              ? [
+                  { icon: <Clock size={17} strokeWidth={1.8} />, label: lateBy ? `Running ${lateBy} min late · update` : "Mark running late", run: () => { setActionsOpen(false); setLatePicker(true); } },
+                  { icon: readySent ? <Check size={17} strokeWidth={2.3} /> : <Bell size={17} strokeWidth={1.8} />, label: readySent ? "Ready sent · undo" : "I'm ready for them", run: () => { setReadySent(!readySent); setActionsOpen(false); } },
+                ]
+              : []),
+            { icon: <MessageSquare size={17} strokeWidth={1.8} />, label: `Message ${firstName}`, run: () => { setActionsOpen(false); router.push(`/app/messages/${slug}`); } },
+            { icon: <RotateCcw size={17} strokeWidth={1.8} />, label: "Reschedule", run: () => { setActionsOpen(false); setDay(null); setTime(null); setRescheduleSheet(true); } },
+            { icon: <X size={17} strokeWidth={1.8} />, label: "Cancel appointment", run: () => { setActionsOpen(false); setCancelSheet(true); }, danger: true },
+          ].map((q) => (
+            <button
+              key={q.label}
+              type="button"
+              onClick={q.run}
+              className={`flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left text-[15px] font-medium last:border-0 ${q.danger ? "text-danger" : "text-navy"}`}
+            >
+              <span className={q.danger ? "text-danger" : "text-secondary"}>{q.icon}</span>
+              {q.label}
+            </button>
+          ))}
+        </div>
+        <div className="h-2" />
+      </Sheet>
+
+      {/* ── Running late — pick how late; we shift the diary and notify clients ── */}
+      <Sheet open={latePicker} onClose={() => setLatePicker(false)} title="Running late?" sub={`${clientName} · ${a.time}`}>
+        <p className="pb-3 text-[13px] leading-relaxed text-secondary">
+          Let your upcoming clients know. We&rsquo;ll shift the diary and notify whoever&rsquo;s affected.
+        </p>
+        <div className="space-y-2">
+          {[5, 10, 15].map((m) => {
+            const clients = m / 5;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => { setLateBy(m); setLatePicker(false); }}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left ${
+                  lateBy === m ? "border-fg-primary bg-canvas" : "border-border bg-white"
+                }`}
+              >
+                <span className="text-[14px] font-semibold text-navy">+{m} min</span>
+                <span className="text-[12px] text-muted">affects next {clients} {clients === 1 ? "client" : "clients"}</span>
+              </button>
+            );
+          })}
+        </div>
+        {lateBy && (
+          <div className="pt-4">
+            <GhostButton onClick={() => { setLateBy(null); setLatePicker(false); }}>Clear — I&rsquo;m back on time</GhostButton>
+          </div>
+        )}
+        <div className="h-2" />
+      </Sheet>
+
+      {/* ── Edit price & duration ── */}
+      <Sheet open={editSvcOpen} onClose={() => setEditSvcOpen(false)} title="Edit service" sub={svcName}>
+        <p className="pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Price (£)</p>
+        <input
+          value={editPriceDraft}
+          onChange={(e) => setEditPriceDraft(e.target.value.replace(/[^0-9]/g, ""))}
+          inputMode="numeric"
+          placeholder="0"
+          className="h-12 w-full rounded-xl border border-border bg-white px-4 text-[15px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <p className="pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Duration</p>
+        <input
+          value={editDurationDraft}
+          onChange={(e) => setEditDurationDraft(e.target.value)}
+          placeholder="e.g. 90m, 1h 30m"
+          className="h-12 w-full rounded-xl border border-border bg-white px-4 text-[15px] text-navy placeholder:text-muted focus:outline-none"
+        />
+        <div className="pt-5">
+          <DarkButton
+            onClick={() => {
+              const p = parseInt(editPriceDraft, 10);
+              if (!Number.isNaN(p)) setPriceOverride(p);
+              if (editDurationDraft.trim()) setDurationOverride(editDurationDraft.trim());
+              setDirty(true);
+              setEditSvcOpen(false);
+            }}
+          >
+            Save changes
+          </DarkButton>
         </div>
         <div className="h-2" />
       </Sheet>

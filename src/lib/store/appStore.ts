@@ -19,21 +19,44 @@ export type QuickAction =
   | "class"
   | "client"
   | "block"
+  | "logpay" // Log Payment — pick any client, then checkout
   | null;
+
+export type CheckoutItemKind =
+  | "appointment"
+  | "service"
+  | "product"
+  | "membership"
+  | "giftcard"
+  | "class"
+  | "other";
 
 export interface CheckoutItem {
   id: string;
-  kind: "appointment" | "service" | "product";
+  kind: CheckoutItemKind;
   name: string;
   sub: string;
   price: number;
   qty: number;
 }
 
+/** How checkout was entered — drives the Done step (rating + queue advance vs plain finish). */
+export type EntryContext = "appointment" | "logpay";
+
 export interface PaymentEntry {
   id: string;
-  method: "Card" | "Cash" | "Other" | "Gift card";
+  method: "Cash" | "Card on file" | "Payment link" | "Card machine" | "Gift card" | "Other";
   amount: number;
+}
+
+/** Who covers the That Time platform fee on this sale. */
+export type FeeBearer = "client" | "split" | "absorb";
+
+/** A client chosen via Log Payment (any client, not just the Up Next queue). */
+export interface CheckoutClient {
+  name: string;
+  initials: string;
+  outstanding?: number;
 }
 
 /** What the appointment details sheet shows; `live` ties it to the Up Next lifecycle. */
@@ -66,8 +89,14 @@ type AppState = {
   apptIdx: number;
   apptStatus: ApptStatus;
   movedTo: string | null;
+  /** Minutes the current appointment is running late (null = on time). */
+  lateBy: number | null;
+  /** "I'm ready" sent — the waiting client has been told to come in. */
+  readySent: boolean;
   setApptStatus: (s: ApptStatus) => void;
   setMovedTo: (v: string | null) => void;
+  setLateBy: (m: number | null) => void;
+  setReadySent: (v: boolean) => void;
   /** Current appointment is finished — move the card to the next one. */
   advanceAppt: () => void;
 
@@ -87,8 +116,8 @@ type AppState = {
   setBreakEnded: (v: boolean) => void;
 
   // Appointments created through quick-add — they appear on the calendar.
-  customAppts: { id: string; client: string; service: string; staff: string; day: number | null; time: string | null }[];
-  addCustomAppt: (a: { client: string; service: string; staff: string; day: number | null; time: string | null }) => void;
+  customAppts: { id: string; client: string; service: string; staff: string; day: number | null; time: string | null; duration?: string; outOfHours?: boolean }[];
+  addCustomAppt: (a: { client: string; service: string; staff: string; day: number | null; time: string | null; duration?: string; outOfHours?: boolean }) => void;
 
   // Quick actions overlay (owned by the tab bar layout).
   quickAction: QuickAction;
@@ -101,13 +130,32 @@ type AppState = {
   tipPct: number; // 0, 10, 15, 20
   tipCustom: number;
   payments: PaymentEntry[];
+  /** Deposit/prepayment already taken at booking, in £ — credited against the bill. */
+  prepaid: number;
+  /** Who covers the platform fee on this sale. */
+  feeBearer: FeeBearer;
+  /** Set when checkout is opened for an arbitrary client via Log Payment. */
+  checkoutClient: CheckoutClient | null;
+  /** How checkout was entered — appointment (Up Next / appt sheet) vs logpay. */
+  entryContext: EntryContext;
   addItem: (item: Omit<CheckoutItem, "id" | "qty">) => void;
   decrementItem: (kind: CheckoutItem["kind"], name: string) => void;
+  /** Edit a line's quantity and/or unit price (price override) from the hub. */
+  updateItem: (id: string, patch: { qty?: number; price?: number }) => void;
   removeItem: (id: string) => void;
   setDiscount: (pct: number, flat: number) => void;
   setTip: (pct: number, custom?: number) => void;
+  setFeeBearer: (b: FeeBearer) => void;
   addPayment: (method: PaymentEntry["method"], amount: number) => void;
   removePayment: (id: string) => void;
+  /** Open checkout for a specific client (Log Payment) — seeds any outstanding balance. */
+  startCheckoutFor: (c: CheckoutClient) => void;
+  /** Reassign the payer on the checkout hub without touching the cart. */
+  setCheckoutClient: (c: CheckoutClient | null) => void;
+  /** Open a blank checkout hub (Log Payment) — no client, no items, assigned on the hub. */
+  startBlankCheckout: () => void;
+  /** Open checkout for the current Up Next appointment — resets to its pre-built bill. */
+  startAppointmentCheckout: () => void;
   resetCheckout: () => void;
 };
 
@@ -123,20 +171,30 @@ export const useAppStore = create<AppState>((set, get) => ({
   apptIdx: 0,
   apptStatus: "upcoming",
   movedTo: null,
+  lateBy: null,
+  readySent: false,
   setApptStatus: (s) => set({ apptStatus: s }),
   setMovedTo: (v) => set({ movedTo: v }),
+  setLateBy: (m) => set({ lateBy: m }),
+  setReadySent: (v) => set({ readySent: v }),
   advanceAppt: () => {
     const idx = get().apptIdx + 1;
     set({
       apptIdx: idx,
       apptStatus: "upcoming",
       movedTo: null,
+      lateBy: null,
+      readySent: false,
       items: baseItemsFor(upNextQueue[idx]),
       discountPct: 0,
       discountFlat: 0,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      prepaid: upNextQueue[idx]?.deposit ?? 0,
+      feeBearer: "absorb",
+      checkoutClient: null,
+      entryContext: "appointment",
     });
   },
 
@@ -163,6 +221,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   tipPct: 0,
   tipCustom: 0,
   payments: [],
+  prepaid: upNextQueue[0]?.deposit ?? 0,
+  feeBearer: "absorb",
+  checkoutClient: null,
+  entryContext: "appointment",
 
   addItem: (item) => {
     const existing = get().items.find((i) => i.kind === item.kind && i.name === item.name);
@@ -182,12 +244,64 @@ export const useAppStore = create<AppState>((set, get) => ({
           : get().items.filter((i) => i.id !== existing.id),
     });
   },
+  updateItem: (id, patch) =>
+    set({
+      items: get().items.map((i) =>
+        i.id === id
+          ? { ...i, price: patch.price ?? i.price, qty: patch.qty != null ? Math.max(1, patch.qty) : i.qty }
+          : i,
+      ),
+    }),
   removeItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
   setDiscount: (pct, flat) => set({ discountPct: pct, discountFlat: flat }),
   setTip: (pct, custom = 0) => set({ tipPct: pct, tipCustom: custom }),
+  setFeeBearer: (b) => set({ feeBearer: b }),
   addPayment: (method, amount) =>
     set({ payments: [...get().payments, { id: uid(), method, amount }] }),
   removePayment: (id) => set({ payments: get().payments.filter((p) => p.id !== id) }),
+  startCheckoutFor: (c) =>
+    set({
+      checkoutClient: c,
+      entryContext: "logpay",
+      items:
+        c.outstanding && c.outstanding > 0
+          ? [{ id: "outstanding", kind: "other", name: "Outstanding balance", sub: "Carried over from a previous visit", price: c.outstanding, qty: 1 }]
+          : [],
+      discountPct: 0,
+      discountFlat: 0,
+      tipPct: 0,
+      tipCustom: 0,
+      payments: [],
+      prepaid: 0,
+      feeBearer: "absorb",
+    }),
+  setCheckoutClient: (c) => set({ checkoutClient: c }),
+  startBlankCheckout: () =>
+    set({
+      checkoutClient: null,
+      entryContext: "logpay",
+      items: [],
+      discountPct: 0,
+      discountFlat: 0,
+      tipPct: 0,
+      tipCustom: 0,
+      payments: [],
+      prepaid: 0,
+      feeBearer: "absorb",
+    }),
+  startAppointmentCheckout: () =>
+    set({
+      checkoutClient: null,
+      entryContext: "appointment",
+      items: baseItemsFor(upNextQueue[get().apptIdx]),
+      discountPct: 0,
+      discountFlat: 0,
+      tipPct: 0,
+      tipCustom: 0,
+      payments: [],
+      prepaid: upNextQueue[get().apptIdx]?.deposit ?? 0,
+      feeBearer: "absorb",
+    }),
   resetCheckout: () =>
     set({
       items: baseItemsFor(upNextQueue[get().apptIdx]),
@@ -196,6 +310,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      prepaid: upNextQueue[get().apptIdx]?.deposit ?? 0,
+      feeBearer: "absorb",
+      checkoutClient: null,
+      entryContext: "appointment",
     }),
 }));
 
@@ -204,6 +322,10 @@ export function currentAppt(idx: number): UpNextAppt | undefined {
   return upNextQueue[idx];
 }
 
+/** That Time's platform fee, charged on the post-discount service/product bill. */
+export const PLATFORM_FEE_RATE = 0.05;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export function checkoutTotals(s: {
   items: CheckoutItem[];
   discountPct: number;
@@ -211,12 +333,25 @@ export function checkoutTotals(s: {
   tipPct: number;
   tipCustom: number;
   payments: PaymentEntry[];
+  prepaid?: number;
+  feeBearer?: FeeBearer;
 }) {
   const subtotal = s.items.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const discount = s.discountPct > 0 ? (subtotal * s.discountPct) / 100 : s.discountFlat;
+  const discount = s.discountPct > 0 ? (subtotal * s.discountPct) / 100 : Math.min(s.discountFlat, subtotal);
   const tip = s.tipCustom > 0 ? s.tipCustom : (subtotal * s.tipPct) / 100;
-  const total = Math.max(0, subtotal - discount + tip);
+  const base = Math.max(0, subtotal - discount); // billable before tip
+  // Platform fee + who carries it: client adds it on top, split halves it, absorb
+  // takes it off the vendor's payout (the client total is unaffected).
+  const fee = round2(base * PLATFORM_FEE_RATE);
+  const feeBearer = s.feeBearer ?? "absorb";
+  const clientFee = feeBearer === "client" ? fee : feeBearer === "split" ? round2(fee / 2) : 0;
+  const vendorFee = feeBearer === "absorb" ? fee : feeBearer === "split" ? round2(fee / 2) : 0;
+  const total = Math.max(0, base + tip + clientFee); // what the client owes
+  const youReceive = Math.max(0, base + tip - vendorFee); // vendor payout after fee
+  const prepaid = s.prepaid ?? 0;
   const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-  const remaining = Math.max(0, total - paid);
-  return { subtotal, discount, tip, total, paid, remaining };
+  const remaining = Math.max(0, total - paid - prepaid);
+  // Overpay: deposit (or collected payments) exceed the bill — surfaced as a credit/refund.
+  const overpay = Math.max(0, paid + prepaid - total);
+  return { subtotal, discount, tip, base, fee, clientFee, vendorFee, total, youReceive, prepaid, paid, remaining, overpay };
 }

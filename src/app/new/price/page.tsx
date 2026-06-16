@@ -19,8 +19,17 @@ export default function PricePage() {
 
   const hours = Math.floor(draft.durationMin / 60);
   const mins = draft.durationMin % 60;
-  const setHours = (h: number) => updateDraft({ durationMin: Math.max(0, h) * 60 + mins });
-  const setMins = (mn: number) => updateDraft({ durationMin: hours * 60 + Math.min(59, Math.max(0, mn)) });
+  // Accept the raw string so a field can be emptied (shows the placeholder)
+  // instead of snapping back to a stuck "0" — typing "10" in minutes reads as
+  // 10 minutes, not "0:10".
+  const setHours = (raw: string) => {
+    const h = raw === "" ? 0 : Math.max(0, parseInt(raw, 10) || 0);
+    updateDraft({ durationMin: h * 60 + mins });
+  };
+  const setMins = (raw: string) => {
+    const mn = raw === "" ? 0 : Math.min(59, Math.max(0, parseInt(raw, 10) || 0));
+    updateDraft({ durationMin: hours * 60 + mn });
+  };
 
   const canCreate = Boolean(draft.price && draft.durationMin > 0 && (!draft.depositEnabled || draft.depositAmount));
 
@@ -41,7 +50,7 @@ export default function PricePage() {
         <div className="space-y-6 pb-6">
           <div>
             <FieldLabel>Price</FieldLabel>
-            <div className="flex items-baseline gap-1.5 rounded-2xl bg-canvas px-4 py-4">
+            <div className="flex items-baseline gap-1.5 rounded-2xl border border-border bg-canvas px-4 py-4">
               <span className="text-[18px] text-muted">£</span>
               <input
                 type="number"
@@ -57,24 +66,26 @@ export default function PricePage() {
           <div>
             <FieldLabel>Duration</FieldLabel>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-baseline rounded-2xl bg-canvas px-4 py-4">
+              <div className="flex items-baseline rounded-2xl border border-border bg-canvas px-4 py-4">
                 <input
                   type="number"
                   inputMode="numeric"
-                  value={hours}
-                  onChange={(e) => setHours(Number(e.target.value) || 0)}
-                  className="w-full bg-transparent text-[28px] font-bold text-navy outline-none"
+                  value={hours === 0 ? "" : String(hours)}
+                  onChange={(e) => setHours(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-transparent text-[28px] font-bold text-navy outline-none placeholder:text-muted"
                 />
                 <span className="shrink-0 text-[13px] text-muted">hours</span>
               </div>
-              <div className="flex items-baseline rounded-2xl bg-canvas px-4 py-4">
+              <div className="flex items-baseline rounded-2xl border border-border bg-canvas px-4 py-4">
                 <input
                   type="number"
                   inputMode="numeric"
                   step={5}
-                  value={mins}
-                  onChange={(e) => setMins(Number(e.target.value) || 0)}
-                  className="w-full bg-transparent text-[28px] font-bold text-navy outline-none"
+                  value={mins === 0 ? "" : String(mins)}
+                  onChange={(e) => setMins(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-transparent text-[28px] font-bold text-navy outline-none placeholder:text-muted"
                 />
                 <span className="shrink-0 text-[13px] text-muted">min</span>
               </div>
@@ -84,7 +95,7 @@ export default function PricePage() {
           <button
             type="button"
             onClick={() => updateDraft({ depositEnabled: !draft.depositEnabled })}
-            className="flex w-full items-center justify-between rounded-2xl bg-canvas px-4 py-4 text-left"
+            className="flex w-full items-center justify-between rounded-2xl border border-border bg-canvas px-4 py-4 text-left"
           >
             <div>
               <div className="text-[15px] font-semibold text-navy">Deposit</div>

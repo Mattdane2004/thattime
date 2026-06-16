@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Car, Video, Check, Search, SlidersHorizontal, Globe, Store, Minus, Plus } from "lucide-react";
+import { Home, Car, Video, Check, Search, SlidersHorizontal, Globe, Store, Minus, Plus, Link2 } from "lucide-react";
 import { ScreenHeader, Sheet, Toggle } from "@/components/ui";
-import { WizardFooter, WizardTitle, TOTAL_STEPS } from "@/components/ui";
-import { useWizardStore } from "@/lib/store/wizardStore";
+import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/ui";
+import { useWizardStore, type RemotePlatform } from "@/lib/store/wizardStore";
 import { businessLocations } from "@/lib/data/locations";
 
-// Wizard step — "Where is it offered?" (Figma 12216:32064). Three modes
-// (in-salon / mobile / remote) are multi-select cards; in-salon and mobile each
-// open a settings bottom sheet for their details.
+// Wizard step — "Where is it offered?" (Figma 12220:49xxx). Three modes
+// (in-salon / mobile / remote) are multi-select cards; each opens a settings
+// bottom sheet for its details.
 
 const shortName = (name: string) => name.replace(/^Salon\s+/, "");
+
+const PLATFORMS: { key: RemotePlatform; label: string; desc: string }[] = [
+  { key: "zoom", label: "Zoom", desc: "Zoom meeting link" },
+  { key: "google_meet", label: "Google Meet", desc: "Google Meet link" },
+  { key: "teams", label: "Microsoft Teams", desc: "Teams meeting link" },
+  { key: "phone", label: "Phone call", desc: "You call the client" },
+  { key: "custom", label: "Custom link", desc: "Any other video link" },
+];
+const platformLabel = (k: RemotePlatform) => PLATFORMS.find((p) => p.key === k)?.label ?? "Remote";
 
 export default function LocationsPage() {
   const router = useRouter();
@@ -21,6 +30,7 @@ export default function LocationsPage() {
 
   const [inSalonSheet, setInSalonSheet] = useState(false);
   const [mobileSheet, setMobileSheet] = useState(false);
+  const [remoteSheet, setRemoteSheet] = useState(false);
 
   const isClass = draft.type === "class";
   const modes = draft.locationModes;
@@ -40,6 +50,9 @@ export default function LocationsPage() {
   const m = draft.mobile;
   const feePart = m.travelFee ? `£${m.feeAmount || "0"} ${m.feeType === "flat" ? "flat fee" : "per mile"}` : "No travel fee";
   const mobileSummary = `${m.radiusMiles} miles · ${feePart} · ${m.noticeValue}${m.noticeUnit === "Hours" ? "h" : "d"} notice`;
+
+  const r = draft.remote;
+  const remoteSummary = r.link ? `${platformLabel(r.platform)} · link set` : `${platformLabel(r.platform)} · add a link`;
 
   return (
     <>
@@ -72,6 +85,8 @@ export default function LocationsPage() {
             sub="Video call or online"
             on={modes.remote}
             onToggle={() => toggleMode("remote")}
+            summary={remoteSummary}
+            onEdit={() => setRemoteSheet(true)}
           />
         </div>
       </div>
@@ -86,6 +101,7 @@ export default function LocationsPage() {
 
       <InSalonSheet open={inSalonSheet} onClose={() => setInSalonSheet(false)} />
       <MobileSheet open={mobileSheet} onClose={() => setMobileSheet(false)} />
+      <RemoteSheet open={remoteSheet} onClose={() => setRemoteSheet(false)} />
     </>
   );
 }
@@ -169,7 +185,16 @@ function InSalonSheet({ open, onClose }: { open: boolean; onClose: () => void })
   });
 
   return (
-    <Sheet open={open} onClose={onClose} title="In-salon locations">
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="In-salon locations"
+      footer={
+        <button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
+          Save settings
+        </button>
+      }
+    >
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -178,7 +203,7 @@ function InSalonSheet({ open, onClose }: { open: boolean; onClose: () => void })
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search locations…"
-              className="h-11 w-full rounded-xl bg-canvas pl-10 pr-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy"
+              className="h-11 w-full rounded-xl border border-border bg-canvas pl-10 pr-4 text-[14px] text-navy outline-none placeholder:text-muted focus:border-navy focus:ring-1 focus:ring-navy"
             />
           </div>
           <button
@@ -199,7 +224,7 @@ function InSalonSheet({ open, onClose }: { open: boolean; onClose: () => void })
             type="button"
             onClick={setAll}
             className={`flex w-full items-center gap-3 rounded-2xl p-4 text-left ${
-              allOn ? "bg-navy text-white" : "bg-canvas text-navy"
+              allOn ? "bg-navy text-white" : "border border-border bg-canvas text-navy"
             }`}
           >
             <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${allOn ? "bg-white/15" : "bg-white"}`}>
@@ -223,7 +248,7 @@ function InSalonSheet({ open, onClose }: { open: boolean; onClose: () => void })
                 key={loc.id}
                 type="button"
                 onClick={() => toggleOne(loc.id)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-canvas p-4 text-left"
+                className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${on ? "border-navy bg-canvas" : "border-border bg-canvas"}`}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white">
                   <Store size={17} className="text-navy" />
@@ -250,30 +275,55 @@ function InSalonSheet({ open, onClose }: { open: boolean; onClose: () => void })
         >
           Don&apos;t see a location? Configure now
         </button>
-
-        <div className="sticky bottom-0 -mx-6 -mb-8 bg-white px-6 pb-8 pt-2">
-          <button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
-            Save settings
-          </button>
-        </div>
       </div>
     </Sheet>
   );
 }
 
-// ---- Mobile settings sheet -------------------------------------------------
+// ---- Mobile settings sheet — radius + travel fee ---------------------------
 
 function MobileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const m = useWizardStore((s) => s.draft.mobile);
   const updateMobile = useWizardStore((s) => s.updateMobile);
 
   const stepNotice = (delta: number) => updateMobile({ noticeValue: Math.max(1, m.noticeValue + delta) });
-  const stepRadius = (delta: number) => updateMobile({ radiusMiles: Math.max(1, m.radiusMiles + delta) });
 
   return (
-    <Sheet open={open} onClose={onClose} title="Mobile settings">
-      <div className="flex flex-col gap-5">
-        <div>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Mobile settings"
+      sub="Where you'll travel and what you charge."
+      footer={
+        <button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
+          Save settings
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {/* 1 — Travel radius */}
+        <div className="rounded-2xl border border-border bg-canvas p-4">
+          <div className="flex items-baseline justify-between pb-3">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Travel radius</span>
+            <span className="text-[15px] font-semibold text-navy">{m.radiusMiles} miles</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={50}
+            value={m.radiusMiles}
+            onChange={(e) => updateMobile({ radiusMiles: Number(e.target.value) })}
+            aria-label="Travel radius in miles"
+            className="w-full accent-navy"
+          />
+          <div className="flex justify-between pt-1 text-[11px] text-muted">
+            <span>1 mile</span>
+            <span>50 miles</span>
+          </div>
+        </div>
+
+        {/* 2 — Travel fee */}
+        <div className="rounded-2xl border border-border bg-canvas p-4">
           <div className="flex items-center justify-between pb-3">
             <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Travel fee</span>
             <button type="button" onClick={() => updateMobile({ travelFee: !m.travelFee })}>
@@ -294,7 +344,7 @@ function MobileSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
                       key={o.v}
                       type="button"
                       onClick={() => updateMobile({ feeType: o.v })}
-                      className={`rounded-xl border-2 px-4 py-3 text-left ${on ? "border-navy bg-canvas" : "border-border"}`}
+                      className={`rounded-xl border-2 px-4 py-3 text-left ${on ? "border-navy bg-white" : "border-border bg-white"}`}
                     >
                       <span className="block text-[14px] font-semibold text-navy">{o.t}</span>
                       <span className="block text-[12px] text-muted">{o.s}</span>
@@ -302,7 +352,7 @@ function MobileSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
                   );
                 })}
               </div>
-              <div className="flex items-center rounded-xl bg-canvas px-4">
+              <div className="flex items-center rounded-xl border border-border bg-white px-4">
                 <span className="text-[15px] text-muted">£</span>
                 <input
                   type="number"
@@ -318,20 +368,8 @@ function MobileSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
           )}
         </div>
 
-        <div className="rounded-2xl bg-canvas p-4">
-          <p className="pb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Travel radius</p>
-          <div className="flex items-center justify-between">
-            <button onClick={() => stepRadius(-5)} aria-label="Less" className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-navy">
-              <Minus size={16} />
-            </button>
-            <span className="text-[15px] font-semibold text-navy">{m.radiusMiles} miles</span>
-            <button onClick={() => stepRadius(5)} aria-label="More" className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-navy">
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-canvas p-4">
+        {/* Minimum booking notice */}
+        <div className="rounded-2xl border border-border bg-canvas p-4">
           <p className="pb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Minimum booking notice</p>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 rounded-xl bg-white px-2 py-1.5">
@@ -363,12 +401,78 @@ function MobileSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
             Clients must book at least <span className="font-semibold text-secondary">{m.noticeValue} {m.noticeUnit.toLowerCase()}</span> in advance
           </p>
         </div>
+      </div>
+    </Sheet>
+  );
+}
 
-        <div className="sticky bottom-0 -mx-6 -mb-8 bg-white px-6 pb-8 pt-2">
-          <button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
-            Save settings
-          </button>
+// ---- Remote settings sheet — platform + link -------------------------------
+
+function RemoteSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const r = useWizardStore((s) => s.draft.remote);
+  const updateRemote = useWizardStore((s) => s.updateRemote);
+  const needsLink = r.platform !== "phone";
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Remote settings"
+      sub="Choose where remote sessions take place."
+      footer={
+        <button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">
+          Save settings
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div>
+          <FieldLabel>Platform</FieldLabel>
+          <div className="overflow-hidden rounded-2xl border border-border">
+            {PLATFORMS.map((p, i) => {
+              const on = r.platform === p.key;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => updateRemote({ platform: p.key })}
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${i > 0 ? "border-t border-border" : ""} ${on ? "bg-canvas" : "bg-white"}`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas">
+                    <Link2 size={16} className="text-navy" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-medium text-navy">{p.label}</span>
+                    <span className="block text-[12px] text-muted">{p.desc}</span>
+                  </span>
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full ${on ? "bg-navy text-white" : "border-2 border-border"}`}>
+                    {on && <Check size={14} strokeWidth={3} />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {needsLink && (
+          <label className="block">
+            <FieldLabel>{platformLabel(r.platform)} link</FieldLabel>
+            <input
+              type="url"
+              inputMode="url"
+              value={r.link}
+              onChange={(e) => updateRemote({ link: e.target.value })}
+              placeholder="https://…"
+              className={fieldInput}
+            />
+            <span className="mt-1.5 block text-[12px] text-muted">Shared with the client when they book.</span>
+          </label>
+        )}
+        {!needsLink && (
+          <div className="rounded-xl border border-border bg-canvas px-4 py-3 text-[13px] text-secondary">
+            You&apos;ll call the client at their booking time — no link needed.
+          </div>
+        )}
       </div>
     </Sheet>
   );

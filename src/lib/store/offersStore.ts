@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { demoOffers, type DemoOffer } from "@/lib/data/offers";
 import type { ServiceDraft } from "@/lib/store/wizardStore";
+import { nextId } from "@/lib/ids";
 
 // Offer catalogue state — seeded from the demo catalogue so offers created in
 // the wizard show up in the Services list and dashboards within a session.
@@ -23,10 +24,15 @@ export const useOffersStore = create<OffersState>((set) => ({
   removeOffer: (id) => set((s) => ({ offers: s.offers.filter((o) => o.id !== id) })),
 }));
 
-/** Build a catalogue entry from a completed wizard draft. */
+/**
+ * Build a catalogue entry from a completed wizard draft. One shared seam for
+ * all four offer types — the common envelope plus the type-specific sub-block,
+ * so the dashboard renders the real offer instead of placeholders.
+ */
 export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): DemoOffer {
   const type = draft.type ?? "service";
   const prefix = { service: "svc", class: "cls", bundle: "bun", subscription: "sub" }[type];
+
   let price = draft.price;
   if (type === "bundle" && draft.bundle.priceMode === "discount") {
     const sum = draft.bundle.serviceIds
@@ -34,14 +40,48 @@ export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): Dem
       .reduce((a, b) => a + b, 0);
     price = String(Math.round(sum * (1 - Number(draft.bundle.discountPercent || 0) / 100)));
   }
-  return {
-    id: `${prefix}_${Math.random().toString(36).slice(2, 8)}`,
+
+  // Shared envelope — every type carries these.
+  const offer: DemoOffer = {
+    id: nextId(prefix),
     type,
     name: draft.name.trim(),
     category: draft.category,
     price: price || "0",
-    durationMin: type === "service" ? draft.durationMin : undefined,
     status: "draft",
     icon: draft.icon,
+    description: draft.description.trim() || undefined,
   };
+
+  // Type-specific sub-block — only carry what each type's wizard collected.
+  const deposit = draft.depositEnabled ? { enabled: true, amount: draft.depositAmount } : undefined;
+  if (type === "service" || type === "class") {
+    offer.locationModes = { ...draft.locationModes };
+    offer.locationIds = [...draft.locationIds];
+    if (draft.locationModes.mobile) offer.mobile = { ...draft.mobile };
+    if (draft.locationModes.remote) offer.remote = { ...draft.remote };
+    offer.staffIds = [...draft.staffIds];
+    if (Object.keys(draft.staffByLocation).length) offer.staffByLocation = { ...draft.staffByLocation };
+    offer.deposit = deposit;
+  }
+  if (type === "service") {
+    offer.durationMin = draft.durationMin;
+  }
+  if (type === "class") {
+    offer.classDetails = { ...draft.classDetails };
+  }
+  if (type === "bundle") {
+    offer.bundle = {
+      kind: draft.bundle.kind,
+      serviceIds: [...draft.bundle.serviceIds],
+      chooseCount: draft.bundle.chooseCount,
+      priceMode: draft.bundle.priceMode,
+      discountPercent: draft.bundle.discountPercent,
+    };
+  }
+  if (type === "subscription") {
+    offer.subscription = { ...draft.subscription };
+  }
+
+  return offer;
 }

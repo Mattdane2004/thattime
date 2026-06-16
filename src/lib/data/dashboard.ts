@@ -32,13 +32,22 @@ export interface HeroMetric {
   spark: number[];
 }
 
-// Owner / solo lead metric — revenue this week with a 7-day trend.
-export const revenueHero: HeroMetric = {
-  label: "Revenue",
-  value: "£4,280",
-  delta: "+12%",
-  up: true,
-  spark: [320, 410, 380, 520, 470, 610, 590],
+// Owner / solo lead metric — revenue as a progress bar: money already collected
+// vs. the period's estimated total from all bookings. Clearer than a trend line
+// for non-data vendors (what have I taken vs. what's still to come).
+export interface RevenueProgress {
+  /** Money already taken (completed + paid appointments). */
+  collected: string;
+  /** Estimated total for the period from all bookings. */
+  estimated: string;
+  /** 0–100 — collected as a share of estimated, for the bar fill. */
+  pct: number;
+}
+
+export const revenueProgress: RevenueProgress = {
+  collected: "£2,100",
+  estimated: "£4,280",
+  pct: 49,
 };
 
 // Staff lead metric — their own takings, never business-wide revenue.

@@ -4,6 +4,19 @@
 // (services, serviceCategories) are derived from here — add/edit offers in
 // this file only.
 import type { OfferType } from "@/lib/types";
+import type { MobileSettings, RemoteSettings, ClassDraft, SubscriptionDraft } from "@/lib/store/wizardStore";
+
+/** A pricing variant created in the Variants setup flow. */
+export type VariantType = "duration" | "staff" | "time" | "location";
+export interface OfferVariant {
+  id: string;
+  type: VariantType;
+  label: string;
+  /** Price difference vs the base price, signed string e.g. "+10" / "-5". */
+  priceDelta: string;
+  /** Duration difference in minutes (duration variants). */
+  durationDelta?: number;
+}
 
 export interface DemoOffer {
   id: string;
@@ -15,6 +28,56 @@ export interface DemoOffer {
   status: "published" | "draft";
   /** Optional glyph key (lib/data/serviceIcons) chosen in the wizard. */
   icon?: string;
+
+  // Wizard-collected fields, persisted so the dashboard renders the real offer.
+  // All optional → back-compatible with the seed catalogue below and existing
+  // reader screens. Carried through by `offerFromDraft` (offersStore.ts) per type.
+
+  /** Short client-facing description (all types). */
+  description?: string;
+  /** Booking deposit (service / class). */
+  deposit?: { enabled: boolean; amount: string };
+  /** Where it's offered (service / class). */
+  locationModes?: { inSalon: boolean; mobile: boolean; remote: boolean };
+  /** In-salon location ids; empty = all locations (service / class). */
+  locationIds?: string[];
+  /** Mobile (travels-to-client) settings (service / class). */
+  mobile?: MobileSettings;
+  /** Remote (video) settings — platform + link (service / class). */
+  remote?: RemoteSettings;
+  /** Staff/instructors who deliver it (service / class). */
+  staffIds?: string[];
+  /** Per-location staff assignment when multiple salons are selected. */
+  staffByLocation?: Record<string, string[]>;
+  /** Class-specific snapshot (capacity, schedule, structure). */
+  classDetails?: ClassDraft;
+  /** Bundle-specific snapshot (contents + pricing mode). */
+  bundle?: { kind: "fixed" | "flexible"; serviceIds: string[]; chooseCount: number; priceMode: "fixed" | "discount"; discountPercent: string };
+  /** Subscription-specific snapshot (type, benefit, billing). */
+  subscription?: SubscriptionDraft;
+
+  // Advanced-module data — persisted live via `updateOffer` from the module
+  // editors under /app/services/[id]/*. All optional; absent = module untouched.
+
+  /** Enabled client-notification keys (all types). */
+  notifications?: string[];
+  /** Selected catalogue ids per advanced module (persisted by their editors). */
+  formIds?: string[];
+  productIds?: string[];
+  resourceIds?: string[];
+  relatedIds?: string[];
+  /** Photo placeholder ids (gallery module). */
+  photos?: number[];
+  /** Pricing variants created via the Variants setup flow. */
+  variants?: OfferVariant[];
+  /** Class prerequisites & what-to-bring. */
+  requirements?: { minAge: string; prerequisites: string; whatToBring: string };
+  /** Class agenda / syllabus items. */
+  agenda?: { title: string }[];
+  /** Class materials & resources. */
+  materials?: { name: string }[];
+  /** Class completion & certificate rules. */
+  certificate?: { enabled: boolean; passCriteria: string };
 }
 
 export const demoOffers: DemoOffer[] = [
@@ -61,15 +124,3 @@ export const offerMeta = (o: DemoOffer): string => {
 
 export const getOffer = (id: string): DemoOffer | undefined =>
   demoOffers.find((o) => o.id === id);
-
-// Module sections shown on an offer dashboard (the legacy /service /class etc.
-// dashboards). Each is a sub-screen still on the backlog.
-export const OFFER_MODULES: { key: string; label: string; desc: string }[] = [
-  { key: "variants", label: "Variants", desc: "Duration, staff & location pricing" },
-  { key: "products", label: "Products", desc: "Retail add-ons for this offer" },
-  { key: "resources", label: "Resources", desc: "Rooms & equipment needed" },
-  { key: "forms", label: "Forms", desc: "Intake & consent forms" },
-  { key: "related", label: "Related", desc: "Cross-sell other offers" },
-  { key: "settings", label: "Settings", desc: "Booking rules & policies" },
-  { key: "notifications", label: "Notifications", desc: "Client reminders & messages" },
-];

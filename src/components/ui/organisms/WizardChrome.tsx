@@ -64,7 +64,7 @@ export function WizardFooter({
 }
 
 export const fieldInput =
-  "h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:ring-1 focus:ring-navy";
+  "h-12 w-full rounded-xl border border-border bg-canvas px-4 text-[14px] text-navy outline-none placeholder:text-muted focus:border-navy focus:ring-1 focus:ring-navy";
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className="mb-2 block text-[13px] font-medium text-secondary">{children}</span>;

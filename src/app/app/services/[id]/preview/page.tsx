@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Clock, MapPin, Star } from "lucide-react";
+import { ChevronLeft, Clock, MapPin } from "lucide-react";
 import { useOffersStore } from "@/lib/store/offersStore";
 
 // Service preview — how clients see an offer. Functional port of the legacy
@@ -11,6 +11,12 @@ import { useOffersStore } from "@/lib/store/offersStore";
 export default function ServicePreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const offer = useOffersStore((s) => s.offers.find((o) => o.id === params.id));
+
+  const locationLabel = (() => {
+    const m = offer?.locationModes;
+    if (!m) return "";
+    return [m.inSalon && "In-salon", m.mobile && "Mobile", m.remote && "Remote"].filter(Boolean).join(" · ");
+  })();
 
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -30,16 +36,17 @@ export default function ServicePreviewPage({ params }: { params: { id: string } 
           <div className="mt-1 flex items-center gap-3 text-[13px] text-muted">
             <span>{offer?.category}</span>
             {offer?.durationMin && <span className="flex items-center gap-1"><Clock size={13} />{offer.durationMin} min</span>}
-            <span className="flex items-center gap-1"><Star size={13} className="fill-warning text-warning" />4.9</span>
           </div>
 
-          <p className="mt-4 text-[14px] leading-relaxed text-secondary">
-            A precision treatment tailored to you — consultation, the service itself, and a finishing touch. Booked online in seconds.
-          </p>
+          {offer?.description && (
+            <p className="mt-4 text-[14px] leading-relaxed text-secondary">{offer.description}</p>
+          )}
 
-          <div className="mt-5 flex items-center gap-2 text-[13px] text-secondary">
-            <MapPin size={15} className="text-muted" />Salon Soho · 14 Greek Street
-          </div>
+          {locationLabel && (
+            <div className="mt-5 flex items-center gap-2 text-[13px] text-secondary">
+              <MapPin size={15} className="text-muted" />{locationLabel}
+            </div>
+          )}
         </div>
       </div>
 

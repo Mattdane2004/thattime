@@ -20,7 +20,9 @@ export interface ServiceDraft {
   locationModes: LocationModes;
   locationIds: string[]; // in-salon salons; empty = all locations
   mobile: MobileSettings;
-  staffIds: string[];
+  remote: RemoteSettings;
+  staffIds: string[]; // flat assignment (single-location / all-locations case)
+  staffByLocation: Record<string, string[]>; // per-location assignment (multi-location case)
   subscription: SubscriptionDraft;
   bundle: BundleDraft;
   classDetails: ClassDraft;
@@ -51,6 +53,15 @@ export const emptyMobile: MobileSettings = {
   noticeValue: 2,
   noticeUnit: "Hours",
 };
+
+// Remote (video / online) settings — which platform and the joining link.
+export type RemotePlatform = "zoom" | "google_meet" | "teams" | "phone" | "custom";
+export interface RemoteSettings {
+  platform: RemotePlatform;
+  link: string;
+}
+
+export const emptyRemote: RemoteSettings = { platform: "zoom", link: "" };
 
 // Class-branch fields (wizard: participants → schedule → pricing).
 export interface ClassDraft {
@@ -86,6 +97,8 @@ export const emptyClassDraft: ClassDraft = {
 export interface BundleDraft {
   kind: "fixed" | "flexible";
   serviceIds: string[];
+  /** Flexible packages: how many of the selected services a client picks. */
+  chooseCount: number;
   /** "fixed" total price, or "" when using a package discount instead. */
   priceMode: "fixed" | "discount";
   discountPercent: string;
@@ -94,13 +107,15 @@ export interface BundleDraft {
 export const emptyBundle: BundleDraft = {
   kind: "fixed",
   serviceIds: [],
+  chooseCount: 2,
   priceMode: "fixed",
   discountPercent: "",
 };
 
 // Subscription-branch fields (wizard: type → benefits → billing).
+// `benefitType` is the single driver — the old `subType` grouping was dropped
+// (it was set on the type page but never read again).
 export interface SubscriptionDraft {
-  subType: "frequency" | "credit" | "membership";
   benefitType: "sessions" | "credit" | "discount" | "access";
   billingPeriod: "week" | "month" | "quarter" | "year";
   includedSessions: number;
@@ -112,7 +127,6 @@ export interface SubscriptionDraft {
 }
 
 export const emptySubscription: SubscriptionDraft = {
-  subType: "frequency",
   benefitType: "sessions",
   billingPeriod: "month",
   includedSessions: 1,
@@ -136,7 +150,9 @@ export const emptyDraft: ServiceDraft = {
   locationModes: { inSalon: true, mobile: false, remote: false },
   locationIds: [],
   mobile: emptyMobile,
+  remote: emptyRemote,
   staffIds: [],
+  staffByLocation: {},
   subscription: emptySubscription,
   bundle: emptyBundle,
   classDetails: emptyClassDraft,
@@ -146,6 +162,7 @@ interface WizardState {
   draft: ServiceDraft;
   updateDraft: (patch: Partial<ServiceDraft>) => void;
   updateMobile: (patch: Partial<MobileSettings>) => void;
+  updateRemote: (patch: Partial<RemoteSettings>) => void;
   updateSubscription: (patch: Partial<SubscriptionDraft>) => void;
   updateBundle: (patch: Partial<BundleDraft>) => void;
   updateClass: (patch: Partial<ClassDraft>) => void;
@@ -157,6 +174,8 @@ export const useWizardStore = create<WizardState>((set) => ({
   updateDraft: (patch) => set((state) => ({ draft: { ...state.draft, ...patch } })),
   updateMobile: (patch) =>
     set((state) => ({ draft: { ...state.draft, mobile: { ...state.draft.mobile, ...patch } } })),
+  updateRemote: (patch) =>
+    set((state) => ({ draft: { ...state.draft, remote: { ...state.draft.remote, ...patch } } })),
   updateSubscription: (patch) =>
     set((state) => ({ draft: { ...state.draft, subscription: { ...state.draft.subscription, ...patch } } })),
   updateBundle: (patch) =>

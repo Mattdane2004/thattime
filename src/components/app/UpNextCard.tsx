@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, AlertTriangle, FileText, MessageSquare, RotateCcw, X,
   CheckCircle2, Play, CreditCard, ChevronRight, Plus, CalendarPlus, Link2, Pause,
-  Copy, Check, Send, CalendarCheck2,
+  Copy, Check, Send, CalendarCheck2, Bell, MoreHorizontal,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { Sheet, DarkButton, GhostButton, MiniCalendar, TimeChips } from "@/components/ui";
@@ -22,13 +22,16 @@ import { upNextQueue } from "@/lib/data/product";
 export function UpNextCard({ compact }: { compact?: boolean }) {
   const router = useRouter();
   const {
-    apptIdx, apptStatus, setApptStatus, movedTo, setMovedTo, advanceAppt, setApptSheet,
+    apptIdx, apptStatus, setApptStatus, movedTo, setMovedTo,
+    lateBy, setLateBy, readySent, setReadySent, advanceAppt, setApptSheet,
   } = useAppStore();
   const [resched, setResched] = useState(false);
   const [cancel, setCancel] = useState(false);
   const [share, setShare] = useState(false);
   const [copied, setCopied] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
+  const [latePicker, setLatePicker] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
 
@@ -65,11 +68,16 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
     });
 
   const pill =
-    movedTo ? `Moved · ${movedTo}`
+    lateBy ? `${lateBy} min late`
+    : movedTo ? `Moved · ${movedTo}`
     : apptStatus === "upcoming" ? "In 5min"
     : apptStatus === "arrived" ? "Arrived"
     : apptStatus === "in-progress" ? "In progress"
     : "Done";
+
+  // "Running late" / "I'm ready" apply before the service starts.
+  const showSignals = apptStatus === "upcoming" || apptStatus === "arrived";
+  const lateClients = lateBy ? lateBy / 5 : 0; // +5 → next 1, +10 → next 2, +15 → next 3
 
   const action =
     apptStatus === "upcoming"
@@ -77,7 +85,7 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
       : apptStatus === "arrived"
         ? { label: "Start service", icon: <Play size={14} />, onClick: () => setApptStatus("in-progress") }
         : apptStatus === "in-progress"
-          ? { label: "Checkout", icon: <CreditCard size={15} />, onClick: () => router.push("/app/checkout") }
+          ? { label: "Checkout", icon: <CreditCard size={15} />, onClick: () => { useAppStore.getState().startAppointmentCheckout(); router.push("/app/checkout"); } }
           : null;
 
   if (apptStatus === "cancelled") {
@@ -178,7 +186,9 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
               className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                apptStatus === "in-progress" ? "bg-white text-navy" : "bg-white/12 text-white"
+                lateBy ? "bg-warning text-white"
+                : apptStatus === "in-progress" ? "bg-white text-navy"
+                : "bg-white/12 text-white"
               }`}
             >
               <Clock size={11} strokeWidth={2} />
@@ -215,28 +225,12 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
         {!compact && (
           <div className="mt-4 flex items-center gap-2">
             <motion.button
-              whileTap={{ scale: 0.92 }}
-              aria-label={`Message ${appt.client}`}
-              onClick={() => router.push(`/app/messages/${appt.id}`)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setActionsOpen(true)}
+              className="flex h-10 items-center gap-1.5 rounded-full bg-white/10 px-4 text-[13px] font-semibold text-white"
             >
-              <MessageSquare size={15} />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              aria-label="Reschedule"
-              onClick={() => setResched(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10"
-            >
-              <RotateCcw size={15} />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              aria-label="Cancel appointment"
-              onClick={() => setCancel(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10"
-            >
-              <X size={15} />
+              <MoreHorizontal size={16} strokeWidth={2} />
+              Actions
             </motion.button>
             {action && (
               <motion.button
@@ -254,7 +248,49 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
             )}
           </div>
         )}
+
+        {/* Running late / ready status feedback (the actions themselves live in the sheet) */}
+        {!compact && lateBy && (
+          <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-white/55">
+            <Clock size={11} strokeWidth={2} />
+            Running {lateBy} min late · next {lateClients} {lateClients === 1 ? "client" : "clients"} notified
+          </p>
+        )}
+        {!compact && readySent && !lateBy && (
+          <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-white/55">
+            <Check size={11} strokeWidth={2.5} />
+            {appt.client} has been told they can come in.
+          </p>
+        )}
       </motion.div>
+
+      {/* Booking actions — consolidated entry point for everything you can do */}
+      <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Booking actions" sub={`${appt.client} · ${appt.service}`}>
+        <div className="flex flex-col pt-1">
+          {[
+            ...(showSignals
+              ? [
+                  { icon: <Clock size={17} strokeWidth={1.8} />, label: lateBy ? `Running ${lateBy} min late · update` : "Mark running late", run: () => { setActionsOpen(false); setLatePicker(true); } },
+                  { icon: readySent ? <Check size={17} strokeWidth={2.3} /> : <Bell size={17} strokeWidth={1.8} />, label: readySent ? "Ready sent · undo" : "I'm ready for them", run: () => { setReadySent(!readySent); setActionsOpen(false); } },
+                ]
+              : []),
+            { icon: <MessageSquare size={17} strokeWidth={1.8} />, label: `Message ${appt.client.split(" ")[0]}`, run: () => { setActionsOpen(false); router.push(`/app/messages/${appt.id}`); } },
+            { icon: <RotateCcw size={17} strokeWidth={1.8} />, label: "Reschedule", run: () => { setActionsOpen(false); setResched(true); } },
+            { icon: <X size={17} strokeWidth={1.8} />, label: "Cancel appointment", run: () => { setActionsOpen(false); setCancel(true); }, danger: true },
+          ].map((a) => (
+            <button
+              key={a.label}
+              type="button"
+              onClick={a.run}
+              className={`flex w-full items-center gap-3.5 border-b border-border py-3.5 text-left text-[15px] font-medium last:border-0 ${a.danger ? "text-danger" : "text-navy"}`}
+            >
+              <span className={a.danger ? "text-danger" : "text-secondary"}>{a.icon}</span>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div className="h-2" />
+      </Sheet>
 
       {/* Reschedule sheet */}
       <Sheet
@@ -279,6 +315,45 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
             {day && time ? `Confirm · Sat ${day} Mar, ${time}` : "Confirm new time"}
           </DarkButton>
         </div>
+      </Sheet>
+
+      {/* Running late — pick how late, we shift the diary and notify affected clients */}
+      <Sheet
+        open={latePicker}
+        onClose={() => setLatePicker(false)}
+        title="Running late?"
+        sub={`${appt.client} · ${appt.time}`}
+      >
+        <p className="pb-3 text-[13px] leading-relaxed text-secondary">
+          Let your upcoming clients know. We&rsquo;ll shift the diary and notify whoever&rsquo;s affected.
+        </p>
+        <div className="space-y-2">
+          {[5, 10, 15].map((m) => {
+            const clients = m / 5;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => { setLateBy(m); setLatePicker(false); }}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left ${
+                  lateBy === m ? "border-fg-primary bg-canvas" : "border-border bg-white"
+                }`}
+              >
+                <span className="text-[14px] font-semibold text-navy">+{m} min</span>
+                <span className="text-[12px] text-muted">
+                  affects next {clients} {clients === 1 ? "client" : "clients"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {lateBy && (
+          <div className="pt-4">
+            <GhostButton onClick={() => { setLateBy(null); setLatePicker(false); }}>
+              Clear — I&rsquo;m back on time
+            </GhostButton>
+          </div>
+        )}
       </Sheet>
 
       {/* Cancel sheet */}
@@ -309,8 +384,7 @@ export function UpNextSection() {
   const { breakActive, setBreakActive, breakEnded, setBreakEnded } = useAppStore();
   return (
     <div className="mx-4 rounded-3xl border border-border bg-white p-4">
-      <p className="text-[16px] font-bold text-navy">Up Next</p>
-      <p className="pb-3 pt-0.5 text-[12px] text-muted">Gap</p>
+      <p className="pb-3 text-[16px] font-bold text-navy">Up Next</p>
       <UpNextCard />
 
       {/* Ending the break swipes the card away and collapses the section */}

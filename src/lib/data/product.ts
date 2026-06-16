@@ -35,27 +35,51 @@ export const serviceCategories = [
 // Retail list for the checkout add-product sheet. Austin folds this into
 // lib/data/products.ts (the offer add-on catalogue) later — see
 // docs/data-dedupe-proposal.md.
+// Retail only — gift cards are sold via their own checkout type (kind:"giftcard"),
+// never as a "product", so the can't-pay-a-gift-card-with-a-gift-card rule holds.
 export const products = [
-  { id: "shampoo", name: "Repair Shampoo", size: "250ml", price: 12 },
-  { id: "conditioner", name: "Repair Conditioner", size: "250ml", price: 14 },
-  { id: "wax", name: "Styling Wax", size: "75ml", price: 9 },
-  { id: "spray", name: "Heat Protect Spray", size: "200ml", price: 16 },
-  { id: "serum", name: "Gloss Serum", size: "50ml", price: 18 },
-  { id: "gift-card", name: "Gift Card", size: "Digital", price: 25 },
+  { id: "shampoo", name: "Repair Shampoo", size: "250ml", price: 12, category: "Hair care" },
+  { id: "conditioner", name: "Repair Conditioner", size: "250ml", price: 14, category: "Hair care" },
+  { id: "serum", name: "Gloss Serum", size: "50ml", price: 18, category: "Hair care" },
+  { id: "wax", name: "Styling Wax", size: "75ml", price: 9, category: "Styling" },
+  { id: "spray", name: "Heat Protect Spray", size: "200ml", price: 16, category: "Styling" },
 ];
+
+export const productCategories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
+
+// Checkout "what are you charging for?" catalogues — memberships and classes
+// are thin views of the canonical offers; gift cards are fixed denominations.
+export const memberships = demoOffers
+  .filter((o) => o.type === "subscription" && o.status === "published")
+  .map((o) => ({ id: o.id, name: o.name, price: Number(o.price), sub: `${o.category} · per month` }));
+
+export const classOffers = demoOffers
+  .filter((o) => o.type === "class" && o.status === "published")
+  .map((o) => ({ id: o.id, name: o.name, price: Number(o.price), sub: o.category }));
+
+export const giftCardDenoms = [25, 50, 100];
 
 export const staffMembers = ["Emma S.", "Alex M.", "Chris T.", "Sophie L."];
 
+// `outstanding` is an unpaid balance in £ (0 = settled) — surfaced in the Log
+// Payment client picker so vendors can spot who owes before taking payment.
 export const clientRows = [
-  { id: "emily", name: "Emily Davis", rating: 4.9, meta: "Next: 2 Apr, 14:30", tags: ["Regular"] },
-  { id: "amanda", name: "Amanda White", rating: 4.3, meta: "Next: 2 Apr, 17:30", tags: ["Regular"] },
-  { id: "jessica", name: "Jessica Brown", rating: 4.5, meta: "Next: 3 Apr, 14:30", tags: ["VIP", "Allergy"] },
-  { id: "michael", name: "Michael Chen", rating: 2.1, meta: "Last: 20 Feb 2026", tags: ["Blocked"] },
-  { id: "patricia", name: "Patricia Taylor", rating: 0, meta: "Last: 5 Feb 2026", tags: [] },
-  { id: "chris-g", name: "Christopher Garcia", rating: 0, meta: "Last: 2 Jan 2026", tags: ["Inactive"] },
-  { id: "sarah", name: "Sarah Johnson", rating: 4.8, meta: "Next: 18 Mar, 11:00", tags: ["Regular"] },
-  { id: "lisa", name: "Lisa Anderson", rating: 4.6, meta: "Next: 14 Apr, 13:00", tags: ["Regular"] },
-  { id: "robert", name: "Robert Lee", rating: 4.4, meta: "Last: 2 Mar 2026", tags: [] },
+  { id: "emily", name: "Emily Davis", rating: 4.9, meta: "Next: 2 Apr, 14:30", tags: ["Regular"], outstanding: 0 },
+  { id: "amanda", name: "Amanda White", rating: 4.3, meta: "Next: 2 Apr, 17:30", tags: ["Regular"], outstanding: 0 },
+  { id: "jessica", name: "Jessica Brown", rating: 4.5, meta: "Next: 3 Apr, 14:30", tags: ["VIP", "Allergy"], outstanding: 0 },
+  { id: "michael", name: "Michael Chen", rating: 2.1, meta: "Last: 20 Feb 2026", tags: ["Blocked"], outstanding: 120 },
+  { id: "patricia", name: "Patricia Taylor", rating: 0, meta: "Last: 5 Feb 2026", tags: [], outstanding: 0 },
+  { id: "chris-g", name: "Christopher Garcia", rating: 0, meta: "Last: 2 Jan 2026", tags: ["Inactive"], outstanding: 0 },
+  { id: "sarah", name: "Sarah Johnson", rating: 4.8, meta: "Next: 18 Mar, 11:00", tags: ["Regular"], outstanding: 0 },
+  { id: "lisa", name: "Lisa Anderson", rating: 4.6, meta: "Next: 14 Apr, 13:00", tags: ["Regular"], outstanding: 45 },
+  { id: "robert", name: "Robert Lee", rating: 4.4, meta: "Last: 2 Mar 2026", tags: [], outstanding: 30 },
+];
+
+// Saved cards on file for the current client — used by the checkout
+// "Card on file" payment sheet. Empty list ⇒ the add-card flow opens directly.
+export const savedCards = [
+  { id: "visa-4242", brand: "Visa", last4: "4242", expiry: "08/27" },
+  { id: "mc-8210", brand: "Mastercard", last4: "8210", expiry: "11/26" },
 ];
 
 export const clientDetailTabs = ["Overview", "Bookings", "Forms", "Reviews"] as const;
@@ -93,13 +117,15 @@ export interface UpNextAppt {
   price: number;
   tags: string[];
   note?: string;
+  /** Deposit/prepayment taken at booking, in £ — shown as a credit in checkout. */
+  deposit?: number;
 }
 
 export const upNextQueue: UpNextAppt[] = [
   {
     id: "sarah", time: "11:00 AM", duration: "1h 30m", client: "Sarah Johnson", initials: "SJ",
     service: "Cut & Colour", staff: "Emma S.", price: 140, tags: ["Allergy", "Form"],
-    note: "Note attached",
+    note: "Note attached", deposit: 40,
   },
   {
     id: "lisa", time: "1:00 PM", duration: "1h", client: "Lisa Anderson", initials: "LA",
@@ -150,8 +176,11 @@ export interface GridBlock {
   shade: "dark" | "mid" | "light" | "muted" | "outline";
   status?: string;
   // Discriminator for non-appointment blocks. Absent = ordinary appointment.
-  kind?: "break" | "blocked" | "bundle";
+  // "processing" = a development/processing gap inside a service (e.g. colour
+  // sitting) — shown as occupied "processing time", not a bookable open slot.
+  kind?: "break" | "blocked" | "bundle" | "processing";
   bundleId?: string; // when kind === "bundle"
+  outstanding?: boolean; // an unpaid balance is owed on this booking
 }
 
 // ── Bundles (packages of services sold together; the business sets the order
@@ -193,8 +222,11 @@ export const threeDayGrid: { day: string; date: string; blocks: GridBlock[] }[] 
     blocks: [
       { start: 9, span: 1, name: "Sarah Johnson", service: "Cut & Style", shade: "muted" },
       { start: 10, span: 1, name: "Lunch Break", shade: "light" },
-      { start: 11, span: 2.5, name: "Jessica Brown", service: "Colour Treatment", shade: "mid" },
-      { start: 13.5, span: 1, name: "Lisa Anderson", service: "Blow Dry & Style", shade: "light" },
+      { start: 11, span: 1, name: "Jessica Brown", service: "Colour · application", shade: "mid" },
+      { start: 12, span: 0.5, name: "Processing time", service: "Colour developing", shade: "light", kind: "processing" },
+      { start: 12.5, span: 1, name: "Jessica Brown", service: "Colour · toner & finish", shade: "mid" },
+      { start: 13.5, span: 1, name: "Lisa Anderson", service: "Blow Dry & Style", shade: "light", status: "Confirmed", outstanding: true },
+      { start: 14.5, span: 0.5, name: "Noah Reed", service: "Haircut", shade: "muted", status: "No-show" },
       { start: 15, span: 2, name: "Emily Davis", service: "Cut & Colour", shade: "mid" },
     ],
   },
@@ -305,47 +337,134 @@ export const classTemplates = [
   { id: "bridal", emoji: "💍", name: "Bridal Trial Workshop", sub: "120m · £80 per seat · 4 seats" },
 ];
 
-export const teamColumns = [
+// Team calendar columns. `hours` shows that day's working hours in the column
+// header (replacing the job title); `off` marks staff not working today — hidden
+// by default but selectable from settings so an owner can call them in.
+// `weekBookings` (Mon→Sun) drives the team week overview: each day is either a
+// list of condensed bookings or "off" (not working that day).
+export interface WeekBooking { time: string; client: string; service: string; }
+export interface TeamColumn {
+  id: string;
+  initials: string;
+  name: string;
+  role: string;
+  hours: string;
+  off?: boolean;
+  weekBookings: (WeekBooking[] | "off")[];
+  blocks: (GridBlock & { price?: string })[];
+}
+
+export const teamColumns: TeamColumn[] = [
   {
     id: "emma",
     initials: "ES",
     name: "Emma S.",
     role: "Senior Stylist",
+    hours: "09:00 – 17:00",
+    weekBookings: [
+      [ { time: "09:00", client: "Sarah Johnson", service: "Cut & Style" }, { time: "11:00", client: "Jessica Brown", service: "Colour" }, { time: "14:30", client: "Emily Davis", service: "Cut & Colour" } ],
+      [ { time: "09:30", client: "Olivia Bennett", service: "Blow Dry" }, { time: "13:00", client: "Lisa Anderson", service: "Colour" } ],
+      [ { time: "10:00", client: "Mia Clark", service: "Cut & Style" }, { time: "15:00", client: "Grace Lee", service: "Colour" } ],
+      [ { time: "09:00", client: "Nadia Khan", service: "Trim" }, { time: "12:00", client: "Nina Patel", service: "Balayage" }, { time: "16:00", client: "Zoe Reed", service: "Blow Dry" } ],
+      [ { time: "09:00", client: "Amara Okafor", service: "Colour" }, { time: "11:30", client: "Ruby Shah", service: "Cut" }, { time: "14:00", client: "Eva Lin", service: "Updo" } ],
+      [ { time: "10:00", client: "Holly Day", service: "Cut & Colour" }, { time: "13:30", client: "Ivy Cole", service: "Blow Dry" } ],
+      "off",
+    ],
     blocks: [
       { start: 9, span: 1, name: "Sarah Johnson", service: "Cut & Style", shade: "muted", status: "Done", price: "60m · £85" },
       { start: 10, span: 1, name: "Lunch Break", shade: "light" },
       { start: 11, span: 2, name: "Jessica Brown", service: "Colour Treatment", shade: "dark", status: "Confirmed", price: "120m · £180" },
       { start: 13, span: 1, name: "Lisa Anderson", service: "Blow Dry & Style", shade: "dark", status: "Confirmed", price: "60m · £55" },
       { start: 14.5, span: 2, name: "Emily Davis", service: "Cut & Colour", shade: "dark", status: "Confirmed", price: "120m · £210" },
-    ] as (GridBlock & { price?: string })[],
+    ],
   },
   {
     id: "alex",
     initials: "AM",
     name: "Alex M.",
     role: "Barber",
+    hours: "09:00 – 16:00",
+    weekBookings: [
+      "off",
+      [ { time: "09:30", client: "Robert Lee", service: "Skin fade" }, { time: "13:15", client: "James Miller", service: "Beard trim" } ],
+      [ { time: "10:00", client: "Leo Carter", service: "Cut" }, { time: "12:30", client: "Sam Ortiz", service: "Skin fade" }, { time: "15:00", client: "Dan Webb", service: "Beard" } ],
+      [ { time: "09:00", client: "Theo Marsh", service: "Cut" }, { time: "14:00", client: "Owen Hale", service: "Skin fade" } ],
+      [ { time: "09:00", client: "Max Turner", service: "Cut" }, { time: "11:00", client: "Liam Scott", service: "Beard" }, { time: "13:30", client: "Harry Evans", service: "Cut & Beard" }, { time: "16:00", client: "Jay Cole", service: "Skin fade" } ],
+      [ { time: "10:00", client: "Noah Reed", service: "Cut" }, { time: "12:00", client: "Kai Brooks", service: "Skin fade" }, { time: "14:30", client: "Reece Day", service: "Beard" } ],
+      [ { time: "11:00", client: "Walk-in", service: "Open chair" } ],
+    ],
     blocks: [
       { start: 9.5, span: 0.8, name: "Robert Lee", shade: "muted", status: "Done" },
       { start: 10.5, span: 0.8, name: "Michael Chen", shade: "muted", status: "No-show" },
       { start: 11.2, span: 1.3, name: "Lunch Break", shade: "light" },
       { start: 13.2, span: 0.8, name: "James Miller", shade: "dark", status: "Confirmed" },
       { start: 14, span: 1.5, name: "Colour Masterclass", service: "6/8 booked", shade: "outline", status: "Class" },
-    ] as (GridBlock & { price?: string })[],
+    ],
   },
   {
     id: "chris",
     initials: "CT",
     name: "Chris T.",
     role: "Stylist",
+    hours: "09:00 – 17:00",
+    weekBookings: [
+      [ { time: "09:00", client: "Olivia Bennett", service: "Glamour pkg" }, { time: "13:00", client: "Amanda White", service: "Cut" } ],
+      [ { time: "11:30", client: "Amanda White", service: "Blow Dry" }, { time: "15:00", client: "Thomas Moore", service: "Cut" } ],
+      "off",
+      [ { time: "10:00", client: "Priya Nair", service: "Colour" }, { time: "14:00", client: "Sofia Khan", service: "Cut & Colour" } ],
+      [ { time: "09:30", client: "Ella Thompson", service: "Full colour" }, { time: "13:00", client: "Isla Cooper", service: "Cut" } ],
+      [ { time: "10:00", client: "Aiden Brooks", service: "Cut & Style" } ],
+      "off",
+    ],
     blocks: [
       { start: 9, span: 2.4, name: "Glamour Package", service: "3 services", shade: "outline", status: "Bundle", kind: "bundle", bundleId: "bun-glamour" },
       { start: 11.5, span: 1.2, name: "Amanda White", shade: "dark", status: "Confirmed" },
-      { start: 13, span: 1, name: "David Wilson", shade: "dark", status: "Unconfirmed" },
+      { start: 13, span: 1, name: "David Wilson", shade: "dark", status: "Unconfirmed", outstanding: true },
       { start: 14.2, span: 0.6, name: "Break", shade: "light", kind: "break" },
       { start: 15, span: 1.2, name: "Thomas Moore", shade: "dark", status: "Confirmed" },
-    ] as (GridBlock & { price?: string })[],
+    ],
+  },
+  {
+    id: "priya",
+    initials: "PS",
+    name: "Priya S.",
+    role: "Stylist",
+    hours: "Day off",
+    off: true,
+    weekBookings: [
+      [ { time: "09:30", client: "Hannah Lee", service: "Cut & Colour" }, { time: "13:00", client: "Maya Singh", service: "Blow Dry" } ],
+      "off",
+      [ { time: "10:00", client: "Freya Watts", service: "Balayage" }, { time: "14:30", client: "Lily Cho", service: "Trim" } ],
+      [ { time: "09:00", client: "Ava Reid", service: "Colour" }, { time: "12:00", client: "Erin Ford", service: "Cut" }, { time: "15:30", client: "Tara Bose", service: "Blow Dry" } ],
+      [ { time: "09:00", client: "Demi Stone", service: "Cut & Colour" }, { time: "13:00", client: "Cara Lyn", service: "Updo" } ],
+      [ { time: "10:00", client: "Beth Cole", service: "Colour" }, { time: "14:00", client: "Sana Ali", service: "Cut" } ],
+      "off",
+    ],
+    blocks: [],
+  },
+  {
+    id: "jordan",
+    initials: "JK",
+    name: "Jordan K.",
+    role: "Junior Stylist",
+    hours: "Day off",
+    off: true,
+    weekBookings: [
+      [ { time: "10:00", client: "Ben Pryce", service: "Cut" } ],
+      "off",
+      [ { time: "11:00", client: "Cody Ray", service: "Skin fade" }, { time: "15:00", client: "Eli Mason", service: "Cut" } ],
+      [ { time: "09:30", client: "Finn Doyle", service: "Cut" }, { time: "13:00", client: "Gus Wood", service: "Beard" } ],
+      [ { time: "10:00", client: "Hugo Bell", service: "Cut" }, { time: "14:00", client: "Ira Knott", service: "Skin fade" } ],
+      [ { time: "11:00", client: "Jude Frost", service: "Cut" } ],
+      "off",
+    ],
+    blocks: [],
   },
 ];
+
+// Bookings with an active payment dispute — surfaces an urgency banner on the
+// appointment card (prototype: keyed by client name).
+export const disputedClients = ["David Wilson"];
 
 export const masterclass = {
   name: "Colour Masterclass",
@@ -371,14 +490,51 @@ export const masterclass = {
 
 // ── Messages ──
 
-export const conversations = [
-  { id: "sarah", name: "Sarah Johnson", preview: "Thanks! See you then 😊", time: "3 Mar, 14:30", unread: 0, kind: "client" },
-  { id: "team", name: "Team chat", preview: "Thanks! See you Soon", time: "3 Mar, 14:30", unread: 0, kind: "group" },
-  { id: "emily", name: "Emily Davis", preview: "Maybe Thursday the 9th? I'll confirm lat", time: "Today, 09:45", unread: 2, kind: "client" },
-  { id: "salon", name: "Hair saloon", preview: "Perfect lets collaborate on Monday", time: "3 Mar, 14:30", unread: 0, kind: "business" },
-  { id: "lisa", name: "Lisa Anderson", preview: "Perfect, see you there!", time: "27 Feb, 12:18", unread: 0, kind: "client" },
-  { id: "robert", name: "Robert Lee", preview: "Yes definitely! Can I come in next week", time: "2 Mar, 14:22", unread: 1, kind: "client" },
-  { id: "amanda", name: "Amanda White", preview: "Looking forward to my appointment!", time: "1 Mar, 16:40", unread: 0, kind: "client" },
+export type ConversationKind = "client" | "group" | "business" | "class";
+
+export type Conversation = {
+  id: string;
+  name: string;
+  preview: string;
+  time: string;
+  unread: number;
+  kind: ConversationKind;
+  /** Secondary line — phone substitute in the thread header, members, supplier label. */
+  sub?: string;
+  /** Avatar stack for group / class conversations. */
+  members?: { initials: string }[];
+  /** Ended class chats are auto-archived: read-only and dimmed in the list. */
+  archived?: boolean;
+};
+
+export const conversations: Conversation[] = [
+  // Clients — 1:1 booking conversations
+  { id: "emily", name: "Emily Davis", preview: "Maybe Thursday the 9th? I'll confirm later today", time: "Today, 09:45", unread: 2, kind: "client" },
+  { id: "sarah", name: "Sarah Johnson", preview: "Thanks! See you then 😊", time: "Today, 08:12", unread: 0, kind: "client" },
+  { id: "robert", name: "Robert Lee", preview: "Yes please — can I come in next week?", time: "Yesterday", unread: 1, kind: "client" },
+  { id: "lisa", name: "Lisa Anderson", preview: "Perfect, see you there!", time: "27 Feb", unread: 0, kind: "client" },
+  { id: "amanda", name: "Amanda White", preview: "Looking forward to my appointment!", time: "25 Feb", unread: 0, kind: "client" },
+  { id: "jessica", name: "Jessica Brown", preview: "Could I add the patch test to my booking?", time: "24 Feb", unread: 0, kind: "client" },
+  // Team & business — internal chat, class groups, suppliers
+  {
+    id: "team", name: "Salon team", preview: "Emma: I'll cover the 2pm colour 👍", time: "Today, 10:02", unread: 3, kind: "group",
+    sub: "Emma, Alex, Chris, Priya, Jordan",
+    members: [{ initials: "ES" }, { initials: "AM" }, { initials: "CT" }, { initials: "PS" }, { initials: "JK" }],
+  },
+  {
+    id: "cls-colour", name: "Colour Masterclass", preview: "You: Doors open at 4:45 — see you all soon!", time: "Today, 09:20", unread: 0, kind: "class",
+    sub: "6 attendees · Today 17:00",
+    members: [{ initials: "MP" }, { initials: "TC" }, { initials: "IM" }, { initials: "SK" }, { initials: "RL" }, { initials: "GL" }],
+  },
+  {
+    id: "supplier", name: "Bloom Hair Supplies", preview: "Your colour stock order ships Monday.", time: "2 Mar", unread: 0, kind: "business",
+    sub: "Supplier",
+  },
+  {
+    id: "cls-bridal", name: "Bridal Hair Workshop", preview: "You: Thank you all — the recording is in your inbox 💐", time: "28 Feb", unread: 0, kind: "class",
+    sub: "Ended 28 Feb · 5 attendees", archived: true,
+    members: [{ initials: "HD" }, { initials: "IC" }, { initials: "ZR" }, { initials: "NK" }, { initials: "EL" }],
+  },
 ];
 
 export const notificationGroups = [

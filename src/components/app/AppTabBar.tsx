@@ -25,9 +25,10 @@ export function AppTabBar() {
   // Staff are stripped back to their own day — no business creation toolbar.
   const showAdd = role !== "staff";
 
-  // Checkout is a focused flow — the back arrow in its header is the only
-  // way out, so the tab bar stays hidden.
-  if (pathname.startsWith("/app/checkout")) return null;
+  // Focused, back-arrow-only flows hide the tab bar: checkout, and the client
+  // detail drill-in (and its sub-pages) — which has its own pinned action bar.
+  // The clients list (/app/clients) keeps the tab bar.
+  if (pathname.startsWith("/app/checkout") || pathname.startsWith("/app/clients/")) return null;
 
   return (
     <nav className={`z-50 grid shrink-0 ${showAdd ? "grid-cols-5" : "grid-cols-4"} border-t border-border bg-surface px-2 pb-3 pt-2`}>

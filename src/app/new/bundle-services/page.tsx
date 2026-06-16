@@ -26,7 +26,8 @@ export default function BundleServicesPage() {
   const toggle = (id: string) =>
     updateBundle({ serviceIds: bundle.serviceIds.includes(id) ? bundle.serviceIds.filter((x) => x !== id) : [...bundle.serviceIds, id] });
 
-  const canContinue = bundle.serviceIds.length >= 2;
+  const flexibleOk = bundle.kind !== "flexible" || (bundle.chooseCount >= 1 && bundle.chooseCount <= bundle.serviceIds.length);
+  const canContinue = bundle.serviceIds.length >= 2 && flexibleOk;
 
   return (
     <>
@@ -50,6 +51,28 @@ export default function BundleServicesPage() {
           </div>
           <div className="mt-2 text-[12px] text-muted">{KINDS.find((k) => k.key === bundle.kind)?.body}</div>
         </div>
+
+        {bundle.kind === "flexible" && (
+          <div className="pb-5">
+            <FieldLabel>Clients choose</FieldLabel>
+            <div className="flex items-center gap-3 rounded-2xl bg-canvas px-4 py-3">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={bundle.chooseCount}
+                onChange={(e) => updateBundle({ chooseCount: Math.max(1, Number(e.target.value) || 1) })}
+                className="w-14 bg-transparent text-[18px] font-bold text-navy outline-none"
+              />
+              <span className="text-[13px] text-muted">
+                of {bundle.serviceIds.length || "the"} selected service{bundle.serviceIds.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            {bundle.serviceIds.length > 0 && bundle.chooseCount > bundle.serviceIds.length && (
+              <div className="mt-1.5 text-[12px] text-danger">Choose at most {bundle.serviceIds.length}.</div>
+            )}
+          </div>
+        )}
 
         <FieldLabel>Services ({bundle.serviceIds.length} selected)</FieldLabel>
         <div className="space-y-2 pb-6">
