@@ -314,7 +314,7 @@ function OfferAdvancedRow({ row, divider }: { row: ModuleRow; divider: boolean }
         <span className="block truncate text-[12px] text-muted">{row.desc}</span>
       </span>
       {row.status && (
-        <span className="hidden max-w-[86px] shrink-0 truncate rounded-full bg-canvas px-2 py-1 text-[11px] font-medium text-secondary sm:inline">
+        <span className="max-w-[86px] shrink-0 truncate rounded-full bg-canvas px-2 py-1 text-[11px] font-medium text-secondary">
           {row.status}
         </span>
       )}

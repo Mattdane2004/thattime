@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Clock, Pencil, Plus, Trash2 } from "lucide-react";
 import { ScreenHeader, Sheet, FieldLabel, fieldInput } from "@/components/ui";
 import { useOffersStore } from "@/lib/store/offersStore";
 import { nextId } from "@/lib/ids";
@@ -15,6 +15,7 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
   const offer = useOffersStore((s) => s.offers.find((o) => o.id === params.id));
   const updateOffer = useOffersStore((s) => s.updateOffer);
   const [sheetDate, setSheetDate] = useState<string | null>(null);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [draft, setDraft] = useState(() => emptyDraft("09:00", "10:00"));
 
   const sessions = useMemo(() => (offer ? classSessions(offer) : []), [offer]);
@@ -31,32 +32,46 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
   const items = offer.agenda ?? [];
   const activeSession = sessions.find((session) => session.date === sheetDate);
   const activeItems = sheetDate ? items.filter((item) => item.date === sheetDate) : [];
+  const editingSection = editingSectionId ? items.find((item) => item.id === editingSectionId) : undefined;
+
+  const closeSheet = () => {
+    setSheetDate(null);
+    setEditingSectionId(null);
+  };
 
   const openAgenda = (date: string, startTime: string, endTime: string) => {
+    setEditingSectionId(null);
     setDraft(emptyDraft(startTime, endTime));
     setSheetDate(date);
   };
 
-  const addSection = () => {
+  const editSection = (item: ClassAgendaItem) => {
+    setEditingSectionId(item.id);
+    setDraft({ title: item.title, startTime: item.startTime, endTime: item.endTime, notes: item.notes });
+    setSheetDate(item.date);
+  };
+
+  const saveSection = () => {
     if (!sheetDate || !draft.title.trim()) return;
-    updateOffer(offer.id, {
-      agenda: [
-        ...items,
-        {
-          id: nextId("agenda"),
-          date: sheetDate,
-          title: draft.title.trim(),
-          startTime: draft.startTime,
-          endTime: draft.endTime,
-          notes: draft.notes.trim(),
-        },
-      ],
-    });
+    const nextItem: ClassAgendaItem = {
+      id: editingSectionId ?? nextId("agenda"),
+      date: sheetDate,
+      title: draft.title.trim(),
+      startTime: draft.startTime,
+      endTime: draft.endTime,
+      notes: draft.notes.trim(),
+    };
+    const nextItems = editingSectionId
+      ? items.map((item) => (item.id === editingSectionId ? nextItem : item))
+      : [...items, nextItem];
+    updateOffer(offer.id, { agenda: nextItems });
+    setEditingSectionId(null);
     setDraft(emptyDraft(activeSession?.startTime ?? "09:00", activeSession?.endTime ?? "10:00"));
   };
 
   const removeSection = (id: string) => {
     updateOffer(offer.id, { agenda: items.filter((item) => item.id !== id) });
+    if (editingSectionId === id) closeSheet();
   };
 
   return (
@@ -94,7 +109,7 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
                     className="flex h-9 items-center gap-1.5 rounded-full bg-navy px-3.5 text-[13px] font-semibold text-white"
                   >
                     <Plus size={15} strokeWidth={1.75} />
-                    Add
+                    Add section
                   </button>
                 </div>
 
@@ -107,11 +122,11 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
                         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas text-secondary">
                           <Clock size={14} strokeWidth={1.75} />
                         </span>
-                        <span className="min-w-0 flex-1">
+                        <button type="button" onClick={() => editSection(item)} className="min-w-0 flex-1 text-left">
                           <span className="block text-[14px] font-semibold text-navy">{item.title}</span>
                           <span className="block text-[12px] text-muted">{item.startTime}-{item.endTime}</span>
                           {item.notes && <span className="mt-1 block text-[12px] leading-snug text-muted">{item.notes}</span>}
-                        </span>
+                        </button>
                         <button type="button" onClick={() => removeSection(item.id)} aria-label="Remove section" className="p-1 text-muted hover:text-danger">
                           <Trash2 size={15} />
                         </button>
@@ -133,10 +148,10 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
 
       <Sheet
         open={Boolean(sheetDate)}
-        onClose={() => setSheetDate(null)}
-        title={activeSession ? `${formatDate(activeSession.date)} agenda` : "Agenda"}
-        sub={activeSession ? `${activeSession.startTime}-${activeSession.endTime}` : undefined}
-        footer={<button onClick={() => setSheetDate(null)} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">Done</button>}
+        onClose={closeSheet}
+        title={editingSection ? "Edit agenda section" : activeSession ? `${formatDate(activeSession.date)} agenda` : "Agenda"}
+        sub={editingSection ? `${formatDate(editingSection.date)} · ${editingSection.startTime}-${editingSection.endTime}` : activeSession ? `${activeSession.startTime}-${activeSession.endTime}` : undefined}
+        footer={<button onClick={closeSheet} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">Done</button>}
       >
         <div className="space-y-5">
           {activeItems.length > 0 && (
@@ -144,11 +159,20 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
               <FieldLabel>Sections added</FieldLabel>
               <div className="space-y-2">
                 {activeItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5">
-                    <span className="min-w-0 flex-1">
+                  <div key={item.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${editingSectionId === item.id ? "border-navy bg-canvas" : "border-border"}`}>
+                    <button type="button" onClick={() => editSection(item)} className="min-w-0 flex-1 text-left">
                       <span className="block truncate text-[14px] font-medium text-navy">{item.title}</span>
                       <span className="block text-[12px] text-muted">{item.startTime}-{item.endTime}</span>
-                    </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => editSection(item)}
+                      aria-label="Edit section"
+                      className="flex h-8 items-center gap-1 rounded-full bg-canvas px-2.5 text-[12px] font-semibold text-secondary hover:text-navy"
+                    >
+                      <Pencil size={13} strokeWidth={1.75} />
+                      Edit
+                    </button>
                     <button type="button" onClick={() => removeSection(item.id)} aria-label="Remove section" className="p-1 text-muted hover:text-danger">
                       <Trash2 size={14} />
                     </button>
@@ -159,7 +183,7 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
           )}
 
           <div className="rounded-2xl border border-border bg-canvas p-4">
-            <div className="pb-4 text-[15px] font-semibold text-navy">Add agenda section</div>
+            <div className="pb-4 text-[15px] font-semibold text-navy">{editingSection ? "Edit agenda section" : "Add agenda section"}</div>
             <div className="space-y-4">
               <label className="block">
                 <FieldLabel>Section title</FieldLabel>
@@ -195,11 +219,11 @@ export default function AgendaModulePage({ params }: { params: { id: string } })
 
               <button
                 type="button"
-                onClick={addSection}
+                onClick={saveSection}
                 disabled={!draft.title.trim()}
                 className="h-11 w-full rounded-full bg-navy text-[14px] font-semibold text-white disabled:bg-border disabled:text-muted"
               >
-                Add section
+                {editingSection ? "Save section" : "Add section"}
               </button>
             </div>
           </div>

@@ -184,6 +184,7 @@ renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { param
   check("Class dashboard shows per-attendee price", cls.includes("per attendee"));
   check("Class dashboard shows Figma advanced groups", cls.includes("Student preparation") && cls.includes("Delivery controls"));
   check("Class dashboard links models", cls.includes("/app/services/cls_beginner_yoga/models"));
+  check("Class dashboard shows advanced statuses", cls.includes("Not set") && cls.includes("Using defaults") && cls.includes("Off"));
 }
 renderContains("OfferSettings", React.createElement(OfferSettingsPage, { params: { id: "svc_classic_haircut" } }), [
   "Online booking", "Who can book", "Lead time", "Cancellation policy", "Delete permanently",
@@ -283,8 +284,12 @@ renderContains("Requirements", React.createElement(RequirementsModulePage, { par
   "Requirements", "Course level", "Age limits", "Required qualification", "Student declarations", "Preparation instructions", "Eligibility notes",
 ]);
 renderContains("Agenda", React.createElement(AgendaModulePage, { params: { id: "cls_beginner_yoga" } }), [
-  "Agenda &amp; syllabus", "Build the class agenda", "Thu 14 May", "No agenda yet",
+  "Agenda &amp; syllabus", "Build the class agenda", "Thu 14 May", "Add section", "No agenda yet",
 ]);
+{
+  const source = readFileSync("./src/app/app/services/[id]/agenda/page.tsx", "utf8");
+  check("Agenda source includes edit/save section flow", source.includes("Edit agenda section") && source.includes("Save section") && source.includes("editSection"));
+}
 renderContains("Materials", React.createElement(MaterialsModulePage, { params: { id: "cls_beginner_yoga" } }), [
   "Course materials", "Upload student materials", "Upload files", "No materials yet",
 ]);
