@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, UserPlus, Search, CalendarDays, Banknote } from "lucide-react";
+import { ChevronLeft, ChevronRight, UserPlus, Search, CalendarDays, Banknote, Armchair } from "lucide-react";
 import type { Staff } from "@/lib/types";
-import { STATUS_LABEL, initialsOf, runTotal } from "@/lib/data/team";
+import { STATUS_LABEL, initialsOf, runTotal, payIsConfigured, paySummary } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
 
 // Team — Members / Shifts / Pay tabs (Fresha-style team management).
@@ -85,7 +85,10 @@ function MembersTab({ members }: { members: Staff[] }) {
 }
 
 function ShiftsTab({ members }: { members: Staff[] }) {
-  const working = members.filter((m) => m.status === "active");
+  // Freelancers / chair-renters schedule themselves, so they're off the owner
+  // rota — but the owner still sees them (rent due + how busy they are).
+  const working = members.filter((m) => m.status === "active" && m.memberType !== "freelancer");
+  const freelancers = members.filter((m) => m.status === "active" && m.memberType === "freelancer");
   const timeOff = members.flatMap((m) => m.schedule.timeOff.map((t) => ({ ...t, member: m })));
 
   return (
@@ -127,6 +130,29 @@ function ShiftsTab({ members }: { members: Staff[] }) {
         })}
       </div>
 
+      {freelancers.length > 0 && (
+        <>
+          <div className="mt-5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Freelancers · self-scheduled</div>
+          <div className="mt-2 space-y-2">
+            {freelancers.map((m) => (
+              <Link key={m.id} href={`/app/team/${m.id}`} className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 hover:border-navy/20">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${m.avatarColor}`}>
+                  {initialsOf(m.name)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium text-navy">{m.name}</div>
+                  <div className="flex items-center gap-1 text-[12px] text-muted">
+                    <Armchair size={12} className="shrink-0" />
+                    {paySummary(m)} · {m.rota.thisWeekHours}h booked this week
+                  </div>
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-muted" />
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="mt-5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Upcoming time off</div>
       <div className="mt-2 space-y-2">
         {timeOff.length === 0 && (
@@ -153,7 +179,7 @@ function ShiftsTab({ members }: { members: Staff[] }) {
 
 function PayTab({ members }: { members: Staff[] }) {
   const payRuns = useTeamStore((s) => s.payRuns);
-  const paid = members.filter((m) => m.status === "active" && m.payment.payRate);
+  const paid = members.filter((m) => m.status === "active" && payIsConfigured(m.payment));
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pb-6">
@@ -186,16 +212,13 @@ function PayTab({ members }: { members: Staff[] }) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-medium text-navy">{m.name}</div>
-              <div className="text-[12px] text-muted">
-                {m.payment.type === "employee" ? `£${m.payment.payRate}/h` : `£${m.payment.payRate}/session`}
-                {m.payment.commission ? ` · ${m.payment.commission}% commission` : ""}
-              </div>
+              <div className="text-[12px] text-muted">{paySummary(m)}</div>
             </div>
             <ChevronRight size={16} className="shrink-0 text-muted" />
           </Link>
         ))}
         {members
-          .filter((m) => m.status === "active" && !m.payment.payRate)
+          .filter((m) => m.status === "active" && !payIsConfigured(m.payment))
           .map((m) => (
             <Link key={m.id} href={`/app/team/${m.id}/pay`} className="flex items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-3 hover:bg-canvas">
               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${m.avatarColor}`}>

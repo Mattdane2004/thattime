@@ -12,10 +12,10 @@ import {
 } from "lucide-react";
 import { AppHeader, Segmented, Sheet, DarkButton, GhostButton, StatusPill, MiniCalendar, ToggleRow } from "@/components/ui";
 import { UpNextCard, GapSlot } from "@/components/app/UpNextCard";
-import { useAppStore } from "@/lib/store/appStore";
+import { useAppStore, type CalendarBlockedTime, type CustomAppointment } from "@/lib/store/appStore";
 import {
   myDayAgenda, threeDayGrid, teamColumns, masterclass, clientRows, services,
-  serviceCategories, bundleBookings, type GridBlock, type TeamColumn, type WeekBooking,
+  serviceCategories, bundleBookings, staffMembers, type GridBlock, type TeamColumn, type WeekBooking,
 } from "@/lib/data/product";
 import { defaultCategories } from "@/lib/tokens/categories";
 
@@ -41,10 +41,44 @@ function hourTop(h: number, scale: number) {
 }
 const spanHeight = (start: number, span: number, scale: number) => hourTop(start + span, scale) - hourTop(start, scale);
 const gridHeight = (scale: number) => hourTop(24, scale) + 8;
+function hourFromOffset(y: number, scale: number) {
+  let remaining = Math.max(0, y - 8);
+  for (let h = 0; h < 24; h++) {
+    const px = hourPxAt(h, scale);
+    if (remaining <= px) return h + remaining / px;
+    remaining -= px;
+  }
+  return 23.75;
+}
+const timeFromPointer = (e: React.MouseEvent<HTMLElement>, scale: number) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const snapped = Math.round(hourFromOffset(e.clientY - rect.top, scale) * 2) / 2;
+  return hhmm(snapped);
+};
 
 const initialsOf = (name: string) =>
   name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-const hhmm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const hhmm = (h: number) => {
+  const clamped = Math.max(0, Math.min(23.75, h));
+  const whole = Math.floor(clamped);
+  return `${whole}:${String(Math.round((clamped % 1) * 60)).padStart(2, "0")}`;
+};
+const timeToHour = (time: string | null | undefined) => {
+  if (!time) return WORK_START;
+  const [h, m = "0"] = time.split(":");
+  return (parseInt(h, 10) || 0) + (parseInt(m, 10) || 0) / 60;
+};
+const durationToSpan = (duration: string | undefined) => {
+  if (!duration) return 1;
+  const hourMatch = duration.match(/(\d+(?:\.\d+)?)h/);
+  const minuteMatch = duration.match(/(\d+)\s*m/);
+  if (hourMatch || minuteMatch) {
+    return Math.max(0.25, (parseFloat(hourMatch?.[1] ?? "0") * 60 + parseInt(minuteMatch?.[1] ?? "0", 10)) / 60);
+  }
+  return Math.max(0.25, (parseInt(duration, 10) || 60) / 60);
+};
+const dayLabelFor = (day: number) => DOW_SHORT[(day - 1) % 7];
 const spanLabel = (span: number) => {
   const m = Math.round(span * 60);
   return m % 60 === 0 ? `${m / 60}h` : m > 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
@@ -79,8 +113,120 @@ function shadeClass(shade: GridBlock["shade"]) {
   }
 }
 
-type GBlock = GridBlock & { price?: string };
+type GBlock = GridBlock & {
+  price?: string;
+  customApptId?: string;
+  occurrenceId?: string;
+  calendarBlockId?: string;
+  renderKey?: string;
+  day?: number;
+  staffName?: string;
+};
+const keyForBlock = (staff: string, b: GBlock) => b.renderKey ?? `${staff}:${b.name}:${b.start}:${b.span}:${b.kind ?? "appt"}`;
+type MovePrompt = { client: string; service: string; from: string; to: string };
 type Density = "full" | "compact" | "minimal";
+
+type CalendarItem = {
+  key: string;
+  day: number;
+  staff: string;
+  block: GBlock;
+};
+
+function customAppointmentItems(customAppts: CustomAppointment[]): CalendarItem[] {
+  return customAppts.flatMap((appt) => {
+    const occurrences = appt.occurrences?.length
+      ? appt.occurrences
+      : [{ id: "primary", day: appt.day, time: appt.time, service: appt.service, staff: appt.staff }];
+    return occurrences.map((occ) => {
+      const start = timeToHour(occ.time ?? appt.time);
+      const staff = (occ.staff || appt.staff).split(" +")[0];
+      const day = occ.day ?? appt.day ?? 12;
+      return {
+        key: `custom:${appt.id}:${occ.id}`,
+        day,
+        staff,
+        block: {
+          start,
+          span: durationToSpan(appt.duration),
+          name: appt.client,
+          service: occ.service || appt.service,
+          shade: appt.pending ? "outline" : "dark",
+          status: appt.pending ? "Unconfirmed" : appt.paymentStatus === "deposit" ? "Deposit paid" : "Confirmed",
+          price: appt.price ? `£${appt.price}` : appt.entitlementLabel,
+          customApptId: appt.id,
+          occurrenceId: occ.id,
+          renderKey: `custom:${appt.id}:${occ.id}`,
+          day,
+          staffName: staff,
+        },
+      };
+    });
+  });
+}
+
+function calendarBlockItems(blocks: CalendarBlockedTime[], expandStaff = true): CalendarItem[] {
+  return blocks.flatMap((b) => {
+    const start = b.wholeDay ? 0 : timeToHour(b.startTime);
+    const end = b.wholeDay ? 24 : timeToHour(b.endTime);
+    const span = Math.max(0.25, end - start);
+    const studioWide = b.staff.length >= staffMembers.length;
+    const visibleStaff = expandStaff ? b.staff : [studioWide ? "Whole studio" : b.staff[0] ?? "Emma S."];
+    return visibleStaff.map((staff) => ({
+      key: `block:${b.id}:${staff}`,
+      day: b.day,
+      staff,
+      block: {
+        start,
+        span,
+        name: b.wholeDay ? `${b.title} · whole day` : b.title,
+        service: [
+          studioWide ? "Whole studio" : b.staff.length > 1 ? `${b.staff.length} team members` : b.allowOnline ? "Online booking allowed" : "Blocked",
+          b.frequency && b.frequency !== "Doesn't repeat" ? b.frequency : null,
+        ].filter(Boolean).join(" · "),
+        shade: b.wholeDay ? "outline" : "light",
+        status: "Blocked",
+        kind: "blocked",
+        calendarBlockId: b.id,
+        renderKey: `block:${b.id}:${staff}`,
+        day: b.day,
+        staffName: staff,
+      },
+    }));
+  });
+}
+
+function seededCalendarItems(moved: Record<string, { day?: number; start?: number; staff?: string }>): CalendarItem[] {
+  return threeDayGrid.flatMap((day) =>
+    day.blocks.map((block, i) => {
+      const key = `seed:calendar:${day.date}:${i}:${block.name}`;
+      const move = moved[key];
+      const staff = move?.staff ?? "Emma S.";
+      return {
+        key,
+        day: move?.day ?? Number(day.date),
+        staff,
+        block: { ...block, start: move?.start ?? block.start, renderKey: key, day: move?.day ?? Number(day.date), staffName: staff },
+      };
+    }),
+  );
+}
+
+function seededTeamItems(columns: TeamColumn[], moved: Record<string, { day?: number; start?: number; staff?: string }>, day: number): CalendarItem[] {
+  return columns.flatMap((column) =>
+    column.blocks.map((block, i) => {
+      const key = `seed:team:${column.id}:${i}:${block.name}`;
+      const move = moved[key];
+      const staff = move?.staff ?? column.name;
+      return {
+        key,
+        day,
+        staff,
+        block: { ...block, start: move?.start ?? block.start, renderKey: key, day, staffName: staff },
+      };
+    }),
+  );
+}
 
 const isAttentionStatus = (s?: string) =>
   s === "No-show" || s === "Cancelled" || s === "Unconfirmed";
@@ -92,6 +238,11 @@ const blockVisible = (b: GBlock, f: CalFilters) => {
   if (!f.showCancelled && b.status === "Cancelled") return false;
   if (!f.showOutstanding && b.outstanding) return false;
   return true;
+};
+const clampIndex = (value: number, max: number) => Math.max(0, Math.min(max, value));
+const movedStart = (start: number, span: number, offsetY: number, zoom: number) => {
+  const raw = start + offsetY / (FULL_PX * zoom);
+  return Math.max(0, Math.min(24 - span, Math.round(raw * 2) / 2));
 };
 // Multi-select category filter: an empty selection means "all categories".
 const catMatch = (svc: string | undefined, cats: string[]) => cats.length === 0 || cats.includes(catOf(svc));
@@ -152,10 +303,14 @@ function useBlockTap() {
     }
     if (b.kind === "break" || b.kind === "blocked" || isBreakBlock(b.name)) {
       setBlockEdit({
+        key: keyForBlock(staff, b),
+        calendarBlockId: b.calendarBlockId,
         title: b.name,
         blockType: b.kind === "blocked" ? "custom" : "break",
         time: hhmm(b.start),
         duration: spanLabel(b.span),
+        day: b.day,
+        wholeDay: b.span >= 23,
       });
       setQuickAction("block");
       return;
@@ -171,7 +326,7 @@ function useBlockTap() {
 // blocks (day view) get the full picture, narrow ones (week, busy team views) the
 // essentials — a category colour bar + name + an attention dot.
 function CalendarBlock({
-  block, density, top, heightPx, shade, status, delay, onTap,
+  block, density, top, heightPx, shade, status, delay, onTap, onMove,
 }: {
   block: GBlock;
   density: Density;
@@ -181,6 +336,7 @@ function CalendarBlock({
   status?: string;
   delay: number;
   onTap: () => void;
+  onMove?: (offsetX: number, offsetY: number, columnWidth: number) => void;
 }) {
   let d: Density = density;
   if (heightPx < 38) d = "minimal";
@@ -197,17 +353,36 @@ function CalendarBlock({
     : isBlocked ? <Lock size={10} className="mr-1 inline shrink-0" />
       : isBundle ? <Layers size={10} className="mr-1 inline shrink-0" /> : null;
   const attention = !!status && isAttentionStatus(status);
+  const canMove = !!onMove && !isProcessing;
+  const blockRef = useRef<HTMLButtonElement | null>(null);
 
   return (
     <motion.button
+      ref={blockRef}
       type="button"
+      layout
+      drag={canMove}
+      dragMomentum={false}
+      dragElastic={0.08}
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
+      whileDrag={{ scale: 1.03, zIndex: 60, boxShadow: "0 18px 40px rgba(8,7,6,0.24)" }}
       transition={{ delay }}
       onClick={(e) => { e.stopPropagation(); onTap(); }}
+      onDragStart={(e) => {
+        if (!canMove) return;
+        e.stopPropagation();
+      }}
+      onDragEnd={(e, info) => {
+        if (!canMove) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const columnWidth = blockRef.current?.parentElement?.clientWidth ?? 1;
+        onMove?.(info.offset.x, info.offset.y, columnWidth);
+      }}
       className={`absolute inset-x-1 overflow-hidden rounded-xl text-left ${
         isProcessing ? "border border-dashed border-border bg-canvas/60 text-muted" : shadeClass(shade)
-      } ${d === "minimal" ? "px-1.5 py-1" : "p-2"} ${isProcessing ? "cursor-default" : ""}`}
+      } ${d === "minimal" ? "px-1.5 py-1" : "p-2"} ${isProcessing ? "cursor-default" : canMove ? "z-10 cursor-grab touch-none active:cursor-grabbing" : ""}`}
       style={{ top, height: heightPx }}
     >
       {showAccent && <span className="absolute inset-y-1 left-1 w-[3px] rounded-full" style={{ background: accent }} />}
@@ -239,6 +414,27 @@ function CalendarBlock({
         </div>
       )}
     </motion.button>
+  );
+}
+
+function MoveNotifySheet({ prompt, onClose }: { prompt: MovePrompt | null; onClose: () => void }) {
+  const firstName = prompt?.client.split(" ")[0] ?? "client";
+  return (
+    <Sheet open={!!prompt} onClose={onClose} title={`Notify ${firstName}?`} sub="Appointment moved by drag/drop">
+      <div className="rounded-2xl bg-canvas p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Message preview</p>
+        <p className="pt-2 text-[14px] leading-relaxed text-navy">
+          Hi {firstName}, your {prompt?.service} appointment has moved from {prompt?.from} to {prompt?.to}. Reply here if that no longer works.
+        </p>
+      </div>
+      <div className="pt-5">
+        <DarkButton onClick={onClose}>Send update</DarkButton>
+        <div className="grid grid-cols-2 gap-2.5 pt-3">
+          <button type="button" onClick={onClose} className="h-11 rounded-full border border-border text-[13px] font-semibold text-navy">Skip</button>
+          <button type="button" onClick={onClose} className="h-11 rounded-full border border-border text-[13px] font-semibold text-navy">Undo move</button>
+        </div>
+      </div>
+    </Sheet>
   );
 }
 
@@ -285,6 +481,7 @@ function useScrollToWork() {
 function MyDayView({ filterCats, timeFmt }: { filterCats: string[]; timeFmt: string }) {
   const setApptSheet = useAppStore((s) => s.setApptSheet);
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const setSlotDraft = useAppStore((s) => s.setSlotDraft);
   const customAppts = useAppStore((s) => s.customAppts);
   return (
     <div className="flex flex-col gap-2.5 px-4 pb-6 pt-4">
@@ -391,7 +588,10 @@ function MyDayView({ filterCats, timeFmt }: { filterCats: string[]; timeFmt: str
         </p>
         <button
           type="button"
-          onClick={() => setQuickAction("choose")}
+          onClick={() => {
+            setSlotDraft({ day: 4, time: "18:00", staff: "Emma S.", view: "Calendar" });
+            setQuickAction("choose");
+          }}
           className="mt-2 flex w-full items-center gap-3 rounded-xl border border-dashed border-border bg-white/60 px-3 py-2 text-left"
         >
           <span className="text-[12px] font-semibold text-navy">{fmtT("18:00", timeFmt)} – {fmtT("21:00", timeFmt)}</span>
@@ -402,20 +602,70 @@ function MyDayView({ filterCats, timeFmt }: { filterCats: string[]; timeFmt: str
   );
 }
 
-function CalendarGridView({ days, filterCats, timeFmt, filters, headerTop }: { days: number; filterCats: string[]; timeFmt: string; filters: CalFilters; headerTop: number }) {
+function CalendarGridView({ startDay, days, filterCats, timeFmt, filters, headerTop }: { startDay: number; days: number; filterCats: string[]; timeFmt: string; filters: CalFilters; headerTop: number }) {
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const setSlotDraft = useAppStore((s) => s.setSlotDraft);
+  const deletedBlockKeys = useAppStore((s) => s.deletedBlockKeys);
+  const customAppts = useAppStore((s) => s.customAppts);
+  const calendarBlocks = useAppStore((s) => s.calendarBlocks);
+  const movedCalendarBlocks = useAppStore((s) => s.movedCalendarBlocks);
+  const updateCustomAppt = useAppStore((s) => s.updateCustomAppt);
+  const updateCustomOccurrence = useAppStore((s) => s.updateCustomOccurrence);
+  const updateCalendarBlock = useAppStore((s) => s.updateCalendarBlock);
+  const moveCalendarBlock = useAppStore((s) => s.moveCalendarBlock);
   const openBlock = useBlockTap();
+  const [movePrompt, setMovePrompt] = useState<MovePrompt | null>(null);
   const { zoom, ref, handlers } = usePinchZoom();
   const workAnchor = useScrollToWork();
-  const visibleDays = threeDayGrid.slice(0, days);
+  const visibleDays = Array.from({ length: days }, (_, i) => {
+    const day = Math.min(31, startDay + i);
+    return { day: dayLabelFor(day), date: String(day), dayNum: day };
+  });
+  const liveItems = [
+    ...seededCalendarItems(movedCalendarBlocks),
+    ...customAppointmentItems(customAppts),
+    ...calendarBlockItems(calendarBlocks, false),
+  ];
   const density: Density = days === 1 ? "full" : days <= 3 ? "compact" : "minimal";
   const H = gridHeight(zoom);
+  const moveItem = (item: CalendarItem, columnIndex: number) => (offsetX: number, offsetY: number, columnWidth: number) => {
+    const newStart = movedStart(item.block.start, item.block.span, offsetY, zoom);
+    const targetIndex = clampIndex(columnIndex + Math.round(offsetX / Math.max(1, columnWidth)), visibleDays.length - 1);
+    const newDay = visibleDays[targetIndex]?.dayNum ?? item.day;
+    if (item.block.customApptId) {
+      const patch = { day: newDay, time: hhmm(newStart) };
+      if (item.block.occurrenceId && item.block.occurrenceId !== "primary") {
+        updateCustomOccurrence(item.block.customApptId, item.block.occurrenceId, patch);
+      } else {
+        updateCustomAppt(item.block.customApptId, patch);
+      }
+    } else if (item.block.calendarBlockId) {
+      updateCalendarBlock(item.block.calendarBlockId, {
+        day: newDay,
+        startTime: hhmm(newStart),
+        endTime: hhmm(newStart + item.block.span),
+      });
+    } else {
+      moveCalendarBlock(item.key, { day: newDay, start: newStart });
+    }
+    setMovePrompt({
+      client: item.block.name,
+      service: item.block.service ?? "appointment",
+      from: `${dayLabelFor(item.day)} ${item.day} · ${hhmm(item.block.start)}`,
+      to: `${dayLabelFor(newDay)} ${newDay} · ${hhmm(newStart)}`,
+    });
+  };
+  const openSlot = (dayNum: number, e?: React.MouseEvent<HTMLDivElement>) => {
+    setSlotDraft({ day: dayNum, time: e ? timeFromPointer(e, zoom) : "12:00", view: "Calendar" });
+    setQuickAction("choose");
+  };
   return (
+    <>
     <div ref={ref} className="px-2 pb-6 pt-2" style={{ touchAction: "pan-y" }} {...handlers}>
       <div className="grid" style={{ gridTemplateColumns: `34px repeat(${days}, 1fr)` }}>
-        <span className="sticky z-20 bg-fog" style={{ top: headerTop }} />
+        <span className="sticky z-40 bg-fog shadow-[0_1px_0_var(--colours-border-border)]" style={{ top: headerTop }} />
         {visibleDays.map((d) => (
-          <div key={d.day} className="sticky z-20 border-b border-border bg-fog pb-2 pt-1 text-center" style={{ top: headerTop }}>
+          <div key={d.date} className="sticky z-40 border-b border-border bg-fog pb-2 pt-1 text-center shadow-[0_1px_0_var(--colours-border-border)]" style={{ top: headerTop }}>
             <p className="text-[11px] text-muted">{d.day}</p>
             <p className="text-[14px] font-bold text-navy">{d.date}</p>
           </div>
@@ -433,24 +683,29 @@ function CalendarGridView({ days, filterCats, timeFmt, filters, headerTop }: { d
         </div>
         {visibleDays.map((d, col) => (
           <div
-            key={d.day}
+            key={d.date}
             role="button"
             tabIndex={0}
             aria-label={`Add to ${d.day} ${d.date}`}
-            onClick={() => setQuickAction("choose")}
-            onKeyDown={(e) => e.key === "Enter" && setQuickAction("choose")}
+            onClick={(e) => openSlot(d.dayNum, e)}
+            onKeyDown={(e) => e.key === "Enter" && openSlot(d.dayNum)}
             className="relative cursor-pointer border-l border-border"
             style={{ height: H }}
           >
             <DayColumnChrome zoom={zoom} showLabel={col === 0} />
             {col === 0 && <div ref={workAnchor} className="absolute" style={{ top: hourTop(WORK_START, zoom), scrollMarginTop: headerTop }} />}
-            {d.blocks.map((b, i) => {
+            {liveItems
+              .filter((item) => item.day === d.dayNum)
+              .sort((a, b) => a.block.start - b.block.start)
+              .map((item, i) => {
+              const b = item.block;
+              if (deletedBlockKeys.includes(keyForBlock(item.staff, b))) return null;
               const special = b.kind || isBreakBlock(b.name);
               if (!special && !catMatch(b.service, filterCats)) return null;
               if (!blockVisible(b, filters)) return null;
               return (
                 <CalendarBlock
-                  key={i}
+                  key={item.key}
                   block={b}
                   density={density}
                   top={hourTop(b.start, zoom)}
@@ -458,7 +713,8 @@ function CalendarGridView({ days, filterCats, timeFmt, filters, headerTop }: { d
                   shade={b.shade}
                   status={b.status}
                   delay={0.03 * i}
-                  onTap={() => openBlock(b, "Emma S.")}
+                  onTap={() => openBlock(b, item.staff)}
+                  onMove={moveItem(item, col)}
                 />
               );
             })}
@@ -466,6 +722,8 @@ function CalendarGridView({ days, filterCats, timeFmt, filters, headerTop }: { d
         ))}
       </div>
     </div>
+    <MoveNotifySheet prompt={movePrompt} onClose={() => setMovePrompt(null)} />
+    </>
   );
 }
 
@@ -566,8 +824,17 @@ function TeamWeek({ columns, shiftOverrides, onAddStaff }: { columns: TeamColumn
   );
 }
 
-function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterCats, filters, teamMode, headerTop }: { onOpenClass: () => void; classCancelled: boolean; timeFmt: string; selectedStaff: string[]; filterCats: string[]; filters: CalFilters; teamMode: "day" | "week"; headerTop: number }) {
+function TeamView({ day, onOpenClass, classCancelled, timeFmt, selectedStaff, filterCats, filters, teamMode, headerTop }: { day: number; onOpenClass: () => void; classCancelled: boolean; timeFmt: string; selectedStaff: string[]; filterCats: string[]; filters: CalFilters; teamMode: "day" | "week"; headerTop: number }) {
   const setQuickAction = useAppStore((s) => s.setQuickAction);
+  const setSlotDraft = useAppStore((s) => s.setSlotDraft);
+  const deletedBlockKeys = useAppStore((s) => s.deletedBlockKeys);
+  const customAppts = useAppStore((s) => s.customAppts);
+  const calendarBlocks = useAppStore((s) => s.calendarBlocks);
+  const movedCalendarBlocks = useAppStore((s) => s.movedCalendarBlocks);
+  const updateCustomAppt = useAppStore((s) => s.updateCustomAppt);
+  const updateCustomOccurrence = useAppStore((s) => s.updateCustomOccurrence);
+  const updateCalendarBlock = useAppStore((s) => s.updateCalendarBlock);
+  const moveCalendarBlock = useAppStore((s) => s.moveCalendarBlock);
   const openBlock = useBlockTap();
   const { zoom, ref, handlers } = usePinchZoom();
   const workAnchor = useScrollToWork();
@@ -578,12 +845,50 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
   const [staffDdOpen, setStaffDdOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [dayPlan, setDayPlan] = useState<DayPlan[]>(defaultDayPlan);
+  const [movePrompt, setMovePrompt] = useState<MovePrompt | null>(null);
   const visibleColumns = teamColumns.filter((c) => selectedStaff.includes(c.id));
   // Week view shows the whole roster — each day self-reports "off", so "off today"
   // shouldn't hide a member who works the rest of the week.
   const weekColumns = [...teamColumns, ...extraStaff];
   const density: Density = visibleColumns.length <= 1 ? "full" : visibleColumns.length <= 3 ? "compact" : "minimal";
   const H = gridHeight(zoom);
+  const liveItems = [
+    ...seededTeamItems(teamColumns, movedCalendarBlocks, day),
+    ...customAppointmentItems(customAppts).filter((item) => item.day === day),
+    ...calendarBlockItems(calendarBlocks, true).filter((item) => item.day === day),
+  ];
+  const moveItem = (item: CalendarItem, columnIndex: number) => (offsetX: number, offsetY: number, columnWidth: number) => {
+    const newStart = movedStart(item.block.start, item.block.span, offsetY, zoom);
+    const targetIndex = clampIndex(columnIndex + Math.round(offsetX / Math.max(1, columnWidth)), visibleColumns.length - 1);
+    const newStaff = visibleColumns[targetIndex]?.name ?? item.staff;
+    if (item.block.customApptId) {
+      const patch = { day, time: hhmm(newStart), staff: newStaff };
+      if (item.block.occurrenceId && item.block.occurrenceId !== "primary") {
+        updateCustomOccurrence(item.block.customApptId, item.block.occurrenceId, patch);
+      } else {
+        updateCustomAppt(item.block.customApptId, patch);
+      }
+    } else if (item.block.calendarBlockId) {
+      updateCalendarBlock(item.block.calendarBlockId, {
+        day,
+        staff: [newStaff],
+        startTime: hhmm(newStart),
+        endTime: hhmm(newStart + item.block.span),
+      });
+    } else {
+      moveCalendarBlock(item.key, { day, staff: newStaff, start: newStart });
+    }
+    setMovePrompt({
+      client: item.block.name,
+      service: item.block.service ?? "appointment",
+      from: `${item.staff} · ${hhmm(item.block.start)}`,
+      to: `${newStaff} · ${hhmm(newStart)}`,
+    });
+  };
+  const openSlot = (staff: string, e?: React.MouseEvent<HTMLDivElement>) => {
+    setSlotDraft({ day, time: e ? timeFromPointer(e, zoom) : "12:00", staff, view: "Team" });
+    setQuickAction("choose");
+  };
 
   const openAssign = () => { setPickStaff("__new__"); setNewName(""); setDayPlan(defaultDayPlan()); setStaffDdOpen(false); setAssignOpen(true); };
   const pickExisting = (c: TeamColumn) => {
@@ -731,9 +1036,9 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
     <div className="px-2 pb-6 pt-2">
       <div ref={ref} style={{ touchAction: "pan-y" }} {...handlers}>
       <div className="grid" style={{ gridTemplateColumns: `34px repeat(${visibleColumns.length}, 1fr)` }}>
-        <span className="sticky z-20 self-stretch bg-fog pt-1 text-[10px] text-muted" style={{ top: headerTop }} />
+        <span className="sticky z-40 self-stretch bg-fog pt-1 text-[10px] text-muted shadow-[0_1px_0_var(--colours-border-border)]" style={{ top: headerTop }} />
         {visibleColumns.map((c) => (
-          <div key={c.id} className="sticky z-20 border-b border-border bg-fog pb-2 pt-1 text-center" style={{ top: headerTop }}>
+          <div key={c.id} className="sticky z-40 border-b border-border bg-fog pb-2 pt-1 text-center shadow-[0_1px_0_var(--colours-border-border)]" style={{ top: headerTop }}>
             <span className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ${c.off ? "bg-canvas text-muted" : "bg-canvas text-secondary"}`}>
               {c.initials}
             </span>
@@ -758,8 +1063,8 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
             role={c.off ? undefined : "button"}
             tabIndex={c.off ? undefined : 0}
             aria-label={c.off ? `${c.name} is off today` : `Add to ${c.name}'s day`}
-            onClick={c.off ? undefined : () => setQuickAction("choose")}
-            onKeyDown={c.off ? undefined : (e) => e.key === "Enter" && setQuickAction("choose")}
+            onClick={c.off ? undefined : (e) => openSlot(c.name, e)}
+            onKeyDown={c.off ? undefined : (e) => e.key === "Enter" && openSlot(c.name)}
             className={`relative border-l border-border ${c.off ? "bg-canvas/40" : "cursor-pointer"}`}
             style={{ height: H }}
           >
@@ -775,7 +1080,12 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
                 <span className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-danger" style={{ top: hourTop(15, zoom) }}>
                   {col === 0 && <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-danger" />}
                 </span>
-                {c.blocks.map((b, i) => {
+                {liveItems
+                  .filter((item) => item.staff === c.name)
+                  .sort((a, b) => a.block.start - b.block.start)
+                  .map((item, i) => {
+                  const b = item.block;
+                  if (deletedBlockKeys.includes(keyForBlock(c.name, b))) return null;
                   const isClass = b.status === "Class";
                   const special = !!b.kind || isBreakBlock(b.name) || isClass;
                   if (!special && !catMatch(b.service, filterCats)) return null;
@@ -784,7 +1094,7 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
                   const status = isClass && classCancelled ? "Cancelled" : b.status;
                   return (
                     <CalendarBlock
-                      key={i}
+                      key={item.key}
                       block={b}
                       density={density}
                       top={hourTop(b.start, zoom)}
@@ -793,6 +1103,7 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
                       status={status}
                       delay={0.03 * i}
                       onTap={() => openBlock(b, c.name, onOpenClass)}
+                      onMove={moveItem(item, col)}
                     />
                   );
                 })}
@@ -802,6 +1113,7 @@ function TeamView({ onOpenClass, classCancelled, timeFmt, selectedStaff, filterC
         ))}
       </div>
       </div>
+      <MoveNotifySheet prompt={movePrompt} onClose={() => setMovePrompt(null)} />
     </div>
   );
 }
@@ -1452,6 +1764,8 @@ const TODAY_IDX = 2; // the schedule demo's "today" — Tuesday 3 March
 
 export default function SchedulePage() {
   const openBlock = useBlockTap();
+  const scheduleFocus = useAppStore((s) => s.scheduleFocus);
+  const clearScheduleFocus = useAppStore((s) => s.clearScheduleFocus);
   const [view, setView] = useState("My Day");
   const [classOpen, setClassOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1481,6 +1795,14 @@ export default function SchedulePage() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!scheduleFocus) return;
+    setView(scheduleFocus.view);
+    setDayIdx(Math.min(Math.max(0, scheduleFocus.day - 1), dayLabels.length - 1));
+    if (scheduleFocus.view === "Calendar" && calDays === MONTH_DAYS) setCalDays(3);
+    clearScheduleFocus();
+  }, [calDays, clearScheduleFocus, scheduleFocus]);
 
   // The date selector shows the period for the active view; arrows step by it.
   const isMonth = view === "Calendar" && calDays === MONTH_DAYS;
@@ -1650,9 +1972,9 @@ export default function SchedulePage() {
               }}
             />
           ) : (
-            <CalendarGridView days={calDays} filterCats={filterCats} timeFmt={timeFmt} filters={filters} headerTop={headerH} />
+            <CalendarGridView startDay={viewStart + 1} days={calDays} filterCats={filterCats} timeFmt={timeFmt} filters={filters} headerTop={headerH} />
           ))}
-          {view === "Team" && <TeamView onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} timeFmt={timeFmt} selectedStaff={selectedStaff} filterCats={filterCats} filters={filters} teamMode={teamMode} headerTop={headerH} />}
+          {view === "Team" && <TeamView day={viewStart + 1} onOpenClass={() => setClassOpen(true)} classCancelled={classCancelled} timeFmt={timeFmt} selectedStaff={selectedStaff} filterCats={filterCats} filters={filters} teamMode={teamMode} headerTop={headerH} />}
         </motion.div>
       </AnimatePresence>
 

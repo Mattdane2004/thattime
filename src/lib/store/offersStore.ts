@@ -40,6 +40,12 @@ export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): Dem
       .reduce((a, b) => a + b, 0);
     price = String(Math.round(sum * (1 - Number(draft.bundle.discountPercent || 0) / 100)));
   }
+  if (type === "subscription") {
+    const tierPrices = (draft.subscription.tiers ?? [])
+      .map((tier) => Number(tier.price))
+      .filter((value) => Number.isFinite(value) && value > 0);
+    if (tierPrices.length) price = String(Math.min(...tierPrices));
+  }
 
   // Shared envelope — every type carries these.
   const offer: DemoOffer = {
@@ -51,10 +57,13 @@ export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): Dem
     status: "draft",
     icon: draft.icon,
     description: draft.description.trim() || undefined,
+    privateListing: draft.privateListing,
   };
 
   // Type-specific sub-block — only carry what each type's wizard collected.
-  const deposit = draft.depositEnabled ? { enabled: true, amount: draft.depositAmount } : undefined;
+  const deposit = draft.depositEnabled
+    ? { enabled: true, amount: draft.depositAmount, type: draft.depositType }
+    : undefined;
   if (type === "service" || type === "class") {
     offer.locationModes = { ...draft.locationModes };
     offer.locationIds = [...draft.locationIds];
@@ -74,10 +83,12 @@ export function offerFromDraft(draft: ServiceDraft, allOffers: DemoOffer[]): Dem
     offer.bundle = {
       kind: draft.bundle.kind,
       serviceIds: [...draft.bundle.serviceIds],
+      links: draft.bundle.links.map((l) => ({ ...l })),
       chooseCount: draft.bundle.chooseCount,
       priceMode: draft.bundle.priceMode,
       discountPercent: draft.bundle.discountPercent,
     };
+    offer.deposit = deposit;
   }
   if (type === "subscription") {
     offer.subscription = { ...draft.subscription };

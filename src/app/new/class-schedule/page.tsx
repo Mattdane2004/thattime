@@ -1,31 +1,88 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Repeat, X } from "lucide-react";
-import { ScreenHeader } from "@/components/ui";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/ui";
+import { ChevronLeft, ChevronRight, Repeat, X } from "lucide-react";
+import { ScreenHeader, Sheet } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 
-// Class wizard — "Select dates" + times (Figma 12135:47208 / 12135:47381).
-// Single day for a one-off class, multi day for a course booked together;
-// weekly repeat covers recurring schedules.
+// Figma screen reference: ThatTime Internal / Classes / "Select dates".
+// Pick one date for a one-off class, multiple dates for a course, then use the
+// repeat sheet for weekly patterns.
 
-const fmt = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_NAMES: Record<string, string> = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
+};
+
+const isoFor = (year: number, monthIndex: number, day: number) =>
+  `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+const parseIso = (iso: string) => new Date(`${iso}T00:00:00`);
+
+const monthLabel = (date: Date) =>
+  date.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+const weekdaysFromDates = (dates: string[]) => {
+  const keys = dates
+    .filter(Boolean)
+    .map((iso) => DAY_KEYS[(parseIso(iso).getDay() + 6) % 7]);
+  return Array.from(new Set(keys));
+};
+
+function repeatSummary(repeat: string, days: string[]) {
+  if (repeat === "none") return "Does not repeat";
+  const readable = days.map((day) => DAY_NAMES[day] ?? day).join(", ");
+  return readable ? `Weekly on ${readable}.` : "Weekly";
+}
 
 export default function ClassSchedulePage() {
   const router = useRouter();
   const cls = useWizardStore((s) => s.draft.classDetails);
   const updateClass = useWizardStore((s) => s.updateClass);
+  const [month, setMonth] = useState(() => (cls.dates[0] ? parseIso(cls.dates[0]) : new Date("2026-05-01T00:00:00")));
+  const [repeatOpen, setRepeatOpen] = useState(false);
 
-  const setDate = (index: number, value: string) => {
-    const dates = [...cls.dates];
-    dates[index] = value;
-    updateClass({ dates });
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const startOffset = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const selected = new Set(cls.dates.filter(Boolean));
+  const canContinue = cls.dates.length > 0 && cls.dates.every(Boolean);
+
+  const setMode = (mode: "single" | "multi") => {
+    const nextDates = mode === "single" ? cls.dates.slice(0, 1) : cls.dates;
+    updateClass({ scheduleMode: mode, dates: nextDates, dateTimes: {} });
   };
 
-  const canContinue =
-    cls.dates.length > 0 && cls.dates.every(Boolean) && Boolean(cls.startTime && cls.endTime) && cls.endTime > cls.startTime;
+  const toggleDate = (iso: string) => {
+    if (cls.scheduleMode === "single") {
+      updateClass({ dates: [iso], dateTimes: {} });
+      return;
+    }
+    const next = selected.has(iso)
+      ? cls.dates.filter((date) => date !== iso)
+      : [...cls.dates, iso].sort();
+    const dateTimes = Object.fromEntries(Object.entries(cls.dateTimes).filter(([date]) => next.includes(date)));
+    updateClass({ dates: next, dateTimes });
+  };
+
+  const openRepeat = () => {
+    const repeatDays = cls.repeatDays.length ? cls.repeatDays : weekdaysFromDates(cls.dates);
+    updateClass({ repeat: "weekly", repeatDays });
+    setRepeatOpen(true);
+  };
+
+  const changeMonth = (delta: number) => {
+    setMonth(new Date(year, monthIndex + delta, 1));
+  };
 
   return (
     <>
@@ -38,7 +95,8 @@ export default function ClassSchedulePage() {
             {(["single", "multi"] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => updateClass({ scheduleMode: mode, dates: cls.dates.slice(0, mode === "single" ? 1 : undefined) })}
+                type="button"
+                onClick={() => setMode(mode)}
                 className={`flex-1 rounded-xl py-2.5 text-[13px] font-medium transition-colors ${
                   cls.scheduleMode === mode ? "bg-surface text-navy shadow-card" : "text-secondary"
                 }`}
@@ -49,78 +107,60 @@ export default function ClassSchedulePage() {
           </div>
         </div>
 
-        <div className="space-y-3 pb-5">
-          <FieldLabel>{cls.scheduleMode === "single" ? "Date" : `Dates (${cls.dates.filter(Boolean).length} selected)`}</FieldLabel>
-          {(cls.dates.length ? cls.dates : [""]).map((d, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="date"
-                value={d}
-                onChange={(e) => (cls.dates.length ? setDate(i, e.target.value) : updateClass({ dates: [e.target.value] }))}
-                className={fieldInput}
-              />
-              {cls.scheduleMode === "multi" && cls.dates.length > 1 && (
-                <button
-                  onClick={() => updateClass({ dates: cls.dates.filter((_, x) => x !== i) })}
-                  aria-label="Remove date"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-canvas"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          ))}
-          {cls.scheduleMode === "multi" && (
-            <button
-              onClick={() => updateClass({ dates: [...(cls.dates.length ? cls.dates : [""]), ""] })}
-              className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-[13px] font-medium text-navy hover:bg-canvas"
-            >
-              <Plus size={14} />Add another date
-            </button>
-          )}
-        </div>
-
-        <div className="flex gap-3 pb-5">
-          <label className="block flex-1">
-            <FieldLabel>Starts</FieldLabel>
-            <input type="time" value={cls.startTime} onChange={(e) => updateClass({ startTime: e.target.value })} className={fieldInput} />
-          </label>
-          <label className="block flex-1">
-            <FieldLabel>Ends</FieldLabel>
-            <input type="time" value={cls.endTime} onChange={(e) => updateClass({ endTime: e.target.value })} className={fieldInput} />
-          </label>
-        </div>
-
-        <div className="space-y-3 pb-6">
-          <div className="flex items-center justify-between rounded-2xl bg-canvas px-4 py-3.5">
-            <span className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface"><Repeat size={15} className="text-navy" /></span>
-              <span>
-                <span className="block text-[14px] font-medium text-navy">Repeats</span>
-                <span className="block text-[12px] text-muted">
-                  {cls.repeat === "none"
-                    ? "Does not repeat."
-                    : `Weekly${cls.dates[0] ? ` on ${fmt(cls.dates[0]).split(" ")[0]}` : ""} · ${cls.repeatWeeks} weeks`}
-                </span>
+        <div className="rounded-3xl bg-canvas px-4 py-4">
+          <div className="flex items-center justify-between">
+            <span>
+              <span className="block text-[17px] font-semibold text-navy">{monthLabel(month)}</span>
+              <span className="block text-[13px] text-muted">
+                {cls.dates.length ? `${cls.dates.length} date${cls.dates.length > 1 ? "s" : ""} selected` : "No dates selected"}
               </span>
             </span>
-            <button
-              onClick={() => updateClass({ repeat: cls.repeat === "none" ? "weekly" : "none" })}
-              className="rounded-full border border-border px-3.5 py-1.5 text-[12px] font-semibold text-navy hover:bg-surface"
-            >
-              {cls.repeat === "none" ? "Set" : "Clear"}
-            </button>
+            <span className="flex gap-2">
+              <button type="button" aria-label="Previous month" onClick={() => changeMonth(-1)} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-navy">
+                <ChevronLeft size={18} />
+              </button>
+              <button type="button" aria-label="Next month" onClick={() => changeMonth(1)} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-navy">
+                <ChevronRight size={18} />
+              </button>
+            </span>
           </div>
-          {cls.repeat === "weekly" && (
-            <label className="block">
-              <FieldLabel>Repeat for (weeks)</FieldLabel>
-              <input
-                type="number" inputMode="numeric" value={cls.repeatWeeks}
-                onChange={(e) => updateClass({ repeatWeeks: Math.max(1, Number(e.target.value) || 1) })}
-                className={fieldInput}
-              />
-            </label>
-          )}
+
+          <div className="mt-5 grid grid-cols-7 gap-2 text-center">
+            {DAY_KEYS.map((day) => (
+              <span key={day} className="text-[11px] font-semibold text-muted">{day[0]}</span>
+            ))}
+            {Array.from({ length: startOffset }, (_, index) => <span key={`blank-${index}`} />)}
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const day = index + 1;
+              const iso = isoFor(year, monthIndex, day);
+              const on = selected.has(iso);
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  onClick={() => toggleDate(iso)}
+                  className={`flex aspect-square items-center justify-center rounded-xl text-[14px] font-semibold ${
+                    on ? "bg-navy text-white shadow-card" : "bg-surface text-navy hover:bg-border/50"
+                  }`}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-2xl bg-canvas">
+          <button type="button" onClick={openRepeat} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-navy">
+              <Repeat size={16} strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-navy">Repeats</span>
+              <span className="block truncate text-[13px] text-muted">{repeatSummary(cls.repeat, cls.repeatDays)}</span>
+            </span>
+            <span className="text-[13px] font-semibold text-navy">Set</span>
+          </button>
         </div>
       </div>
 
@@ -128,9 +168,70 @@ export default function ClassSchedulePage() {
         step={3}
         total={TOTAL_STEPS.class}
         onBack={() => router.push("/new/class-participants")}
-        onNext={() => canContinue && router.push("/new/locations")}
+        onNext={() => canContinue && router.push("/new/class-times")}
+        nextLabel="Set times"
         disabled={!canContinue}
       />
+
+      <RepeatSheet open={repeatOpen} onClose={() => setRepeatOpen(false)} />
     </>
+  );
+}
+
+function RepeatSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const cls = useWizardStore((s) => s.draft.classDetails);
+  const updateClass = useWizardStore((s) => s.updateClass);
+
+  const toggleDay = (day: string) => {
+    const next = cls.repeatDays.includes(day)
+      ? cls.repeatDays.filter((value) => value !== day)
+      : [...cls.repeatDays, day].sort((a, b) => DAY_KEYS.indexOf(a) - DAY_KEYS.indexOf(b));
+    updateClass({ repeat: next.length ? "weekly" : "none", repeatDays: next });
+  };
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Repeat settings"
+      footer={<button type="button" onClick={onClose} className="h-12 w-full rounded-full bg-navy text-[15px] font-semibold text-white">Done</button>}
+    >
+      <div className="space-y-5">
+        <label className="block">
+          <FieldLabel>Frequency</FieldLabel>
+          <div className="flex h-12 items-center rounded-xl bg-canvas px-4 text-[15px] font-semibold text-navy">Weekly</div>
+        </label>
+
+        <div>
+          <FieldLabel>Repeats on</FieldLabel>
+          <div className="flex gap-2">
+            {DAY_KEYS.map((day) => {
+              const on = cls.repeatDays.includes(day);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => toggleDay(day)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-[13px] font-semibold ${
+                    on ? "bg-navy text-white" : "bg-canvas text-secondary"
+                  }`}
+                >
+                  {day[0]}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2 text-[12px] text-muted">{cls.repeatDays.map((day) => DAY_NAMES[day]).join(", ") || "Choose repeat days"}</div>
+        </div>
+
+        <label className="block">
+          <FieldLabel>Ends</FieldLabel>
+          <div className="flex h-12 items-center justify-between rounded-xl bg-canvas px-4 text-[15px] font-semibold text-navy">
+            Never
+            <X size={16} className="text-muted" />
+          </div>
+        </label>
+      </div>
+    </Sheet>
   );
 }

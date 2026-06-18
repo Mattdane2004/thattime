@@ -5,9 +5,9 @@
 // Next footer; titles are a large heading with a grey subtitle.
 
 // Steps per offer type: service basics→locations→staff→price; class
-// basics→attendees→dates→locations→instructors→price; bundle basics→services
-// →pricing; subscription basics→type→benefits→billing.
-export const TOTAL_STEPS = { service: 4, class: 6, bundle: 3, subscription: 4 } as const;
+// basics→attendees→dates→times→locations→instructors→price; bundle basics
+// →services→order→pricing; subscription basics→type→benefits→billing.
+export const TOTAL_STEPS = { service: 4, class: 7, bundle: 4, subscription: 4 } as const;
 
 export function WizardTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (

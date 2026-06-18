@@ -17,6 +17,7 @@ import {
   services, products, memberships, classOffers, giftCardDenoms, serviceCategories, productCategories,
   clientRows, traitChips, upNextQueue, savedCards,
 } from "@/lib/data/product";
+import { discountCodes, entitlementBalances } from "@/lib/data/finalisation";
 
 // Checkout — a hub-and-spoke till. The page is the hub: client, items, adjustments
 // and payments all live here with empty states; each is edited through a bottom-sheet
@@ -135,10 +136,17 @@ export default function CheckoutPage() {
   const staffName = appt?.staff ?? "your stylist";
   const anonymous = noClient || displayName === "Walk-in" || displayName === "New client";
   const sellingGiftCard = store.items.some((i) => i.kind === "giftcard");
+  const selectedCode = discountCodes.find((c) => c.id === store.discountCodeId);
+  const saleNames = store.items.map((i) => i.name);
+  const eligibleEntitlements = entitlementBalances.filter(
+    (e) => e.client === displayName && e.remaining > 0 && e.appliesTo.some((name) => saleNames.includes(name)),
+  );
+  const appliedEntitlement = eligibleEntitlements.find((e) => e.name === store.entitlementLabel);
 
   // Spokes.
   const [clientSheet, setClientSheet] = useState(false);
   const [clientQuery, setClientQuery] = useState("");
+  const [showAllOwed, setShowAllOwed] = useState(false);
   const [addSheet, setAddSheet] = useState(false);
   const [addType, setAddType] = useState<CheckoutItemKind>("service");
   const [addQuery, setAddQuery] = useState("");
@@ -189,6 +197,7 @@ export default function CheckoutPage() {
   // Assign / change the payer; seed (or clear) their outstanding balance line.
   const assignClient = (c: CheckoutClient) => {
     store.setCheckoutClient(c);
+    store.setEntitlementCredit(null, 0);
     const existing = store.items.find((i) => i.name === "Outstanding balance");
     if (existing) store.removeItem(existing.id);
     if (c.outstanding && c.outstanding > 0) {
@@ -196,6 +205,7 @@ export default function CheckoutPage() {
     }
     setClientSheet(false);
     setClientQuery("");
+    setShowAllOwed(false);
   };
 
   // Record a payment — does NOT auto-finish; the operator taps Complete when ready.
@@ -220,6 +230,10 @@ export default function CheckoutPage() {
     router.push("/app");
   };
 
+  const applyEntitlement = (name: string | null, amount: number) => {
+    store.setEntitlementCredit(name, amount);
+  };
+
   // Filtered add-sheet catalogues.
   const addServices = services.filter((s) => (addCat === "All" || s.category === addCat) && s.name.toLowerCase().includes(addQuery.toLowerCase()));
   const addProducts = products.filter((p) => (addCat === "All" || p.category === addCat) && p.name.toLowerCase().includes(addQuery.toLowerCase()));
@@ -229,6 +243,7 @@ export default function CheckoutPage() {
   // Client picker lists.
   const clientMatches = clientRows.filter((c) => c.name.toLowerCase().includes(clientQuery.toLowerCase()));
   const owedClients = clientMatches.filter((c) => (c.outstanding ?? 0) > 0).sort((a, b) => (b.outstanding ?? 0) - (a.outstanding ?? 0));
+  const owedVisible = showAllOwed ? owedClients : owedClients.slice(0, 4);
   const settledClients = clientMatches.filter((c) => (c.outstanding ?? 0) === 0);
 
   // ── Done / paid screen ──────────────────────────────────────────────
@@ -244,6 +259,12 @@ export default function CheckoutPage() {
           </motion.p>
           <p className="pt-1 text-[14px] text-secondary">{displayName}</p>
           <div className="mt-6 w-full overflow-hidden rounded-2xl bg-canvas">
+            {store.entitlementCredit > 0 && store.entitlementLabel && (
+              <div className="flex items-center justify-between border-b border-border px-4 py-3 text-[13px] last:border-0">
+                <span className="text-secondary">{store.entitlementLabel}</span>
+                <span className="font-semibold text-navy">−{fmt(store.entitlementCredit)}</span>
+              </div>
+            )}
             {totals.prepaid > 0 && (
               <div className="flex items-center justify-between border-b border-border px-4 py-3 text-[13px] last:border-0">
                 <span className="text-secondary">Deposit (at booking)</span>
@@ -271,6 +292,16 @@ export default function CheckoutPage() {
           </motion.button>
         </div>
         <div className="shrink-0 px-6 pb-8">
+          {appliedEntitlement && (
+            <button
+              type="button"
+              onClick={() => useAppStore.getState().setQuickAction("appointment")}
+              className="mb-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-border text-[14px] font-semibold text-navy"
+            >
+              <Repeat size={15} strokeWidth={1.9} />
+              Book next session · {appliedEntitlement.remaining - 1} left
+            </button>
+          )}
           {isAppt ? (
             <>
               <DarkButton onClick={() => setRate(true)}>Rate the visit</DarkButton>
@@ -362,6 +393,43 @@ export default function CheckoutPage() {
           </button>
         )}
 
+        {eligibleEntitlements.length > 0 && (
+          <div className="mx-4 mt-3 rounded-2xl border border-border bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <span>
+                <span className="block text-[13px] font-bold text-navy">Package/subscription credit available</span>
+                <span className="block pt-0.5 text-[12px] text-muted">
+                  Auto-suggested from {displayName}&rsquo;s remaining sessions.
+                </span>
+              </span>
+              {store.entitlementCredit > 0 && <span className="rounded-full bg-fg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-navy">Applied</span>}
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              {eligibleEntitlements.map((e) => {
+                const on = store.entitlementLabel === e.name;
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => applyEntitlement(on ? null : e.name, on ? 0 : e.value)}
+                    className={`flex items-center justify-between rounded-xl border px-3.5 py-3 text-left ${
+                      on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-canvas text-navy"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-semibold">{e.name}</span>
+                      <span className={`block truncate pt-0.5 text-[11px] ${on ? "text-white/70" : "text-muted"}`}>
+                        {e.kind === "subscription" ? "Subscription" : "Package"} · {e.used}/{e.purchased} used · {e.remaining} remaining
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[13px] font-bold">−{fmt(e.value)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Items — empty state + inline qty editing */}
         <p className="px-4 pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Items</p>
         {store.items.length === 0 ? (
@@ -410,7 +478,10 @@ export default function CheckoutPage() {
           <button type="button" onClick={() => setDiscountSheet(true)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
             <Percent size={15} strokeWidth={1.75} className="shrink-0 text-secondary" />
             <span className="flex-1 text-[14px] font-medium text-navy">Discount</span>
-            <span className="text-[13px] font-semibold text-navy">{totals.discount > 0 ? `−${fmt(totals.discount)}` : "Add"}</span>
+            <span className="text-right">
+              <span className="block text-[13px] font-semibold text-navy">{totals.discount > 0 ? `−${fmt(totals.discount)}` : "Add"}</span>
+              {selectedCode && <span className="block text-[11px] text-muted">{selectedCode.code}</span>}
+            </span>
             <ChevronRight size={15} className="shrink-0 text-muted" />
           </button>
           <button type="button" onClick={() => { setTipPick(null); setTipCustomDraft(0); setTipSheet(true); }} className="flex w-full items-center gap-3 border-t border-border px-4 py-3.5 text-left">
@@ -453,6 +524,7 @@ export default function CheckoutPage() {
         <div className="mx-4 mt-4 overflow-hidden rounded-2xl bg-canvas">
           <div className="flex items-center justify-between px-4 py-3 text-[13px]"><span className="text-secondary">Subtotal</span><span className="font-semibold text-navy">{fmt(totals.subtotal)}</span></div>
           {totals.discount > 0 && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]"><span className="text-secondary">Discount</span><span className="font-semibold text-navy">−{fmt(totals.discount)}</span></div>}
+          {totals.entitlementCredit > 0 && store.entitlementLabel && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]"><span className="text-secondary">{store.entitlementLabel}</span><span className="font-semibold text-navy">−{fmt(totals.entitlementCredit)}</span></div>}
           {totals.tip > 0 && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]"><span className="text-secondary">Tip</span><span className="font-semibold text-navy">{fmt(totals.tip)}</span></div>}
           {totals.clientFee > 0 && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]"><span className="text-secondary">Platform fee</span><span className="font-semibold text-navy">{fmt(totals.clientFee)}</span></div>}
           {totals.prepaid > 0 && <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]"><span className="text-secondary">Deposit paid at booking</span><span className="font-semibold text-navy">−{fmt(totals.prepaid)}</span></div>}
@@ -545,7 +617,7 @@ export default function CheckoutPage() {
           <>
             <p className="px-1 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Owes a balance</p>
             <div className="flex flex-col gap-2.5">
-              {owedClients.map((c) => (
+              {owedVisible.map((c) => (
                 <button key={c.id} type="button" onClick={() => assignClient({ name: c.name, initials: initialsOf(c.name), outstanding: c.outstanding })} className="flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/[0.06] p-3.5 text-left">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15 text-[12px] font-semibold text-warning">{initialsOf(c.name)}</span>
                   <span className="min-w-0 flex-1">
@@ -555,6 +627,15 @@ export default function CheckoutPage() {
                   <ChevronRight size={15} className="text-muted" />
                 </button>
               ))}
+              {owedClients.length > 4 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllOwed((v) => !v)}
+                  className="h-10 rounded-full border border-border text-[13px] font-semibold text-navy"
+                >
+                  {showAllOwed ? "Show fewer" : `Show all ${owedClients.length}`}
+                </button>
+              )}
             </div>
           </>
         )}
@@ -711,6 +792,34 @@ export default function CheckoutPage() {
 
       {/* Discount */}
       <Sheet open={discountSheet} onClose={() => setDiscountSheet(false)} title="Add discount" sub={`Off the ${fmt(totals.subtotal)} bill`}>
+        <p className="px-1 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Saved codes</p>
+        <div className="flex flex-col gap-2 pb-4">
+          {discountCodes.map((code) => {
+            const on = store.discountCodeId === code.id;
+            const pounds = code.type === "percent" ? (totals.subtotal * code.value) / 100 : Math.min(code.value, totals.subtotal);
+            return (
+              <button
+                key={code.id}
+                type="button"
+                onClick={() => {
+                  if (on) store.setDiscountCode(null, 0, 0);
+                  else store.setDiscountCode(code.id, code.type === "percent" ? code.value : 0, code.type === "amount" ? code.value : 0);
+                  setDiscountSheet(false);
+                }}
+                className={`flex items-center justify-between rounded-2xl border p-3.5 text-left ${
+                  on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
+                }`}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-bold">{code.label}</span>
+                  <span className={`block truncate pt-0.5 text-[11px] ${on ? "text-white/70" : "text-muted"}`}>{code.code} · {code.scope}</span>
+                </span>
+                <span className="shrink-0 text-[13px] font-bold">−{fmt(pounds)}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Manual discount</p>
         <div className="flex rounded-full bg-canvas p-1">
           {(["pct", "amount"] as const).map((mode) => (
             <button key={mode} type="button" onClick={() => { setDiscMode(mode); setDiscDraft(""); }} className={`flex-1 rounded-full py-2 text-[13px] font-semibold transition-colors ${discMode === mode ? "bg-white text-navy shadow-[0_1px_3px_rgba(8,7,6,0.08)]" : "text-muted"}`}>{mode === "pct" ? "Percentage" : "Amount"}</button>

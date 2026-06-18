@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, Building2, PenSquare, Users } from "lucide-react";
+import { Search, Building2, PenSquare, Users, Settings2, Check, Smartphone } from "lucide-react";
 import { AppHeader, Sheet } from "@/components/ui";
 import { conversations, clientRows, teamColumns, type Conversation } from "@/lib/data/product";
+import { messagePermissionOptions } from "@/lib/data/finalisation";
 
 // Messages — conversation list with unread/group/business filters, plus a
 // compose button that opens a 1:1 with any client or team member. Group chats
@@ -45,6 +46,8 @@ export default function MessagesPage() {
   const [query, setQuery] = useState("");
   const [compose, setCompose] = useState(false);
   const [composeQuery, setComposeQuery] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [permission, setPermission] = useState<(typeof messagePermissionOptions)[number]["id"]>("after");
 
   const visible = conversations.filter((c) => {
     if (!c.name.toLowerCase().includes(query.toLowerCase())) return false;
@@ -90,6 +93,15 @@ export default function MessagesPage() {
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-navy"
           >
             <PenSquare size={17} strokeWidth={1.85} />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            aria-label="Message settings"
+            onClick={() => setSettingsOpen(true)}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-navy"
+          >
+            <Settings2 size={17} strokeWidth={1.85} />
           </motion.button>
         </div>
         <div className="flex gap-2 pt-3">
@@ -167,6 +179,40 @@ export default function MessagesPage() {
       ))}
 
       {/* Compose — start a 1:1 with a client or team member */}
+      <Sheet open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Message settings" sub="Business default inherited by clients" full>
+        <p className="px-1 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Who can message?</p>
+        <div className="flex flex-col gap-2.5">
+          {messagePermissionOptions.map((o) => {
+            const on = permission === o.id;
+            return (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => setPermission(o.id)}
+                className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"}`}
+              >
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${on ? "bg-white/15 text-white" : "bg-canvas text-secondary"}`}>
+                  {on ? <Check size={14} strokeWidth={2.5} /> : <Users size={14} strokeWidth={1.8} />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-bold">{o.label}</span>
+                  <span className={`block pt-0.5 text-[12px] leading-snug ${on ? "text-white/70" : "text-muted"}`}>{o.sub}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 rounded-2xl bg-canvas p-4">
+          <p className="flex items-center gap-2 text-[13px] font-bold text-navy">
+            <Smartphone size={15} strokeWidth={1.8} />
+            Client app gate
+          </p>
+          <p className="pt-1 text-[12px] leading-snug text-muted">
+            Clients can read conversion prompts on web, but replying and sending files requires the That Time app.
+          </p>
+        </div>
+      </Sheet>
+
       <Sheet open={compose} onClose={() => setCompose(false)} title="New message" sub="Pick a client or team member" full>
         <div className="relative pt-1">
           <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />

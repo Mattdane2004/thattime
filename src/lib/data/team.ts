@@ -29,11 +29,11 @@ export function defaultWeek(daysOff: Weekday[] = ["Sun"]): WeeklyScheduleDay[] {
 
 /** Permission presets per access level — the flags each level switches on. */
 export const ACCESS_PRESETS: Record<AccessLevel, StaffPermissions> = {
-  basic: { calendar: true, bookings: false, clients: false, services: false, payments: false, team: false, reports: false, settings: false },
-  low: { calendar: true, bookings: true, clients: true, services: false, payments: false, team: false, reports: false, settings: false },
-  medium: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: false, reports: false, settings: false },
-  high: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: true, reports: true, settings: false },
-  owner: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: true, reports: true, settings: true },
+  basic: { calendar: true, bookings: false, clients: false, services: false, payments: false, team: false, reports: false, settings: false, scheduleSelfEdit: false, viewTeamSchedule: false },
+  low: { calendar: true, bookings: true, clients: true, services: false, payments: false, team: false, reports: false, settings: false, scheduleSelfEdit: false, viewTeamSchedule: false },
+  medium: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: false, reports: false, settings: false, scheduleSelfEdit: false, viewTeamSchedule: true },
+  high: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: true, reports: true, settings: false, scheduleSelfEdit: true, viewTeamSchedule: true },
+  owner: { calendar: true, bookings: true, clients: true, services: true, payments: true, team: true, reports: true, settings: true, scheduleSelfEdit: true, viewTeamSchedule: true },
 };
 
 export const ACCESS_LEVELS: { key: AccessLevel; label: string; desc: string }[] = [
@@ -53,12 +53,13 @@ function member(
     email: `${base.name.toLowerCase().replace(/[^a-z]+/g, ".")}@thattime.app`,
     phone: "+44 7700 900000",
     active: base.status === "active",
+    memberType: "employee",
     locations: ["loc1"],
     accessLevel,
     profile: { publicName: base.name.split(" ")[0], bio: "", visibleOnProfile: base.bookable, featured: false },
     schedule: { timezone: "Europe/London", weekly: defaultWeek(), timeOff: [] },
     permissions: ACCESS_PRESETS[accessLevel],
-    payment: { type: "employee", payRate: "12.50", commission: 20, tips: true, payoutStatus: "Up to date" },
+    payment: { components: { hourly: "12.50", commission: { rate: 20, direction: "to_member" } }, tips: true, payoutStatus: "Up to date" },
     rota: { thisWeekHours: 40, nextShift: "Tomorrow · 9:00–18:00", notes: "" },
     invite: { sentAt: "2026-05-02", acceptedAt: base.status === "active" ? "2026-05-03" : "" },
     ...base,
@@ -67,16 +68,16 @@ function member(
 }
 
 export const teamMembers: Staff[] = [
-  member({ id: "s1", name: "Alex Morgan", role: "Senior stylist", systemRoles: ["Owner", "Staff"], status: "active", avatarColor: "bg-sky-100 text-sky-700", bookable: true, services: ["Classic haircut", "Blow dry"] }, { accessLevel: "owner", payment: { type: "employee", payRate: "", commission: 0, tips: true, payoutStatus: "Owner draw" } }),
+  member({ id: "s1", name: "Alex Morgan", role: "Senior stylist", systemRoles: ["Owner", "Staff"], status: "active", avatarColor: "bg-sky-100 text-sky-700", bookable: true, services: ["Classic haircut", "Blow dry"] }, { accessLevel: "owner", payment: { components: {}, tips: true, payoutStatus: "Owner draw" } }),
   member({ id: "s2", name: "Priya Shah", role: "Stylist", systemRoles: ["Staff"], status: "active", avatarColor: "bg-violet-100 text-violet-700", bookable: true, services: ["Classic haircut", "Blow dry"] }),
-  member({ id: "s3", name: "Jordan Lee", role: "Colourist", systemRoles: ["Staff"], status: "active", avatarColor: "bg-amber-100 text-amber-700", bookable: true, services: ["Root tint", "Colour consultation"] }, { payment: { type: "employee", payRate: "14.00", commission: 25, tips: true, payoutStatus: "Up to date" } }),
+  member({ id: "s3", name: "Jordan Lee", role: "Colourist", systemRoles: ["Staff"], status: "active", avatarColor: "bg-amber-100 text-amber-700", bookable: true, services: ["Root tint", "Colour consultation"] }, { payment: { components: { hourly: "14.00", commission: { rate: 25, direction: "to_member" } }, tips: true, payoutStatus: "Up to date" } }),
   member({ id: "s4", name: "Sam Rivera", role: "Barber", systemRoles: ["Staff"], status: "active", avatarColor: "bg-emerald-100 text-emerald-700", bookable: true, services: ["Classic haircut", "Beard trim", "Blow dry"] }, { schedule: { timezone: "Europe/London", weekly: defaultWeek(["Sun", "Mon"]), timeOff: [{ id: "to1", label: "Holiday", date: "22–26 Jun" }] } }),
   member({ id: "s5", name: "Nina Okafor", role: "Apprentice", systemRoles: ["Staff"], status: "needs_setup", avatarColor: "bg-rose-100 text-rose-700", bookable: false, services: [] }, { accessLevel: "basic", rota: { thisWeekHours: 0, nextShift: "Not scheduled", notes: "" } }),
   member({ id: "s6", name: "Tom Becker", role: "Barber", systemRoles: ["Manager", "Staff"], status: "active", avatarColor: "bg-slate-100 text-slate-700", bookable: true, services: ["Classic haircut", "Beard trim", "Blow dry"] }),
   member({ id: "s7", name: "Amara Nwosu", role: "Senior instructor", systemRoles: ["Manager", "Instructor"], status: "active", avatarColor: "bg-cyan-100 text-cyan-700", bookable: true, services: ["Beginner yoga"] }),
-  member({ id: "s8", name: "Jamie Kowalski", role: "Yoga instructor", systemRoles: ["Instructor"], status: "active", avatarColor: "bg-lime-100 text-lime-700", bookable: true, services: ["Beginner yoga"] }, { payment: { type: "contractor", payRate: "30.00", commission: 0, tips: false, payoutStatus: "Invoices monthly" } }),
+  member({ id: "s8", name: "Jamie Kowalski", role: "Yoga instructor", systemRoles: ["Instructor"], status: "active", avatarColor: "bg-lime-100 text-lime-700", bookable: true, services: ["Beginner yoga"] }, { memberType: "freelancer", payment: { components: { chairRent: { amount: "200", frequency: "weekly" }, commission: { rate: 10, direction: "to_owner" } }, tips: false, payoutStatus: "Self-billed" } }),
   member({ id: "s9", name: "Rachel Byrne", role: "Fitness trainer", systemRoles: ["Instructor"], status: "pending", avatarColor: "bg-orange-100 text-orange-700", bookable: false, services: [] }, { invite: { sentAt: "2026-06-08", acceptedAt: "" }, rota: { thisWeekHours: 0, nextShift: "Not scheduled", notes: "" } }),
-  member({ id: "s10", name: "Tom Adeyemi", role: "Pilates instructor", systemRoles: ["Instructor"], status: "active", avatarColor: "bg-fuchsia-100 text-fuchsia-700", bookable: true, services: [] }, { payment: { type: "contractor", payRate: "28.00", commission: 0, tips: false, payoutStatus: "Up to date" } }),
+  member({ id: "s10", name: "Tom Adeyemi", role: "Pilates instructor", systemRoles: ["Instructor"], status: "active", avatarColor: "bg-fuchsia-100 text-fuchsia-700", bookable: true, services: [] }, { memberType: "freelancer", payment: { components: { chairRent: { amount: "150", frequency: "weekly" } }, tips: false, payoutStatus: "Up to date" } }),
   member({ id: "s11", name: "Priya Mehta", role: "Wellbeing coach", systemRoles: ["Instructor"], status: "needs_setup", avatarColor: "bg-teal-100 text-teal-700", bookable: false, services: [] }, { rota: { thisWeekHours: 0, nextShift: "Not scheduled", notes: "" } }),
 ];
 
@@ -118,6 +119,25 @@ export const demoPayRuns: PayRun[] = [
 
 export const lineTotal = (l: PayRun["lines"][number]) => l.wages + l.commission + l.tips + l.adjustments;
 export const runTotal = (r: PayRun) => r.lines.reduce((sum, l) => sum + lineTotal(l), 0);
+
+/** True once at least one pay component is set (otherwise pay is "set up later"). */
+export function payIsConfigured(p: Staff["payment"]): boolean {
+  const c = p.components;
+  return Boolean(c.salary || c.hourly || c.commission || c.chairRent);
+}
+
+/** One-line pay summary for list/detail rows — e.g. "£12.50/h · 25% commission"
+ *  or, for a chair-renter, "£200/wk rent · you take 10%". */
+export function paySummary(m: Staff): string {
+  if (!payIsConfigured(m.payment)) return "Not set up";
+  const c = m.payment.components;
+  const parts: string[] = [];
+  if (c.hourly) parts.push(`£${c.hourly}/h`);
+  if (c.salary) parts.push(`£${c.salary} salary`);
+  if (c.chairRent) parts.push(`£${c.chairRent.amount}/${c.chairRent.frequency === "weekly" ? "wk" : "mo"} rent`);
+  if (c.commission) parts.push(`${c.commission.direction === "to_owner" ? "you take " : ""}${c.commission.rate}% commission`);
+  return parts.join(" · ");
+}
 
 export function summaryOf(m: Staff): TeamMemberSummary {
   return {

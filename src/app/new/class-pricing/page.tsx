@@ -35,19 +35,22 @@ export default function ClassPricingPage() {
     <>
       <ScreenHeader onBack={() => router.push("/new/staff")} rightAction={<span className="text-[13px] text-muted">Help</span>} />
       <div className="flex-1 overflow-y-auto px-5">
-        <WizardTitle title="Price" subtitle="How much per booking." />
+        <WizardTitle title="Price" subtitle="How much" />
 
         <div className="space-y-5 pb-6">
           <label className="block">
-            <FieldLabel>{seatBased ? "Price per person (£)" : "Price for the group (£)"}</FieldLabel>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={draft.price}
-              onChange={(e) => updateDraft({ price: e.target.value })}
-              placeholder={seatBased ? "15" : "120"}
-              className={fieldInput}
-            />
+            <FieldLabel>{seatBased ? "Price per person" : "Price for the group"}</FieldLabel>
+            <div className="flex items-center rounded-xl border border-border bg-canvas px-4">
+              <span className="text-[15px] text-muted">£</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={draft.price}
+                onChange={(e) => updateDraft({ price: e.target.value })}
+                placeholder={seatBased ? "15" : "120"}
+                className="h-14 min-w-0 flex-1 bg-transparent px-3 text-[28px] font-semibold text-navy outline-none placeholder:text-muted"
+              />
+            </div>
             {seatBased && price > 0 && cls.capacity > 0 && (
               <span className="mt-2 block text-[13px] text-secondary">
                 £{price} × {cls.capacity} seats = <span className="font-semibold text-navy">£{price * cls.capacity}</span> potential revenue per session
@@ -83,7 +86,7 @@ export default function ClassPricingPage() {
       </div>
 
       <WizardFooter
-        step={6}
+        step={7}
         total={TOTAL_STEPS.class}
         onBack={() => router.push("/new/staff")}
         onNext={create}

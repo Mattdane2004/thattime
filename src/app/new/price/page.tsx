@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ScreenHeader } from "@/components/ui";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, Toggle, TOTAL_STEPS } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, Toggle, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { useOffersStore, offerFromDraft } from "@/lib/store/offersStore";
 
@@ -105,17 +105,27 @@ export default function PricePage() {
           </button>
 
           {draft.depositEnabled && (
-            <label className="block">
-              <FieldLabel>Deposit amount (£)</FieldLabel>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={draft.depositAmount}
-                onChange={(e) => updateDraft({ depositAmount: e.target.value })}
-                placeholder="10"
-                className={fieldInput}
-              />
-            </label>
+            <div>
+              <FieldLabel>Deposit amount</FieldLabel>
+              <div className="flex items-stretch gap-2">
+                <div className="flex shrink-0 rounded-xl border border-border bg-canvas p-1">
+                  {(["fixed", "percent"] as const).map((t) => (
+                    <button key={t} type="button" onClick={() => updateDraft({ depositType: t })}
+                      className={`h-10 w-11 rounded-lg text-[16px] font-bold ${draft.depositType === t ? "bg-navy text-white" : "text-secondary"}`}>
+                      {t === "fixed" ? "£" : "%"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-1 items-center rounded-xl border border-border bg-canvas px-4">
+                  {draft.depositType === "fixed" && <span className="text-[15px] text-muted">£</span>}
+                  <input type="number" inputMode="decimal" value={draft.depositAmount}
+                    onChange={(e) => updateDraft({ depositAmount: e.target.value })}
+                    placeholder={draft.depositType === "percent" ? "20" : "10"}
+                    className="h-12 flex-1 bg-transparent px-2 text-[15px] font-semibold text-navy outline-none placeholder:font-normal placeholder:text-muted" />
+                  <span className="text-[13px] text-muted">{draft.depositType === "percent" ? "% of price" : "per booking"}</span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

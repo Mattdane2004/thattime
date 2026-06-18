@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Check, Scissors } from "lucide-react";
 import { ScreenHeader } from "@/components/ui";
 import { WizardFooter, WizardTitle, FieldLabel, TOTAL_STEPS } from "@/components/ui";
-import { useWizardStore, type BundleDraft } from "@/lib/store/wizardStore";
+import { useWizardStore, syncBundleLinks, type BundleDraft } from "@/lib/store/wizardStore";
 import { useOffersStore } from "@/lib/store/offersStore";
 import { offerMeta } from "@/lib/data/offers";
 
@@ -23,8 +23,10 @@ export default function BundleServicesPage() {
   const offers = useOffersStore((s) => s.offers);
 
   const services = offers.filter((o) => o.type === "service" && o.status === "published");
-  const toggle = (id: string) =>
-    updateBundle({ serviceIds: bundle.serviceIds.includes(id) ? bundle.serviceIds.filter((x) => x !== id) : [...bundle.serviceIds, id] });
+  const toggle = (id: string) => {
+    const serviceIds = bundle.serviceIds.includes(id) ? bundle.serviceIds.filter((x) => x !== id) : [...bundle.serviceIds, id];
+    updateBundle({ serviceIds, links: syncBundleLinks(serviceIds, bundle.links) });
+  };
 
   const flexibleOk = bundle.kind !== "flexible" || (bundle.chooseCount >= 1 && bundle.chooseCount <= bundle.serviceIds.length);
   const canContinue = bundle.serviceIds.length >= 2 && flexibleOk;
@@ -104,7 +106,7 @@ export default function BundleServicesPage() {
         step={2}
         total={TOTAL_STEPS.bundle}
         onBack={() => router.push("/new/basics")}
-        onNext={() => canContinue && router.push("/new/bundle-pricing")}
+        onNext={() => canContinue && router.push("/new/bundle-order")}
         nextLabel={canContinue ? "Next" : "Add at least 2 services"}
         disabled={!canContinue}
       />

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Trash2 } from "lucide-react";
+import { Ban, Coins, MessageSquare, Trash2 } from "lucide-react";
 import { Sheet, DarkButton, GhostButton, ToggleRow, SettingsGroup, BackHeader } from "@/components/ui";
+import { clientPlatformFeeOptions } from "@/lib/data/finalisation";
 
 // Client settings & policies — a dedicated page (was a bottom sheet),
 // grouped Apple-Settings style: every rule that applies to this one client,
@@ -25,9 +26,11 @@ export default function ClientSettingsPage() {
   // Payments
   const [payPrefs, setPayPrefs] = useState<string[]>(["Card"]);
   const [deposit, setDeposit] = useState(false);
+  const [feePref, setFeePref] = useState<(typeof clientPlatformFeeOptions)[number]["id"]>("inherit");
 
   // Communication
   const [marketing, setMarketing] = useState({ email: true, sms: false, confirmations: true });
+  const [messageBlocked, setMessageBlocked] = useState(false);
 
   // Access
   const [blocked, setBlocked] = useState(false);
@@ -127,6 +130,26 @@ export default function ClientSettingsPage() {
             on={deposit}
             onToggle={() => setDeposit((v) => !v)}
           />
+          <div className="border-t border-border px-4 py-3.5">
+            <p className="flex items-center gap-2 text-[14px] font-medium text-navy">
+              <Coins size={15} strokeWidth={1.75} className="text-secondary" />
+              Platform fee preference
+            </p>
+            <p className="pt-0.5 text-[11px] leading-snug text-muted">Business default applies first, then this client override, then any one-off checkout choice.</p>
+            <div className="mt-3 flex flex-col gap-2">
+              {clientPlatformFeeOptions.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setFeePref(o.id)}
+                  className={`rounded-xl border px-3 py-2.5 text-left ${feePref === o.id ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"}`}
+                >
+                  <span className="block text-[13px] font-semibold">{o.label}</span>
+                  <span className={`block pt-0.5 text-[11px] ${feePref === o.id ? "text-white/70" : "text-muted"}`}>{o.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </SettingsGroup>
 
         <SettingsGroup label="Communication">
@@ -149,6 +172,13 @@ export default function ClientSettingsPage() {
             sub="Offers by text — reminders stay on"
             on={marketing.sms}
             onToggle={() => setMarketing((m) => ({ ...m, sms: !m.sms }))}
+          />
+          <ToggleRow
+            divider
+            title={<span className="inline-flex items-center gap-2"><MessageSquare size={15} strokeWidth={1.75} /> Block messages only</span>}
+            sub="Stops this client messaging without blocking bookings"
+            on={messageBlocked}
+            onToggle={() => setMessageBlocked((v) => !v)}
           />
         </SettingsGroup>
 

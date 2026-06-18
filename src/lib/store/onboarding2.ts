@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { WeeklyScheduleDay } from "@/lib/types";
 
 /**
  * State for the new onboarding flows (Figma "🔴 Onbaording", node 10960-10046).
@@ -50,6 +51,12 @@ type OnboardingState = {
   staffManager: string;
   staffName: { first: string; last: string };
   staffEmail: string;
+  /** Did the owner pre-set this member's schedule? If not, the join flow asks them. */
+  staffScheduleSet: boolean;
+  /** Did the owner grant self-edit? With either flag the week becomes editable. */
+  staffCanSelfEdit: boolean;
+  /** The member's working week, editable in the join flow when permitted. */
+  staffAvailability: WeeklyScheduleDay[];
 
   // B2C client
   audience: Audience | null;
@@ -98,6 +105,17 @@ const initial = {
   staffManager: "Emma",
   staffName: { first: "Sam", last: "Taylor" },
   staffEmail: "sam@email.com",
+  staffScheduleSet: true,
+  staffCanSelfEdit: true,
+  staffAvailability: [
+    { day: "Mon", enabled: false, start: "09:00", end: "18:00" },
+    { day: "Tue", enabled: true, start: "09:00", end: "18:00" },
+    { day: "Wed", enabled: true, start: "09:00", end: "20:00" },
+    { day: "Thu", enabled: true, start: "09:00", end: "20:00" },
+    { day: "Fri", enabled: true, start: "09:00", end: "20:00" },
+    { day: "Sat", enabled: true, start: "10:00", end: "16:00" },
+    { day: "Sun", enabled: false, start: "09:00", end: "18:00" },
+  ] as WeeklyScheduleDay[],
 
   audience: null,
   clientCategories: [] as string[],

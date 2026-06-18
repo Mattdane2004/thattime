@@ -42,12 +42,19 @@ export interface RevenueProgress {
   estimated: string;
   /** 0–100 — collected as a share of estimated, for the bar fill. */
   pct: number;
+  /** Progress-bar markers requested in final sign-off. */
+  markers: Record<Period, string[]>;
 }
 
 export const revenueProgress: RevenueProgress = {
   collected: "£2,100",
   estimated: "£4,280",
   pct: 49,
+  markers: {
+    Today: ["9am", "12pm", "8pm"],
+    "This week": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "Last 30 days": ["W1", "W2", "W3", "W4"],
+  },
 };
 
 // Staff lead metric — their own takings, never business-wide revenue.

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, MoreVertical, Sparkles, ChevronRight, X, Check, BookOpen,
-  Pencil, CalendarClock, Trash2, Star,
+  Pencil, CalendarClock, Trash2, Star, Lock, Bell,
 } from "lucide-react";
 import { notificationGroups } from "@/lib/data/product";
+import { notificationChannelSettings } from "@/lib/data/finalisation";
+import { Sheet } from "@/components/ui";
 
 // Notifications — grouped feed with message requests, product updates and
 // swipe-to-delete on dismissible rows.
@@ -59,6 +61,7 @@ const kindCat = (k: string) =>
 export default function NotificationsPage() {
   const router = useRouter();
   const [filter, setFilter] = useState("All");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [requestState, setRequestState] = useState<"pending" | "accepted" | "declined">("pending");
   const [deleted, setDeleted] = useState<Record<string, boolean>>({});
 
@@ -77,7 +80,7 @@ export default function NotificationsPage() {
           </button>
           <h1 className="text-[17px] font-bold text-navy">Notifications</h1>
         </span>
-        <button aria-label="More" className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy">
+        <button aria-label="Notification settings" onClick={() => setSettingsOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy">
           <MoreVertical size={16} strokeWidth={1.75} />
         </button>
       </div>
@@ -224,6 +227,45 @@ export default function NotificationsPage() {
         </div>
         );
       })}
+
+      <Sheet open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Notification settings" sub="In-app is free; SMS, WhatsApp and email can be paid add-ons" full>
+        <div className="rounded-2xl bg-canvas p-4">
+          <p className="flex items-center gap-2 text-[13px] font-bold text-navy">
+            <Bell size={15} strokeWidth={1.8} />
+            Channel rules
+          </p>
+          <p className="pt-1 text-[12px] leading-snug text-muted">
+            Push/in-app reminders are included. Paid channels are shown locked unless the business subscribes to the notification package.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2.5 pt-4">
+          {notificationChannelSettings.map((setting) => (
+            <div key={setting.id} className="rounded-2xl border border-border bg-white p-4">
+              <p className="text-[14px] font-bold text-navy">{setting.label}</p>
+              <p className="pt-0.5 text-[12px] text-muted">{setting.description}</p>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {([
+                  ["push", "In-app", setting.push, false],
+                  ["email", "Email", setting.email, setting.paid],
+                  ["sms", "SMS", setting.sms, setting.paid],
+                  ["whatsapp", "WhatsApp", setting.whatsapp, setting.paid],
+                ] as const).map(([key, label, on, paid]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`flex h-10 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${
+                      paid ? "bg-canvas text-muted" : on ? "bg-fg-primary text-white" : "border border-border text-navy"
+                    }`}
+                  >
+                    {paid && <Lock size={10} strokeWidth={2} />}
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Sheet>
     </div>
   );
 }

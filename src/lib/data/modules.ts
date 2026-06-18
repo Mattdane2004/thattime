@@ -22,19 +22,26 @@ export interface Resource {
   type: "space" | "equipment";
   name: string;
   capacity?: number;
+  location?: string;
+  /** Equipment only: the room it lives in (auto-attached when picked). */
+  roomId?: string;
 }
 
 export const resourcesCatalog: Resource[] = [
-  { id: "sp1", type: "space", name: "Treatment room A", capacity: 1 },
-  { id: "sp2", type: "space", name: "Treatment room B", capacity: 1 },
-  { id: "sp3", type: "space", name: "VIP suite", capacity: 1 },
-  { id: "sp4", type: "space", name: "Tanning studio", capacity: 2 },
-  { id: "eq1", type: "equipment", name: "Wash basin" },
-  { id: "eq2", type: "equipment", name: "UV lamp" },
-  { id: "eq3", type: "equipment", name: "Steamer" },
-  { id: "eq4", type: "equipment", name: "Tanning bed 1" },
-  { id: "eq5", type: "equipment", name: "Laser machine" },
+  { id: "sp1", type: "space", name: "Treatment room A", capacity: 1, location: "Salon Soho" },
+  { id: "sp2", type: "space", name: "Treatment room B", capacity: 1, location: "Salon Soho, Salon Brixton" },
+  { id: "sp3", type: "space", name: "VIP suite", capacity: 1, location: "Salon Soho" },
+  { id: "sp4", type: "space", name: "Tanning studio", capacity: 2, location: "All locations" },
+  { id: "eq1", type: "equipment", name: "Wash basin", location: "All locations" },
+  { id: "eq2", type: "equipment", name: "UV lamp", location: "All locations" },
+  { id: "eq3", type: "equipment", name: "Steamer", location: "All locations" },
+  { id: "eq4", type: "equipment", name: "Tanning bed 1", location: "All locations", roomId: "sp4" },
+  { id: "eq6", type: "equipment", name: "Tanning bed 2", location: "All locations", roomId: "sp4" },
+  { id: "eq5", type: "equipment", name: "Laser machine", location: "Salon Soho", roomId: "sp1" },
 ];
+
+/** Equipment that lives inside a given room. */
+export const equipmentInRoom = (roomId: string) => resourcesCatalog.filter((r) => r.type === "equipment" && r.roomId === roomId);
 
 export interface Variant {
   id: string;

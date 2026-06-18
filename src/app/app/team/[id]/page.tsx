@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Mail, Phone, CalendarDays, ShieldCheck,
   Banknote, Scissors, MapPin, Send, Archive, RotateCcw,
 } from "lucide-react";
-import { STATUS_LABEL, ACCESS_LEVELS, initialsOf } from "@/lib/data/team";
+import { STATUS_LABEL, ACCESS_LEVELS, initialsOf, paySummary } from "@/lib/data/team";
 import { useTeamStore } from "@/lib/store/teamStore";
 import { Toggle } from "@/components/ui";
 import { businessLocations } from "@/lib/data/locations";
@@ -62,7 +62,12 @@ export default function TeamMemberPage({ params }: { params: { id: string } }) {
           </div>
           <div className="min-w-0">
             <div className="text-[20px] font-bold tracking-tight text-navy">{member.name}</div>
-            <div className="text-[13px] text-muted">{member.role}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-muted">{member.role}</span>
+              {member.memberType === "freelancer" && (
+                <span className="rounded bg-canvas px-1.5 py-0.5 text-[10px] font-medium text-secondary">Freelancer</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -94,7 +99,9 @@ export default function TeamMemberPage({ params }: { params: { id: string } }) {
           >
             <span>
               <span className="block text-[14px] font-medium text-navy">Takes bookings</span>
-              <span className="block text-[12px] text-muted">Clients can book this member online</span>
+              <span className="block text-[12px] text-muted">
+                {member.memberType === "freelancer" ? "Clients can book them — they run their own diary" : "Clients can book this member online"}
+              </span>
             </span>
             <Toggle on={member.bookable} />
           </button>
@@ -102,14 +109,24 @@ export default function TeamMemberPage({ params }: { params: { id: string } }) {
 
         <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Manage</div>
         <div className="overflow-hidden rounded-2xl border border-border">
-          <Link href={`/app/team/${member.id}/schedule`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-canvas">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas"><CalendarDays size={15} className="text-secondary" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-medium text-navy">Schedule</span>
-              <span className="block text-[12px] text-muted">{workingDays} working days · {member.schedule.timeOff.length} time off</span>
-            </span>
-            <ChevronRight size={16} className="shrink-0 text-muted" />
-          </Link>
+          {member.memberType === "freelancer" ? (
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas"><CalendarDays size={15} className="text-secondary" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-navy">Schedule</span>
+                <span className="block text-[12px] text-muted">Self-scheduled · they set their own hours</span>
+              </span>
+            </div>
+          ) : (
+            <Link href={`/app/team/${member.id}/schedule`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-canvas">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas"><CalendarDays size={15} className="text-secondary" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-navy">Schedule</span>
+                <span className="block text-[12px] text-muted">{workingDays} working days · {member.schedule.timeOff.length} time off</span>
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-muted" />
+            </Link>
+          )}
           <Link href={`/app/team/${member.id}/permissions`} className="flex items-center gap-3 border-t border-border px-4 py-3.5 hover:bg-canvas">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas"><ShieldCheck size={15} className="text-secondary" /></span>
             <span className="min-w-0 flex-1">
@@ -122,11 +139,7 @@ export default function TeamMemberPage({ params }: { params: { id: string } }) {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas"><Banknote size={15} className="text-secondary" /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-[14px] font-medium text-navy">Pay</span>
-              <span className="block text-[12px] text-muted">
-                {member.payment.payRate
-                  ? `${member.payment.type === "employee" ? `£${member.payment.payRate}/h` : `£${member.payment.payRate}/session`}${member.payment.commission ? ` · ${member.payment.commission}% commission` : ""}`
-                  : "Not set up"}
-              </span>
+              <span className="block text-[12px] text-muted">{paySummary(member)}</span>
             </span>
             <ChevronRight size={16} className="shrink-0 text-muted" />
           </Link>

@@ -8,11 +8,12 @@ import {
   RotateCcw, X, Search, SlidersHorizontal, ChevronDown, FileText, Eye, Bell, Download,
   MapPin, Mail, Copy, Check, MoreVertical, Ban, Trash2,
   Tag as TagIcon, AlertTriangle, StickyNote, Wallet, Settings, ChevronRight,
-  Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical,
+  Camera, Image as ImageIcon, Repeat, Pencil, FlaskConical, Share2,
 } from "lucide-react";
 import { Segmented, DarkButton, GhostButton, Sheet, MiniCalendar, TimeChips, StatusPill } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
 import { pastAppointments, clientForms, staffMembers, tagPresets, clientRows, contactFor } from "@/lib/data/product";
+import { clientUpcomingAppointments, entitlementBalances } from "@/lib/data/finalisation";
 
 // Client detail, organised by job-to-be-done:
 //   Overview     — the dashboard: safety strip, next appointment, a
@@ -23,27 +24,55 @@ import { pastAppointments, clientForms, staffMembers, tagPresets, clientRows, co
 // The 3-dot menu holds profile-level actions only (edit / VIP / merge /
 // block / delete).
 
-/** Compact next-appointment card — actions live behind the dots, not on the card. */
-function NextAppointmentCard({ onMenu, moved }: { onMenu: () => void; moved: string | null }) {
+function UpcomingAppointmentsRail({
+  moved,
+  onMenu,
+  onViewAll,
+  onOpen,
+}: {
+  moved: string | null;
+  onMenu: () => void;
+  onViewAll: () => void;
+  onOpen: (appt: (typeof clientUpcomingAppointments)[number]) => void;
+}) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
-      <div className="flex items-start justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-          Next appointment
-        </p>
-        <button
-          type="button"
-          aria-label="Appointment options"
-          onClick={onMenu}
-          className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-full text-navy hover:bg-canvas"
-        >
-          <MoreVertical size={15} strokeWidth={1.75} />
-        </button>
+    <div>
+      <div className="flex items-center justify-between pb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Upcoming appointments</p>
+        <button type="button" onClick={onViewAll} className="text-[12px] font-semibold text-navy">View all</button>
       </div>
-      <p className="text-[16px] font-bold text-navy">Cut & Style</p>
-      <p className="flex items-center gap-2 pt-1 text-[12px] text-muted">
-        {moved ? `Moved · ${moved}` : "18 Mar 2026"} · Emma S. · 60min · £85
-      </p>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        {clientUpcomingAppointments.map((appt, i) => (
+          <button
+            key={appt.id}
+            type="button"
+            onClick={() => onOpen(appt)}
+            className="w-[218px] shrink-0 rounded-2xl bg-white p-4 text-left shadow-[0_1px_4px_rgba(8,7,6,0.04)]"
+          >
+            <span className="flex items-start justify-between gap-2">
+              <span className="min-w-0">
+                <span className="block truncate text-[15px] font-bold text-navy">{appt.service}</span>
+                <span className="block pt-1 text-[12px] text-muted">{i === 0 && moved ? `Moved · ${moved}` : `${appt.date} · ${appt.time}`}</span>
+              </span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                appt.status === "pending" ? "bg-warning/10 text-warning" : appt.status === "recurring" ? "bg-canvas text-secondary" : "bg-fg-primary/10 text-navy"
+              }`}>
+                {appt.status === "recurring" ? "Repeats" : appt.status}
+              </span>
+            </span>
+            <span className="block pt-3 text-[12px] text-secondary">{appt.staff} · £{appt.price}</span>
+            {i === 0 && (
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); onMenu(); }}
+                className="mt-3 inline-flex h-8 items-center rounded-full border border-border px-3 text-[11px] font-semibold text-navy"
+              >
+                Options
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -139,11 +168,13 @@ export default function ClientDetailPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formPick, setFormPick] = useState<string | null>(null);
   const [formSent, setFormSent] = useState<string[]>([]);
+  const [sharedForms, setSharedForms] = useState<string[]>([]);
   const [reminded, setReminded] = useState(false);
 
   // 3-dot actions
   const [actionsOpen, setActionsOpen] = useState(false);
   const [blocked, setBlocked] = useState(record?.tags.includes("Blocked") ?? false);
+  const [messageBlocked, setMessageBlocked] = useState(false);
   const [tags, setTags] = useState<string[]>(record?.tags.filter((t) => t !== "Blocked") ?? ["Regular"]);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -164,6 +195,10 @@ export default function ClientDetailPage() {
   const [apptSearch, setApptSearch] = useState("");
   const [apptFilter, setApptFilter] = useState("All");
   const [apptFilterOpen, setApptFilterOpen] = useState(false);
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
+  const [upcomingSearch, setUpcomingSearch] = useState("");
+  const [upcomingFilter, setUpcomingFilter] = useState("All");
+  const [upcomingSort, setUpcomingSort] = useState("Soonest");
 
   // Allergy "Note" detail + note-link dropdown
   const [alNote, setAlNote] = useState("");
@@ -209,6 +244,7 @@ export default function ClientDetailPage() {
 
   // Appointments
   const [bookingSel, setBookingSel] = useState<(typeof pastAppointments)[number] | null>(null);
+  const [sessionAdjust, setSessionAdjust] = useState<Record<string, number>>({});
 
   const unpaid = pastAppointments.find((p) => p.id === "p3");
   const severe = allergies.some((a) => a.severity === "Severe" || a.severity === "Fatal");
@@ -222,6 +258,18 @@ export default function ClientDetailPage() {
   const noteLinkOptions = ["General", ...pastAppointments.map((p) => `${p.name} · ${p.meta.split(" · ")[0]}`)];
 
   const field = "h-12 w-full rounded-xl bg-canvas px-4 text-[14px] text-navy placeholder:text-muted focus:outline-none";
+  const clientEntitlements = entitlementBalances.filter((e) => e.client === details.name || e.client === seedName);
+  const openUpcoming = (appt: (typeof clientUpcomingAppointments)[number]) =>
+    setApptSheet({
+      client: details.name,
+      initials,
+      service: appt.service,
+      staff: appt.staff,
+      time: appt.time,
+      duration: `£${appt.price}`,
+      price: appt.price,
+      status: appt.status === "pending" ? "Pending" : appt.status === "recurring" ? "Recurring" : "Confirmed",
+    });
 
   // Needs-attention rows, most urgent first. Each is one compact row with a
   // single clear action — not a separate full-width card per concern.
@@ -407,7 +455,14 @@ export default function ClientDetailPage() {
               )}
 
               {/* What's next */}
-              {!cancelled && <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />}
+              {!cancelled && (
+                <UpcomingAppointmentsRail
+                  moved={moved}
+                  onMenu={() => setNextApptMenu(true)}
+                  onViewAll={() => setUpcomingOpen(true)}
+                  onOpen={openUpcoming}
+                />
+              )}
 
               {/* Wallet, reviews and settings are full pages now; contact stays a sheet */}
               <div>
@@ -445,7 +500,12 @@ export default function ClientDetailPage() {
                   </button>
                 </div>
               ) : (
-                <NextAppointmentCard moved={moved} onMenu={() => setNextApptMenu(true)} />
+                <UpcomingAppointmentsRail
+                  moved={moved}
+                  onMenu={() => setNextApptMenu(true)}
+                  onViewAll={() => setUpcomingOpen(true)}
+                  onOpen={openUpcoming}
+                />
               )}
 
               <RecordHeading>History · {pastAppointments.length}</RecordHeading>
@@ -673,6 +733,38 @@ export default function ClientDetailPage() {
                 </div>
               ))}
 
+              <RecordHeading>Packages &amp; subscriptions</RecordHeading>
+              {clientEntitlements.length === 0 ? (
+                <p className="rounded-2xl bg-white p-4 text-[13px] text-muted shadow-[0_1px_4px_rgba(8,7,6,0.04)]">No package or subscription sessions recorded.</p>
+              ) : (
+                clientEntitlements.map((e) => {
+                  const adjust = sessionAdjust[e.id] ?? 0;
+                  const remaining = Math.max(0, e.remaining + adjust);
+                  return (
+                    <div key={e.id} className="rounded-2xl bg-white p-4 shadow-[0_1px_4px_rgba(8,7,6,0.04)]">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-bold text-navy">{e.name}</span>
+                          <span className="block pt-0.5 text-[12px] text-muted">
+                            {e.kind === "subscription" ? "Subscription" : "Package"} · purchased {e.purchased} · used {e.used}
+                          </span>
+                        </span>
+                        <span className="rounded-full bg-fg-primary/10 px-2.5 py-1 text-[11px] font-bold text-navy">{remaining} left</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between rounded-xl bg-canvas px-3 py-2.5">
+                        <span className="text-[12px] text-secondary">Manual adjustment</span>
+                        <span className="flex items-center gap-3">
+                          <button type="button" aria-label="Reduce sessions" onClick={() => setSessionAdjust((s) => ({ ...s, [e.id]: (s[e.id] ?? 0) - 1 }))} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-navy">−</button>
+                          <span className="w-6 text-center text-[13px] font-bold text-navy">{adjust > 0 ? `+${adjust}` : adjust}</span>
+                          <button type="button" aria-label="Add sessions" onClick={() => setSessionAdjust((s) => ({ ...s, [e.id]: (s[e.id] ?? 0) + 1 }))} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-navy">+</button>
+                        </span>
+                      </div>
+                      <p className="pt-2 text-[11px] text-muted">Use when importing packages from a previous system or correcting session counts.</p>
+                    </div>
+                  );
+                })
+              )}
+
               <RecordHeading
                 action={
                   <button
@@ -700,7 +792,7 @@ export default function ClientDetailPage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-semibold text-navy">{f.name}</span>
-                    <span className="block pt-0.5 text-[12px] text-muted">{f.meta}</span>
+                    <span className="block pt-0.5 text-[12px] text-muted">{sharedForms.includes(f.id) ? "Shared by native sheet" : f.meta}</span>
                     <span className="block pt-1 text-[11px] text-muted">⎘ {f.appt}</span>
                   </span>
                   {f.state === "view" && (
@@ -710,6 +802,13 @@ export default function ClientDetailPage() {
                       </button>
                       <button aria-label={`Download ${f.name}`} className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-navy">
                         <Download size={13} strokeWidth={2} />
+                      </button>
+                      <button
+                        aria-label={`Share ${f.name}`}
+                        onClick={() => setSharedForms((s) => (s.includes(f.id) ? s : [...s, f.id]))}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-navy"
+                      >
+                        <Share2 size={13} strokeWidth={2} />
                       </button>
                     </div>
                   )}
@@ -749,12 +848,65 @@ export default function ClientDetailPage() {
 
       {/* ── Sheets ── */}
 
+      <Sheet open={upcomingOpen} onClose={() => setUpcomingOpen(false)} title="Upcoming appointments" sub={`${details.name} · ${clientUpcomingAppointments.length} booked`} full>
+        <div className="flex gap-2 pb-3">
+          <div className="relative flex-1">
+            <Search size={15} strokeWidth={1.75} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={upcomingSearch}
+              onChange={(e) => setUpcomingSearch(e.target.value)}
+              placeholder="Search upcoming..."
+              className="h-11 w-full rounded-full bg-canvas pl-10 pr-4 text-[13px] text-navy placeholder:text-muted focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setUpcomingSort((s) => (s === "Soonest" ? "Highest £" : "Soonest"))}
+            className="rounded-full border border-border px-3 text-[12px] font-semibold text-navy"
+          >
+            {upcomingSort}
+          </button>
+        </div>
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-3 [scrollbar-width:none]">
+          {["All", "Confirmed", "Pending", "Recurring"].map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setUpcomingFilter(f)}
+              className={`shrink-0 rounded-full px-3.5 py-2 text-[12px] font-semibold ${
+                upcomingFilter === f ? "bg-fg-primary text-white" : "border border-border bg-white text-navy"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-2.5">
+          {clientUpcomingAppointments
+            .filter((a) => upcomingFilter === "All" || a.status === upcomingFilter.toLowerCase())
+            .filter((a) => `${a.service} ${a.staff} ${a.date}`.toLowerCase().includes(upcomingSearch.toLowerCase()))
+            .sort((a, b) => upcomingSort === "Highest £" ? b.price - a.price : a.date.localeCompare(b.date))
+            .map((appt) => (
+              <button key={appt.id} type="button" onClick={() => { openUpcoming(appt); setUpcomingOpen(false); }} className="rounded-2xl border border-border bg-white p-4 text-left">
+                <span className="flex items-center justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-bold text-navy">{appt.service}</span>
+                    <span className="block pt-0.5 text-[12px] text-muted">{appt.date} · {appt.time} · {appt.staff}</span>
+                  </span>
+                  <span className="shrink-0 text-[14px] font-bold text-navy">£{appt.price}</span>
+                </span>
+              </button>
+            ))}
+        </div>
+      </Sheet>
+
       {/* 3-dot: profile-level actions only */}
       <Sheet open={actionsOpen} onClose={() => setActionsOpen(false)} title={details.name} sub="Profile actions">
         <div className="flex flex-col gap-2 pt-1">
           {[
             { icon: <Pencil size={15} />, t: "Edit details", run: () => { setEditName(details.name); setEditPhone(details.phone); setEditEmail(details.email); setActionsOpen(false); setEditOpen(true); } },
             { icon: <TagIcon size={15} />, t: "Add tags", run: () => { setActionsOpen(false); setTagQuery(""); setTagSheetOpen(true); } },
+            { icon: <MessageSquare size={15} />, t: messageBlocked ? "Unblock messages" : "Block messages", run: () => { setMessageBlocked((b) => !b); setActionsOpen(false); } },
             { icon: <Ban size={15} />, t: blocked ? "Unblock client" : "Block client", run: () => { setBlocked((b) => !b); setActionsOpen(false); } },
           ].map((a) => (
             <button key={a.t} onClick={a.run} className="flex w-full items-center gap-2.5 rounded-2xl border border-border bg-white px-4 py-3.5 text-left text-[13px] font-semibold text-navy">

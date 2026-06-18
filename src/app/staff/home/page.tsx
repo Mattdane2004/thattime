@@ -19,7 +19,7 @@ export default function StaffHomePage() {
   return (
     <AppFrame>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <HomePage role="staff" />
+        <HomePage />
       </div>
       <AppTabBar />
       <QuickActionsHost />

@@ -59,7 +59,7 @@ export default function ServicesPage() {
       </div>
 
       <div className="px-5 pb-3">
-        <div className="text-[26px] font-bold tracking-tight text-navy">Offerings</div>
+        <div className="text-[26px] font-bold tracking-tight text-navy">Services</div>
         <div className="mt-0.5 text-[13px] text-muted">Everything you offer, in one place.</div>
       </div>
 

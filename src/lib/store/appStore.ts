@@ -38,6 +38,7 @@ export interface CheckoutItem {
   sub: string;
   price: number;
   qty: number;
+  coveredBy?: string;
 }
 
 /** How checkout was entered — drives the Done step (rating + queue advance vs plain finish). */
@@ -68,6 +69,7 @@ export interface ApptSheetData {
   time: string;
   duration: string;
   price?: number;
+  deposit?: number;
   status?: string;
   tags?: string[];
   live?: boolean;
@@ -78,10 +80,75 @@ export interface ApptSheetData {
 
 /** A break / blocked-time block being edited via the blocked-time setup sheet. */
 export interface BlockEdit {
+  key?: string;
+  calendarBlockId?: string;
   title: string;
   blockType: string; // a blockTypes id, or "custom"
   time: string;
   duration: string;
+  day?: number;
+  wholeDay?: boolean;
+  frequency?: string;
+}
+
+export interface AppointmentOccurrence {
+  id: string;
+  day: number | null;
+  time: string | null;
+  service: string;
+  staff: string;
+}
+
+export interface CustomAppointment {
+  id: string;
+  client: string;
+  service: string;
+  staff: string;
+  day: number | null;
+  time: string | null;
+  duration?: string;
+  outOfHours?: boolean;
+  appointmentType?: "salon" | "mobile" | "online";
+  paymentStatus?: "unpaid" | "deposit" | "paid" | "subscription";
+  deposit?: number;
+  paymentLinkHours?: number;
+  pending?: boolean;
+  recurring?: string | null;
+  bookingSetId?: string;
+  occurrences?: AppointmentOccurrence[];
+  entitlementLabel?: string;
+  price?: number;
+}
+
+export interface CalendarBlockedTime {
+  id: string;
+  title: string;
+  blockType: string;
+  day: number;
+  staff: string[];
+  startTime: string;
+  endTime: string;
+  wholeDay: boolean;
+  allowOnline: boolean;
+  frequency?: string;
+}
+
+export interface MovedCalendarBlock {
+  day?: number;
+  start?: number;
+  staff?: string;
+}
+
+export interface ScheduleFocus {
+  view: "Calendar" | "Team";
+  day: number;
+}
+
+export interface CalendarSlotDraft {
+  day: number;
+  time: string;
+  staff?: string;
+  view: "Calendar" | "Team";
 }
 
 type AppState = {
@@ -108,6 +175,8 @@ type AppState = {
   // sheet pre-filled for editing (null = creating a new block).
   blockEdit: BlockEdit | null;
   setBlockEdit: (b: BlockEdit | null) => void;
+  deletedBlockKeys: string[];
+  deleteBlockKey: (key: string) => void;
 
   // Break card: idle → active → ended (ended slides away and stays gone).
   breakActive: boolean;
@@ -116,8 +185,23 @@ type AppState = {
   setBreakEnded: (v: boolean) => void;
 
   // Appointments created through quick-add — they appear on the calendar.
-  customAppts: { id: string; client: string; service: string; staff: string; day: number | null; time: string | null; duration?: string; outOfHours?: boolean }[];
-  addCustomAppt: (a: { client: string; service: string; staff: string; day: number | null; time: string | null; duration?: string; outOfHours?: boolean }) => void;
+  customAppts: CustomAppointment[];
+  addCustomAppt: (a: Omit<CustomAppointment, "id">) => string;
+  updateCustomAppt: (id: string, patch: Partial<CustomAppointment>) => void;
+  updateCustomOccurrence: (appointmentId: string, occurrenceId: string, patch: Partial<AppointmentOccurrence>) => void;
+  cancelCustomAppointments: (ids: string[]) => void;
+  calendarBlocks: CalendarBlockedTime[];
+  addCalendarBlock: (b: Omit<CalendarBlockedTime, "id">) => string;
+  updateCalendarBlock: (id: string, patch: Partial<CalendarBlockedTime>) => void;
+  deleteCalendarBlock: (id: string) => void;
+  movedCalendarBlocks: Record<string, MovedCalendarBlock>;
+  moveCalendarBlock: (key: string, patch: MovedCalendarBlock) => void;
+  scheduleFocus: ScheduleFocus | null;
+  focusSchedule: (day: number, view?: ScheduleFocus["view"]) => void;
+  clearScheduleFocus: () => void;
+  slotDraft: CalendarSlotDraft | null;
+  setSlotDraft: (slot: CalendarSlotDraft | null) => void;
+  clearSlotDraft: () => void;
 
   // Quick actions overlay (owned by the tab bar layout).
   quickAction: QuickAction;
@@ -127,9 +211,13 @@ type AppState = {
   items: CheckoutItem[];
   discountPct: number; // 0, 10, 20
   discountFlat: number; // £
+  discountCodeId: string | null;
   tipPct: number; // 0, 10, 15, 20
   tipCustom: number;
   payments: PaymentEntry[];
+  /** Package/subscription credit applied to this sale. */
+  entitlementCredit: number;
+  entitlementLabel: string | null;
   /** Deposit/prepayment already taken at booking, in £ — credited against the bill. */
   prepaid: number;
   /** Who covers the platform fee on this sale. */
@@ -144,6 +232,8 @@ type AppState = {
   updateItem: (id: string, patch: { qty?: number; price?: number }) => void;
   removeItem: (id: string) => void;
   setDiscount: (pct: number, flat: number) => void;
+  setDiscountCode: (id: string | null, pct: number, flat: number) => void;
+  setEntitlementCredit: (label: string | null, amount: number) => void;
   setTip: (pct: number, custom?: number) => void;
   setFeeBearer: (b: FeeBearer) => void;
   addPayment: (method: PaymentEntry["method"], amount: number) => void;
@@ -188,9 +278,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       items: baseItemsFor(upNextQueue[idx]),
       discountPct: 0,
       discountFlat: 0,
+      discountCodeId: null,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      entitlementCredit: 0,
+      entitlementLabel: null,
       prepaid: upNextQueue[idx]?.deposit ?? 0,
       feeBearer: "absorb",
       checkoutClient: null,
@@ -203,6 +296,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   blockEdit: null,
   setBlockEdit: (b) => set({ blockEdit: b }),
+  deletedBlockKeys: [],
+  deleteBlockKey: (key) => {
+    const deletedBlockKeys = get().deletedBlockKeys;
+    if (deletedBlockKeys.includes(key)) return;
+    set({ deletedBlockKeys: [...deletedBlockKeys, key] });
+  },
 
   breakActive: false,
   setBreakActive: (v) => set({ breakActive: v }),
@@ -210,7 +309,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBreakEnded: (v) => set({ breakEnded: v }),
 
   customAppts: [],
-  addCustomAppt: (a) => set({ customAppts: [...get().customAppts, { ...a, id: uid() }] }),
+  addCustomAppt: (a) => {
+    const id = uid();
+    set({ customAppts: [...get().customAppts, { ...a, id }] });
+    return id;
+  },
+  updateCustomAppt: (id, patch) => set({ customAppts: get().customAppts.map((a) => (a.id === id ? { ...a, ...patch } : a)) }),
+  updateCustomOccurrence: (appointmentId, occurrenceId, patch) =>
+    set({
+      customAppts: get().customAppts.map((a) =>
+        a.id === appointmentId
+          ? { ...a, occurrences: (a.occurrences ?? []).map((o) => (o.id === occurrenceId ? { ...o, ...patch } : o)) }
+          : a,
+      ),
+    }),
+  cancelCustomAppointments: (ids) => set({ customAppts: get().customAppts.filter((a) => !ids.includes(a.id)) }),
+
+  calendarBlocks: [],
+  addCalendarBlock: (b) => {
+    const id = uid();
+    set({ calendarBlocks: [...get().calendarBlocks, { ...b, id }] });
+    return id;
+  },
+  updateCalendarBlock: (id, patch) => set({ calendarBlocks: get().calendarBlocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) }),
+  deleteCalendarBlock: (id) => set({ calendarBlocks: get().calendarBlocks.filter((b) => b.id !== id) }),
+  movedCalendarBlocks: {},
+  moveCalendarBlock: (key, patch) => set({ movedCalendarBlocks: { ...get().movedCalendarBlocks, [key]: { ...get().movedCalendarBlocks[key], ...patch } } }),
+  scheduleFocus: null,
+  focusSchedule: (day, view = "Calendar") => set({ scheduleFocus: { day, view } }),
+  clearScheduleFocus: () => set({ scheduleFocus: null }),
+  slotDraft: null,
+  setSlotDraft: (slot) => set({ slotDraft: slot }),
+  clearSlotDraft: () => set({ slotDraft: null }),
 
   quickAction: null,
   setQuickAction: (q) => set({ quickAction: q }),
@@ -218,9 +348,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   items: baseItemsFor(upNextQueue[0]),
   discountPct: 0,
   discountFlat: 0,
+  discountCodeId: null,
   tipPct: 0,
   tipCustom: 0,
   payments: [],
+  entitlementCredit: 0,
+  entitlementLabel: null,
   prepaid: upNextQueue[0]?.deposit ?? 0,
   feeBearer: "absorb",
   checkoutClient: null,
@@ -253,7 +386,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     }),
   removeItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
-  setDiscount: (pct, flat) => set({ discountPct: pct, discountFlat: flat }),
+  setDiscount: (pct, flat) => set({ discountPct: pct, discountFlat: flat, discountCodeId: null }),
+  setDiscountCode: (id, pct, flat) => set({ discountCodeId: id, discountPct: pct, discountFlat: flat }),
+  setEntitlementCredit: (label, amount) => set({ entitlementLabel: label, entitlementCredit: Math.max(0, amount) }),
   setTip: (pct, custom = 0) => set({ tipPct: pct, tipCustom: custom }),
   setFeeBearer: (b) => set({ feeBearer: b }),
   addPayment: (method, amount) =>
@@ -269,9 +404,12 @@ export const useAppStore = create<AppState>((set, get) => ({
           : [],
       discountPct: 0,
       discountFlat: 0,
+      discountCodeId: null,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      entitlementCredit: 0,
+      entitlementLabel: null,
       prepaid: 0,
       feeBearer: "absorb",
     }),
@@ -283,9 +421,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       items: [],
       discountPct: 0,
       discountFlat: 0,
+      discountCodeId: null,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      entitlementCredit: 0,
+      entitlementLabel: null,
       prepaid: 0,
       feeBearer: "absorb",
     }),
@@ -296,9 +437,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       items: baseItemsFor(upNextQueue[get().apptIdx]),
       discountPct: 0,
       discountFlat: 0,
+      discountCodeId: null,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      entitlementCredit: 0,
+      entitlementLabel: null,
       prepaid: upNextQueue[get().apptIdx]?.deposit ?? 0,
       feeBearer: "absorb",
     }),
@@ -307,9 +451,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       items: baseItemsFor(upNextQueue[get().apptIdx]),
       discountPct: 0,
       discountFlat: 0,
+      discountCodeId: null,
       tipPct: 0,
       tipCustom: 0,
       payments: [],
+      entitlementCredit: 0,
+      entitlementLabel: null,
       prepaid: upNextQueue[get().apptIdx]?.deposit ?? 0,
       feeBearer: "absorb",
       checkoutClient: null,
@@ -330,6 +477,7 @@ export function checkoutTotals(s: {
   items: CheckoutItem[];
   discountPct: number;
   discountFlat: number;
+  entitlementCredit?: number;
   tipPct: number;
   tipCustom: number;
   payments: PaymentEntry[];
@@ -340,6 +488,7 @@ export function checkoutTotals(s: {
   const discount = s.discountPct > 0 ? (subtotal * s.discountPct) / 100 : Math.min(s.discountFlat, subtotal);
   const tip = s.tipCustom > 0 ? s.tipCustom : (subtotal * s.tipPct) / 100;
   const base = Math.max(0, subtotal - discount); // billable before tip
+  const entitlementCredit = Math.min(s.entitlementCredit ?? 0, base);
   // Platform fee + who carries it: client adds it on top, split halves it, absorb
   // takes it off the vendor's payout (the client total is unaffected).
   const fee = round2(base * PLATFORM_FEE_RATE);
@@ -350,8 +499,8 @@ export function checkoutTotals(s: {
   const youReceive = Math.max(0, base + tip - vendorFee); // vendor payout after fee
   const prepaid = s.prepaid ?? 0;
   const paid = s.payments.reduce((sum, p) => sum + p.amount, 0);
-  const remaining = Math.max(0, total - paid - prepaid);
+  const remaining = Math.max(0, total - paid - prepaid - entitlementCredit);
   // Overpay: deposit (or collected payments) exceed the bill — surfaced as a credit/refund.
-  const overpay = Math.max(0, paid + prepaid - total);
-  return { subtotal, discount, tip, base, fee, clientFee, vendorFee, total, youReceive, prepaid, paid, remaining, overpay };
+  const overpay = Math.max(0, paid + prepaid + entitlementCredit - total);
+  return { subtotal, discount, tip, base, entitlementCredit, fee, clientFee, vendorFee, total, youReceive, prepaid, paid, remaining, overpay };
 }

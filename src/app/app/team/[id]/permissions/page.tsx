@@ -20,6 +20,8 @@ const AREAS: { key: keyof Staff["permissions"]; label: string; desc: string }[] 
   { key: "team", label: "Team", desc: "Manage team members and shifts" },
   { key: "reports", label: "Reports", desc: "View performance reports" },
   { key: "settings", label: "Settings", desc: "Change business settings" },
+  { key: "scheduleSelfEdit", label: "Edit own schedule", desc: "Change their own working hours" },
+  { key: "viewTeamSchedule", label: "See team schedule", desc: "View everyone's shifts, not just their own" },
 ];
 
 export default function MemberPermissionsPage({ params }: { params: { id: string } }) {

@@ -2,7 +2,10 @@
 // render the ported components with react-dom/server and assert output.
 import { renderToString } from "react-dom/server";
 import React from "react";
+import { readFileSync } from "node:fs";
 import HomePage from "./src/app/app/page";
+import { useRoleStore } from "./src/lib/store/roleStore";
+import { HomeScreen } from "./src/components/app/HomeScreen";
 import HubPage from "./src/app/app/hub/page";
 import ServicesPage from "./src/app/app/services/page";
 import MarketingPage from "./src/app/app/marketing/page";
@@ -15,6 +18,7 @@ import ConsumerInboxPage from "./src/app/c/inbox/page";
 import ConsumerProfilePage from "./src/app/c/profile/page";
 import ConsumerSettingsPage from "./src/app/c/settings/page";
 import ProductsModulePage from "./src/app/app/services/[id]/products/page";
+import ServiceBundlesPage from "./src/app/app/services/[id]/bundles/page";
 import ServicePreviewPage from "./src/app/app/services/[id]/preview/page";
 import PhotosModulePage from "./src/app/app/services/[id]/photos/page";
 import FormsModulePage from "./src/app/app/services/[id]/forms/page";
@@ -26,6 +30,7 @@ import RequirementsModulePage from "./src/app/app/services/[id]/requirements/pag
 import AgendaModulePage from "./src/app/app/services/[id]/agenda/page";
 import MaterialsModulePage from "./src/app/app/services/[id]/materials/page";
 import CertificatesModulePage from "./src/app/app/services/[id]/certificates/page";
+import ModelsModulePage from "./src/app/app/services/[id]/models/page";
 import SetupGuidePage from "./src/app/app/setup/page";
 import AlertsPage from "./src/app/app/alerts/page";
 import ImportDataPage from "./src/app/app/setup/import/page";
@@ -48,6 +53,7 @@ import MemberSchedulePage from "./src/app/app/team/[id]/schedule/page";
 import MemberPermissionsPage from "./src/app/app/team/[id]/permissions/page";
 import MemberPayPage from "./src/app/app/team/[id]/pay/page";
 import PayRunPage from "./src/app/app/team/pay/[runId]/page";
+import { WeekEditor } from "./src/components/team/WeekEditor";
 import OfferSettingsPage from "./src/app/app/services/[id]/settings/page";
 import BasicsPage from "./src/app/new/basics/page";
 import LocationsPage from "./src/app/new/locations/page";
@@ -57,12 +63,23 @@ import SubscriptionTypePage from "./src/app/new/subscription-type/page";
 import SubscriptionBenefitsPage from "./src/app/new/subscription-benefits/page";
 import SubscriptionBillingPage from "./src/app/new/subscription-billing/page";
 import BundleServicesPage from "./src/app/new/bundle-services/page";
+import BundleOrderPage from "./src/app/new/bundle-order/page";
+import BundleOrderRoute from "./src/app/app/services/[id]/order/page";
+import BundleServicesRoute from "./src/app/app/services/[id]/services/page";
+import SubBenefitsRoute from "./src/app/app/services/[id]/sub-benefits/page";
+import SubBillingRoute from "./src/app/app/services/[id]/sub-billing/page";
+import SubServicesRoute from "./src/app/app/services/[id]/sub-services/page";
+import SubRulesRoute from "./src/app/app/services/[id]/sub-rules/page";
 import BundlePricingPage from "./src/app/new/bundle-pricing/page";
+import { BundleOrderEditor } from "./src/components/offer/BundleOrderEditor";
 import ClassParticipantsPage from "./src/app/new/class-participants/page";
 import ClassSchedulePage from "./src/app/new/class-schedule/page";
+import ClassTimesPage from "./src/app/new/class-times/page";
 import { defaultCategories, tintFromHex, categorySwatches } from "./src/lib/tokens/categories";
 import { SummaryRow as OfferSummaryRow } from "./src/components/ui";
 import { offerFromDraft } from "./src/lib/store/offersStore";
+import { estimateBundle } from "./src/lib/data/bundles";
+import { serviceBundlePrice, serviceBundleSavings, serviceBundleSummary } from "./src/lib/data/serviceBundles";
 import { demoOffers } from "./src/lib/data/offers";
 import { emptyDraft, emptyClassDraft, emptySubscription } from "./src/lib/store/wizardStore";
 import { Button, Input, Textarea, Label, Badge, Avatar, Chip, Spinner, Separator, Card, Field, ListRow, SegmentedControl, EmptyState, StatTile, Switch, Checkbox, RadioGroup, RadioGroupItem, Tabs, TabsList, TabsTrigger, TabsContent, Dialog, DialogTrigger, Sheet, BottomSheet, PermissionDialog, Toaster, toast, CheckCircle, PhoneInput, OtpInput, SelectCard, CheckRow, SocialButtons, OrDivider, ProgressDashes, PrimaryButton, DarkButton, GhostButton, StatusPill, Segmented, MiniCalendar, TimeChips, PasswordField, AppHeader, SectionLabel, Tag, ToggleRow, SettingsGroup, StarRating, BackHeader, ScreenHeader, Toggle } from "./src/components/ui";
@@ -87,14 +104,16 @@ renderContains("Home", React.createElement(HomePage), [
 ]);
 
 // 1b) Staff role — stripped dashboard: own earnings, no business analytics/team.
-renderContains("Home (staff)", React.createElement(HomePage, { role: "staff" }), [
+useRoleStore.setState({ role: "staff" });
+renderContains("Home (staff)", React.createElement(HomeScreen, { role: "staff" }), [
   "Up Next", "Your earnings", "Upcoming Shifts",
 ]);
 {
-  const staffHome = renderToString(React.createElement(HomePage, { role: "staff" }));
+  const staffHome = renderToString(React.createElement(HomeScreen, { role: "staff" }));
   check("Staff home hides Team Today", !staffHome.includes("Team Today"));
   check("Staff home hides business revenue", !staffHome.includes("£4,280"));
 }
+useRoleStore.setState({ role: "owner" });
 
 // 2) Hub "Menu" (Figma 11988:90748).
 renderContains("Hub", React.createElement(HubPage), [
@@ -110,7 +129,7 @@ renderContains("Clients", React.createElement(ClientsPage), [
 // header carries the stats — Bookings / Spent / Rating — and a Contact action).
 renderContains("ClientDetail", React.createElement(ClientDetailPage), [
   "Sarah Johnson", "Active", "Book now", "Contact", "Total Bookings", "Total Sales", "Rating",
-  "Allergies", "PPD", "Needs attention", "Next appointment",
+  "Allergies", "PPD", "Needs attention", "Upcoming appointments",
 ]);
 
 // 3b-ii) Client sub-pages: wallet, reviews, settings.
@@ -122,12 +141,12 @@ renderContains("ClientReviews", React.createElement(ClientReviewsPage), [
 ]);
 renderContains("ClientSettings", React.createElement(ClientSettingsPage), [
   "Settings &amp; policies", "Require manual review", "Preferred days", "Cancellation policy",
-  "Require a deposit", "Block client", "Delete client",
+  "Require a deposit", "Platform fee preference", "Block messages only", "Block client", "Delete client",
 ]);
 
 // 3c) Offerings list.
 renderContains("Services", React.createElement(ServicesPage), [
-  "Offerings", "Everything you offer", "Classic haircut", "New", "Hair",
+  "Services", "Everything you offer", "Classic haircut", "New", "Hair",
 ]);
 
 // 3d) Marketing hub.
@@ -137,7 +156,7 @@ renderContains("Marketing", React.createElement(MarketingPage), [
 
 // 3e) Offer dashboard ("Edit Service").
 renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }), [
-  "Classic haircut", "Edit service", "Advanced", "Variants", "Settings", "Unpublish", "Preview",
+  "Classic haircut", "Edit service", "Advanced", "Variants", "Bundles", "Settings", "Unpublish", "Preview",
 ]);
 {
   const dash = renderToString(React.createElement(OfferDashboardPage, { params: { id: "svc_classic_haircut" } }));
@@ -149,19 +168,25 @@ renderContains("OfferDashboard", React.createElement(OfferDashboardPage, { param
 // 3e-ii) Per-type dashboard summaries render for each type's seed (fallbacks, no crash).
 {
   const bundle = renderToString(React.createElement(OfferDashboardPage, { params: { id: "bun_cut_colour" } }));
-  check("Bundle dashboard renders summary", bundle.includes("Edit") && bundle.includes("Pricing not set"));
+  check("Bundle dashboard renders Overview tab", bundle.includes("Ready to publish") && bundle.includes("Included services") && bundle.includes("Order &amp; gaps"));
+  check("Bundle dashboard shows price summary", bundle.includes("list value"));
+  check("Bundle dashboard shows timeline", bundle.includes("Estimated bundle timeline"));
   check("Bundle dashboard omits location/staff rows", !bundle.includes("Location not set"));
 
   const sub = renderToString(React.createElement(OfferDashboardPage, { params: { id: "sub_monthly_cuts" } }));
-  check("Subscription dashboard renders summary", sub.includes("Billing not set") && sub.includes("Benefit not set"));
+  check("Subscription dashboard renders Overview tab", sub.includes("Ready to publish") && sub.includes("Tiers") && sub.includes("Tiers &amp; benefits"));
+  check("Subscription dashboard shows billing label", sub.includes("From £45"));
+  check("Subscription dashboard shows benefit label", sub.includes("1 service booking / month"));
   check("Subscription dashboard omits location/staff rows", !sub.includes("Location not set"));
 
   const cls = renderToString(React.createElement(OfferDashboardPage, { params: { id: "cls_beginner_yoga" } }));
   check("Class dashboard renders schedule + attendees", cls.includes("Schedule not set") && cls.includes("Attendees not set"));
   check("Class dashboard shows per-attendee price", cls.includes("per attendee"));
+  check("Class dashboard shows Figma advanced groups", cls.includes("Student preparation") && cls.includes("Delivery controls"));
+  check("Class dashboard links models", cls.includes("/app/services/cls_beginner_yoga/models"));
 }
 renderContains("OfferSettings", React.createElement(OfferSettingsPage, { params: { id: "svc_classic_haircut" } }), [
-  "Online booking", "Who can book", "Lead time", "cancellation window", "Delete permanently",
+  "Online booking", "Who can book", "Lead time", "Cancellation policy", "Delete permanently",
 ]);
 
 // 3f) Hub → B2C switcher lands on the consumer app (covered in section 8).
@@ -173,7 +198,13 @@ renderContains("SetupGuide", React.createElement(SetupGuidePage), [
 
 // 3h) Products module editor.
 renderContains("Products", React.createElement(ProductsModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Products", "No product preferences yet", "Set up products",
+  "Product preferences", "No product preferences yet", "Set up products",
+]);
+renderContains("ClassProducts", React.createElement(ProductsModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Equipment &amp; what to bring", "Kit, PPE and student items", "Add kit", "No kit items yet",
+]);
+renderContains("ServiceBundles", React.createElement(ServiceBundlesPage, { params: { id: "svc_classic_haircut" } }), [
+  "Bundles", "No bundles yet", "Set up bundle", "10 haircuts with 10% off",
 ]);
 
 // 3i) Service preview + photos module.
@@ -191,6 +222,37 @@ renderContains("Forms", React.createElement(FormsModulePage, { params: { id: "sv
 renderContains("Resources", React.createElement(ResourcesModulePage, { params: { id: "svc_classic_haircut" } }), [
   "Resources", "No resources yet", "Add a room",
 ]);
+// Bundle inherits its component services' forms/resources (read-only) above its own.
+renderContains("BundleOrderRoute", React.createElement(BundleOrderRoute, { params: { id: "bun_cut_colour" } }), [
+  "Order &amp; gaps", "Estimated bundle timeline", "Cut &amp; Style", "Colour Treatment",
+]);
+renderContains("BundleServicesRoute", React.createElement(BundleServicesRoute, { params: { id: "bun_cut_colour" } }), [
+  "Included services", "Fixed bundle", "Flexible package", "Cut &amp; Style", "Colour Treatment",
+]);
+renderContains("SubBenefits", React.createElement(SubBenefitsRoute, { params: { id: "sub_monthly_cuts" } }), [
+  "Tiers &amp; benefits", "Service bookings", "Class bookings", "Discounts", "Member-only",
+]);
+renderContains("SubBilling", React.createElement(SubBillingRoute, { params: { id: "sub_monthly_cuts" } }), [
+  "Billing &amp; terms", "Tier pricing", "Joining fee", "Minimum term",
+]);
+renderContains("SubServices/sessions", React.createElement(SubServicesRoute, { params: { id: "sub_monthly_cuts" } }), [
+  "Included services", "All published services", "Sessions can be used across any of these services",
+]);
+renderContains("SubServices/discount", React.createElement(SubServicesRoute, { params: { id: "sub_vip" } }), [
+  "Included services", "All published services", "Discount applies to these services",
+]);
+renderContains("SubRules/sessions", React.createElement(SubRulesRoute, { params: { id: "sub_monthly_cuts" } }), [
+  "Booking rules", "Session cooldown", "Rollover unused sessions", "Allow membership pause",
+]);
+renderContains("SubRules/discount", React.createElement(SubRulesRoute, { params: { id: "sub_vip" } }), [
+  "Booking rules", "Allow membership pause", "Cooldown and rollover only apply",
+]);
+renderContains("Forms/bundle-inherited", React.createElement(FormsModulePage, { params: { id: "bun_cut_colour" } }), [
+  "Inherited from services", "New client intake", "Patch test record", "Bundle forms",
+]);
+renderContains("Resources/bundle-inherited", React.createElement(ResourcesModulePage, { params: { id: "bun_cut_colour" } }), [
+  "Inherited from services", "Treatment room A", "Treatment room B", "Bundle resources",
+]);
 renderContains("Variants", React.createElement(VariantsModulePage, { params: { id: "svc_classic_haircut" } }), [
   "Variants", "No variants yet", "Start with a type",
 ]);
@@ -202,7 +264,7 @@ renderContains("TeamInvite", React.createElement(TeamInvitePage), [
 
 // 3l) Alerts feed + Import data.
 renderContains("Alerts", React.createElement(AlertsPage), [
-  "Alerts", "Today", "Message request", "New booking",
+  "Notifications", "Today", "Message request", "New Booking",
 ]);
 renderContains("ImportData", React.createElement(ImportDataPage), [
   "Import data", "Upload CSV", "another platform", "Clients", "Bookings",
@@ -210,25 +272,38 @@ renderContains("ImportData", React.createElement(ImportDataPage), [
 
 // 3m) Related services module.
 renderContains("Related", React.createElement(RelatedModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Related", "No related services yet", "Add suggestions",
+  "Related services", "No related services yet", "Create a group",
 ]);
 
 // 3n) Phase 4 advanced module pages (notifications + class modules).
 renderContains("Notifications", React.createElement(NotificationsModulePage, { params: { id: "svc_classic_haircut" } }), [
-  "Notifications", "Booking confirmation", "24-hour reminder",
+  "Notifications", "Booking confirmation", "Add notification",
 ]);
 renderContains("Requirements", React.createElement(RequirementsModulePage, { params: { id: "cls_beginner_yoga" } }), [
-  "Requirements", "Minimum age", "Prerequisites", "What to bring",
+  "Requirements", "Course level", "Age limits", "Required qualification", "Student declarations", "Preparation instructions", "Eligibility notes",
 ]);
 renderContains("Agenda", React.createElement(AgendaModulePage, { params: { id: "cls_beginner_yoga" } }), [
-  "Agenda &amp; syllabus", "Add an agenda item",
+  "Agenda &amp; syllabus", "Build the class agenda", "Thu 14 May", "No agenda yet",
 ]);
 renderContains("Materials", React.createElement(MaterialsModulePage, { params: { id: "cls_beginner_yoga" } }), [
-  "Materials", "Add a material",
+  "Course materials", "Upload student materials", "Upload files", "No materials yet",
 ]);
 renderContains("Certificates", React.createElement(CertificatesModulePage, { params: { id: "cls_beginner_yoga" } }), [
-  "Completion &amp; certificates", "Issue a certificate",
+  "Completion &amp; certificates", "Completion certificate", "No certificate configured",
 ]);
+renderContains("Models", React.createElement(ModelsModulePage, { params: { id: "cls_beginner_yoga" } }), [
+  "Models &amp; practice clients", "Model applications", "No model applications",
+]);
+{
+  const source = readFileSync("./src/app/app/services/[id]/models/page.tsx", "utf8");
+  check("Models source covers Figma setup sections", [
+    "Candidate criteria",
+    "Evidence & assessment",
+    "Intake & capacity",
+    "Safety & commitment",
+    "Application link",
+  ].every((label) => source.includes(label)));
+}
 
 // 4) Team section (Members tab default).
 renderContains("Team", React.createElement(TeamPage), [
@@ -244,11 +319,22 @@ renderContains("TeamPermissions", React.createElement(MemberPermissionsPage, { p
   "Access level", "Basic", "Medium", "Fine-tune", "Calendar", "Reports",
 ]);
 renderContains("TeamPay", React.createElement(MemberPayPage, { params: { id: "s2" } }), [
-  "pay", "Employment type", "Hourly rate", "commission", "tips",
+  "pay", "Member type", "Hourly rate", "Commission", "Chair rent", "Keeps their tips",
+]);
+// Freelancer pay shows chair rent + owner-takes commission.
+renderContains("TeamPayFreelancer", React.createElement(MemberPayPage, { params: { id: "s8" } }), [
+  "freelancer", "Chair rent", "You take this share", "What they owe",
 ]);
 renderContains("PayRun", React.createElement(PayRunPage, { params: { runId: "run_jun_1" } }), [
   "Pay run", "Jun 2026", "Wages", "Commission", "Tips", "Complete pay run",
 ]);
+// Shared week editor — controlled, used by member schedule + staff join flow.
+renderContains("WeekEditor", React.createElement(WeekEditor, {
+  week: [
+    { day: "Mon", enabled: true, start: "09:00", end: "17:00" },
+    { day: "Sun", enabled: false, start: "09:00", end: "17:00" },
+  ],
+}), ["Mon", "Sun", "Day off"]);
 
 // 5) Ported Messages.
 renderContains("Messages", React.createElement(MessagesPage), [
@@ -258,13 +344,30 @@ renderContains("Messages", React.createElement(MessagesPage), [
 
 // 5b) Conversation thread.
 renderContains("Conversation", React.createElement(ConversationPage), [
-  "Emily Davis", "Upcoming Appointment", "Blow Dry &amp; Style", "Select a date", "Type a message",
+  "Emily Davis", "Upcoming Appointment", "Blow Dry &amp; Style", "Select a date", "Type a message", "app-gated",
 ]);
 
 // 5c) Checkout — appointment entry lands on the Review step.
 renderContains("Checkout", React.createElement(CheckoutPage), [
-  "Checkout", "Sarah Johnson", "Cut &amp; Colour", "Deposit paid at booking", "Platform fee", "Take payment",
+  "Checkout", "Sarah Johnson", "Cut &amp; Colour", "Deposit paid at booking", "Package/subscription credit available", "Platform fee", "Take payment",
 ]);
+
+{
+  const appointmentSheetSource = readFileSync("./src/components/app/AppointmentSheet.tsx", "utf8");
+  check("AppointmentSheet includes Booking/Activity tabs", appointmentSheetSource.includes('["Booking", "Activity"]'));
+  check("AppointmentSheet includes payment and discount controls", appointmentSheetSource.includes("Deposit paid") && appointmentSheetSource.includes("Discount code") && appointmentSheetSource.includes("Balance due"));
+  check("AppointmentSheet includes policy-guided cancellation flow", appointmentSheetSource.includes("Policy outcome") && appointmentSheetSource.includes("Offer freed slot to waitlist") && appointmentSheetSource.includes("Refund amount"));
+}
+{
+  const quickActionsSource = readFileSync("./src/components/app/QuickActions.tsx", "utf8");
+  check("QuickActions add appointment includes custom time/deposit/payment link", quickActionsSource.includes("Custom time") && quickActionsSource.includes("Deposit / booking fee") && quickActionsSource.includes("payment link"));
+  check("QuickActions add appointment includes multi-date/recurring/pending states", quickActionsSource.includes("Linked date") && quickActionsSource.includes("Repeat") && quickActionsSource.includes("Pending salon approval"));
+  check("BlockTimeSheet includes whole-day block and booking allowance", quickActionsSource.includes("Block whole day") && quickActionsSource.includes("Online booking allowed during blocked time"));
+}
+{
+  const scheduleSource = readFileSync("./src/app/app/schedule/page.tsx", "utf8");
+  check("Schedule includes drag/drop move notification prompt", scheduleSource.includes("Appointment moved by drag/drop") && scheduleSource.includes("drag={canMove}"));
+}
 
 // 6) Ported Schedule agenda.
 renderContains("Schedule", React.createElement(SchedulePage), [
@@ -281,35 +384,68 @@ renderContains("Wizard/type", React.createElement(TypeSelectorPage), [
 renderContains("Wizard/basics", React.createElement(BasicsPage), [
   "The basics", "Name", "Category", "Choose a category", "Tap to change icon", "Description", "Next",
 ]);
+{
+  const basicsSource = readFileSync("./src/app/new/basics/page.tsx", "utf8");
+  check("Wizard/basics class branch includes private listing", basicsSource.includes("Private listing") && basicsSource.includes("Hide this class from the public marketplace"));
+}
 renderContains("Wizard/locations", React.createElement(LocationsPage), [
   "Where is it offered", "In-salon", "Mobile", "Remote", "All locations", "Edit settings", "Next",
 ]);
+{
+  const locationsSource = readFileSync("./src/app/new/locations/page.tsx", "utf8");
+  check("Wizard/locations class branch hides mobile for public classes", locationsSource.includes("publicClass") && locationsSource.includes("Mobile delivery is only available on private classes"));
+}
 renderContains("Wizard/staff", React.createElement(StaffPage), [
   "Who offers it", "Alex Morgan", "Search staff",
 ]);
 renderContains("Wizard/sub-type", React.createElement(SubscriptionTypePage), [
-  "Subscription type", "Service frequency", "Store credit", "Membership", "Next",
+  "Membership tiers", "Starter", "Set price", "Add another tier",
 ]);
 renderContains("Wizard/sub-benefits", React.createElement(SubscriptionBenefitsPage), [
-  "What do members get", "Included sessions", "Member discount", "Access pass",
+  "What members get", "Service bookings", "Class bookings", "Discounts", "Member-only access",
 ]);
 renderContains("Wizard/sub-billing", React.createElement(SubscriptionBillingPage), [
-  "Billing", "Billing period", "Joining fee", "Create subscription",
+  "Terms &amp; review", "Joining fee", "Minimum term", "Create membership",
 ]);
 renderContains("Wizard/bundle-services", React.createElement(BundleServicesPage), [
   "Included services", "Fixed bundle", "Flexible package", "Services",
 ]);
+renderContains("Wizard/bundle-order", React.createElement(BundleOrderPage), [
+  "Order &amp; gaps", "Drag services into order", "Add at least two services", "Step",
+]);
+renderContains(
+  "BundleOrderEditor",
+  React.createElement(BundleOrderEditor, {
+    serviceIds: ["svc_classic_haircut", "svc_beard_trim", "svc_classic_haircut", "svc_beard_trim"],
+    // gap → linked → separate → (trailing back-to-back): one of each connector.
+    links: [
+      { kind: "gap" as const, gapMin: 30 },
+      { kind: "linked" as const },
+      { kind: "separate" as const, gapDays: 2 },
+      { kind: "back_to_back" as const },
+    ],
+    offers: demoOffers,
+    onChange: () => {},
+  }),
+  [
+    "Estimated bundle timeline", "Classic haircut", "Beard trim",
+    "extra time", "Linked", "runs at the same time", "new booking",
+  ],
+);
 renderContains("Wizard/bundle-pricing", React.createElement(BundlePricingPage), [
-  "Bundle price", "Fixed price", "Package discount", "Create bundle",
+  "Pricing", "Total value", "Pricing style", "Fixed price", "Package discount", "Require deposit", "Create bundle",
 ]);
 renderContains("Wizard/class-participants", React.createElement(ClassParticipantsPage), [
   "Attendees", "Public group", "Private booking", "Group size", "Auto-cancel",
 ]);
 renderContains("Wizard/class-schedule", React.createElement(ClassSchedulePage), [
-  "Select dates", "Single day", "Multi day", "Starts", "Ends", "Repeats",
+  "Select dates", "Single day", "Multi day", "May 2026", "Repeats", "Set times",
+]);
+renderContains("Wizard/class-times", React.createElement(ClassTimesPage), [
+  "Set the times", "Default time", "Course dates", "Next",
 ]);
 renderContains("Wizard/class-pricing", React.createElement(ClassPricingPage), [
-  "Price", "Deposit", "Create class",
+  "Price", "Price per person", "Deposit", "Create class",
 ]);
 renderContains("Wizard/price", React.createElement(PricePage), [
   "Price", "duration", "Deposit", "Create service",
@@ -448,17 +584,19 @@ check("ProgressDashes renders total dashes", (() => { const s = h(React.createEl
   check("offerFromDraft class: id prefix", cls.id.startsWith("cls_"));
 
   const bun = offerFromDraft(
-    { ...base, type: "bundle", price: "120",
-      bundle: { kind: "flexible", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], chooseCount: 1, priceMode: "fixed", discountPercent: "" } },
+    { ...base, type: "bundle", price: "120", depositEnabled: true, depositAmount: "10",
+      bundle: { kind: "flexible", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], links: [{ kind: "gap", gapMin: 30 }, { kind: "back_to_back" }], chooseCount: 1, priceMode: "fixed", discountPercent: "" } },
     demoOffers,
   );
   check("offerFromDraft bundle: carries bundle snapshot", bun.bundle?.serviceIds.length === 2);
   check("offerFromDraft bundle: carries chooseCount", bun.bundle?.chooseCount === 1);
+  check("offerFromDraft bundle: carries links", bun.bundle?.links?.[0].kind === "gap");
+  check("offerFromDraft bundle: carries deposit", bun.deposit?.enabled === true && bun.deposit?.amount === "10");
   check("offerFromDraft bundle: id prefix", bun.id.startsWith("bun_"));
 
   const bunDisc = offerFromDraft(
     { ...base, type: "bundle", price: "",
-      bundle: { kind: "fixed", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], chooseCount: 2, priceMode: "discount", discountPercent: "10" } },
+      bundle: { kind: "fixed", serviceIds: ["svc_classic_haircut", "svc_beard_trim"], links: [], chooseCount: 2, priceMode: "discount", discountPercent: "10" } },
     demoOffers,
   );
   // svc_classic_haircut (35) + svc_beard_trim (15) = 50; -10% = 45.
@@ -471,6 +609,22 @@ check("ProgressDashes renders total dashes", (() => { const s = h(React.createEl
   );
   check("offerFromDraft subscription: carries subscription snapshot", sub.subscription?.includedSessions === 4);
   check("offerFromDraft subscription: id prefix", sub.id.startsWith("sub_"));
+
+  // estimateBundle over haircut(45) + beard(20) + haircut(45):
+  // linked = concurrent (max), gap adds minutes, separate opens a new visit.
+  const ids3 = ["svc_classic_haircut", "svc_beard_trim", "svc_classic_haircut"];
+  const estLinked = estimateBundle(ids3, [{ kind: "linked" }, { kind: "back_to_back" }, { kind: "back_to_back" }], demoOffers);
+  check("estimateBundle: linked counts once", estLinked.totalMin === 45 + 45 && estLinked.visits === 1);
+  const estGap = estimateBundle(ids3, [{ kind: "gap", gapMin: 30 }, { kind: "back_to_back" }, { kind: "back_to_back" }], demoOffers);
+  check("estimateBundle: gap adds minutes", estGap.totalMin === 45 + 30 + 20 + 45);
+  const estSep = estimateBundle(ids3, [{ kind: "separate", gapDays: 2 }, { kind: "back_to_back" }, { kind: "back_to_back" }], demoOffers);
+  check("estimateBundle: separate opens a visit", estSep.visits === 2);
+
+  const pack = { id: "sb_test", name: "10 haircut bundle", quantity: 10, pricingMode: "percent" as const, discountPercent: "10", fixedPrice: "", active: true };
+  const packOffer = { name: "Classic haircut", price: "35" };
+  check("serviceBundle: 10% price math", serviceBundlePrice(packOffer, pack) === 315);
+  check("serviceBundle: savings math", serviceBundleSavings(packOffer, pack) === 35);
+  check("serviceBundle: summary", serviceBundleSummary(packOffer, pack).includes("10 Classic haircut bookings"));
 
   // Empty draft must not crash and must omit optional fields cleanly.
   const empty = offerFromDraft({ ...emptyDraft, type: "service", name: "X", category: "Hair" }, demoOffers);

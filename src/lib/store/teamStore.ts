@@ -51,6 +51,7 @@ export const useTeamStore = create<TeamState>((set) => ({
       email: input.email,
       phone: "",
       role: input.role || (input.memberType === "freelancer" ? "Freelancer" : "Team member"),
+      memberType: input.memberType,
       systemRoles: ["Staff"],
       active: false,
       status: "pending",
@@ -63,9 +64,8 @@ export const useTeamStore = create<TeamState>((set) => ({
       schedule: { timezone: "Europe/London", weekly: defaultWeek(), timeOff: [] },
       permissions: ACCESS_PRESETS[input.accessLevel],
       payment: {
-        type: input.memberType === "freelancer" ? "contractor" : "employee",
-        payRate: "",
-        commission: 0,
+        // Pay is left unset at invite — the owner configures it later (skippable).
+        components: {},
         tips: input.memberType !== "freelancer",
         payoutStatus: "Not set up",
       },

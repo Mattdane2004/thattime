@@ -19,7 +19,7 @@ export default function ClassParticipantsPage() {
   const updateClass = useWizardStore((s) => s.updateClass);
 
   const seatBased = cls.bookingStructure === "seat_based";
-  const canContinue = !seatBased || (cls.capacity > 0 && cls.minParticipants > 0 && cls.minParticipants <= cls.capacity);
+  const canContinue = cls.capacity > 0 && cls.minParticipants > 0 && cls.minParticipants <= cls.capacity;
 
   return (
     <>
@@ -49,29 +49,33 @@ export default function ClassParticipantsPage() {
           </div>
         </div>
 
-        {seatBased && (
-          <div className="pb-6">
-            <FieldLabel>Group size</FieldLabel>
-            <div className="mb-3 text-[12px] text-muted">Set the smallest class you will run and the total number of seats.</div>
-            <div className="flex gap-3">
-              <label className="block flex-1">
-                <span className="mb-2 block text-[12px] font-medium text-navy">Minimum attendees</span>
-                <input
-                  type="number" inputMode="numeric" value={cls.minParticipants}
-                  onChange={(e) => updateClass({ minParticipants: Number(e.target.value) || 0 })}
-                  className={fieldInput}
-                />
-              </label>
-              <label className="block flex-1">
-                <span className="mb-2 block text-[12px] font-medium text-navy">Maximum seats</span>
-                <input
-                  type="number" inputMode="numeric" value={cls.capacity}
-                  onChange={(e) => updateClass({ capacity: Number(e.target.value) || 0 })}
-                  className={fieldInput}
-                />
-              </label>
-            </div>
+        <div className="pb-6">
+          <FieldLabel>Group size</FieldLabel>
+          <div className="mb-3 text-[12px] text-muted">
+            {seatBased
+              ? "Set the smallest class you will run and the total number of seats."
+              : "Set the smallest private group you will accept and the largest group size."}
+          </div>
+          <div className="flex gap-3">
+            <label className="block flex-1">
+              <span className="mb-2 block text-[12px] font-medium text-navy">Minimum attendees</span>
+              <input
+                type="number" inputMode="numeric" value={cls.minParticipants}
+                onChange={(e) => updateClass({ minParticipants: Number(e.target.value) || 0 })}
+                className={fieldInput}
+              />
+            </label>
+            <label className="block flex-1">
+              <span className="mb-2 block text-[12px] font-medium text-navy">Maximum seats</span>
+              <input
+                type="number" inputMode="numeric" value={cls.capacity}
+                onChange={(e) => updateClass({ capacity: Number(e.target.value) || 0 })}
+                className={fieldInput}
+              />
+            </label>
+          </div>
 
+          {seatBased && (
             <button
               onClick={() => updateClass({ autoCancel: !cls.autoCancel })}
               className="mt-4 flex w-full items-start justify-between gap-3 rounded-2xl bg-canvas px-4 py-3.5 text-left"
@@ -84,8 +88,8 @@ export default function ClassParticipantsPage() {
               </span>
               <Toggle on={cls.autoCancel} />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <WizardFooter

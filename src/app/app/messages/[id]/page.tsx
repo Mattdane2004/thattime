@@ -7,6 +7,7 @@ import {
   ChevronLeft, Phone, UserRound, AlertTriangle, Scissors, CalendarDays,
   Clock, X, RotateCcw, Plus, Send, CalendarPlus, PoundSterling,
   Image as ImageIcon, Video, FileText, Play, Megaphone, Archive, Users,
+  MoreVertical, BellOff, Pin, Trash2, Ban, Smartphone,
 } from "lucide-react";
 import { Sheet, DarkButton, MiniCalendar, TimeChips } from "@/components/ui";
 import { useAppStore } from "@/lib/store/appStore";
@@ -140,6 +141,8 @@ export default function ConversationPage() {
   const [draft, setDraft] = useState("");
   const [day, setDay] = useState<number | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const [options, setOptions] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   const send = (text: string) => {
     if (!text.trim() && pending.length === 0) return;
@@ -203,7 +206,21 @@ export default function ConversationPage() {
             <UserRound size={15} strokeWidth={1.75} />
           </button>
         )}
+        <button
+          aria-label="Conversation options"
+          onClick={() => setOptions(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-navy"
+        >
+          <MoreVertical size={15} strokeWidth={1.75} />
+        </button>
       </div>
+
+      {isClient && (
+        <div className="flex items-center gap-2 border-b border-border bg-canvas/60 px-4 py-2.5 text-[12px] text-secondary">
+          <Smartphone size={14} strokeWidth={1.75} />
+          <span>{blocked ? "Messaging blocked for this client." : "Client web replies are app-gated; app download required to reply or send files."}</span>
+        </div>
+      )}
 
       {/* Pinned upcoming appointment — client conversations only */}
       {isClient && !convo.fresh && (
@@ -369,9 +386,10 @@ export default function ConversationPage() {
       </div>
 
       {/* Composer — archived class chats are read-only */}
-      {archived ? (
+      {archived || blocked ? (
         <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border px-4 py-5 text-[12px] font-medium text-muted">
-          <Archive size={14} strokeWidth={1.75} /> This conversation is archived
+          {blocked ? <Ban size={14} strokeWidth={1.75} /> : <Archive size={14} strokeWidth={1.75} />}
+          {blocked ? "Messaging is blocked for this client" : "This conversation is archived"}
         </div>
       ) : (
         <div className="shrink-0 border-t border-border">
@@ -436,6 +454,34 @@ export default function ConversationPage() {
       )}
 
       {/* "+" sheet — Send (media) + Actions (client booking) */}
+      <Sheet open={options} onClose={() => setOptions(false)} title="Conversation options" sub={convo.name}>
+        <div className="flex flex-col gap-2.5 pt-1">
+          {[
+            { icon: <BellOff size={17} strokeWidth={1.8} />, title: "Mute", sub: "Pause notifications for this thread" },
+            { icon: <Pin size={17} strokeWidth={1.8} />, title: "Pin", sub: "Keep this conversation at the top" },
+            { icon: <Archive size={17} strokeWidth={1.8} />, title: "Archive", sub: "Hide until there is new activity" },
+            ...(isClient ? [{ icon: <Ban size={17} strokeWidth={1.8} />, title: blocked ? "Unblock messaging" : "Block messaging", sub: "Separate from booking access" }] : []),
+            { icon: <Trash2 size={17} strokeWidth={1.8} />, title: "Delete", sub: "Remove this conversation from the inbox", danger: true },
+          ].map((o) => (
+            <button
+              key={o.title}
+              type="button"
+              onClick={() => {
+                if (o.title.includes("Block") || o.title.includes("Unblock")) setBlocked((b) => !b);
+                setOptions(false);
+              }}
+              className={`flex w-full items-center gap-3.5 rounded-2xl border p-4 text-left ${o.danger ? "border-danger/30 text-danger" : "border-border text-navy"}`}
+            >
+              <span className={o.danger ? "text-danger" : "text-secondary"}>{o.icon}</span>
+              <span className="min-w-0">
+                <span className="block text-[14px] font-semibold">{o.title}</span>
+                <span className="block pt-0.5 text-[12px] text-muted">{o.sub}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </Sheet>
+
       <Sheet open={actions} onClose={() => setActions(false)} title="Add to message">
         <p className="px-1 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Send</p>
         <div className="grid grid-cols-3 gap-2.5">

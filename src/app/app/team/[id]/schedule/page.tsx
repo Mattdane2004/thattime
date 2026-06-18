@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { ScreenHeader } from "@/components/ui";
-import { FieldLabel, fieldInput, Toggle } from "@/components/ui";
+import { FieldLabel, fieldInput } from "@/components/ui";
+import { WeekEditor, weeklyHours } from "@/components/team/WeekEditor";
 import { useTeamStore } from "@/lib/store/teamStore";
 
 // Member schedule — weekly working hours (toggle a day, set start/end) and
@@ -30,9 +31,7 @@ export default function MemberSchedulePage({ params }: { params: { id: string } 
     );
   }
 
-  const hours = member.schedule.weekly
-    .filter((d) => d.enabled)
-    .reduce((sum, d) => sum + (Number(d.end.slice(0, 2)) - Number(d.start.slice(0, 2))), 0);
+  const hours = weeklyHours(member.schedule.weekly);
 
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -43,39 +42,10 @@ export default function MemberSchedulePage({ params }: { params: { id: string } 
         </div>
 
         <div className="mb-2 mt-5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Working hours</div>
-        <div className="overflow-hidden rounded-2xl border border-border">
-          {member.schedule.weekly.map((d, i) => (
-            <div key={d.day} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}>
-              <button
-                onClick={() => setWeeklyDay(member.id, d.day, { enabled: !d.enabled })}
-                className="flex items-center gap-3"
-                aria-label={`Toggle ${d.day}`}
-              >
-                <Toggle on={d.enabled} />
-                <span className={`w-10 text-left text-[13px] font-semibold ${d.enabled ? "text-navy" : "text-muted"}`}>{d.day}</span>
-              </button>
-              {d.enabled ? (
-                <div className="flex flex-1 items-center justify-end gap-2">
-                  <input
-                    type="time"
-                    value={d.start}
-                    onChange={(e) => setWeeklyDay(member.id, d.day, { start: e.target.value })}
-                    className="h-9 rounded-lg bg-canvas px-2 text-[12px] text-navy outline-none focus:ring-1 focus:ring-navy"
-                  />
-                  <span className="text-[12px] text-muted">–</span>
-                  <input
-                    type="time"
-                    value={d.end}
-                    onChange={(e) => setWeeklyDay(member.id, d.day, { end: e.target.value })}
-                    className="h-9 rounded-lg bg-canvas px-2 text-[12px] text-navy outline-none focus:ring-1 focus:ring-navy"
-                  />
-                </div>
-              ) : (
-                <span className="flex-1 text-right text-[12px] text-muted">Day off</span>
-              )}
-            </div>
-          ))}
-        </div>
+        <WeekEditor
+          week={member.schedule.weekly}
+          onChange={(day, patch) => setWeeklyDay(member.id, day, patch)}
+        />
 
         <div className="mb-2 mt-5 flex items-center justify-between px-1">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Time off</span>

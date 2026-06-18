@@ -53,7 +53,7 @@ const accountItems: MenuItem[] = [
   { key: "my-profile", label: "My profile", icon: CircleUser },
   { key: "billing", label: "Plans & billing", icon: CreditCard },
   { key: "referrals", label: "Referrals", icon: Share2 },
-  { key: "notifications", label: "Notifications", icon: Bell, href: "/app/alerts" },
+  { key: "notifications", label: "Notifications", icon: Bell, href: "/app/notifications" },
   { key: "preferences", label: "Preferences", icon: Sliders },
   { key: "help", label: "Help & FAQ", icon: HelpCircle },
   { key: "legal", label: "Legal", icon: FileCheck },

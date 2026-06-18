@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Search, Plus } from "lucide-react";
 import { ScreenHeader, Sheet } from "@/components/ui";
-import { WizardFooter, WizardTitle, FieldLabel, fieldInput, TOTAL_STEPS } from "@/components/ui";
+import { WizardFooter, WizardTitle, FieldLabel, Toggle, fieldInput, TOTAL_STEPS } from "@/components/ui";
 import { useWizardStore } from "@/lib/store/wizardStore";
 import { useCategoriesStore } from "@/lib/store/categoriesStore";
 import { categorySwatches, tintFromHex } from "@/lib/tokens/categories";
@@ -98,6 +98,22 @@ export default function BasicsPage() {
               <ChevronRight size={18} className="text-muted" />
             </button>
           </div>
+
+          {type === "class" && (
+            <button
+              type="button"
+              onClick={() => updateDraft({ privateListing: !draft.privateListing })}
+              className="flex w-full items-center justify-between gap-4 rounded-2xl bg-canvas px-4 py-4 text-left"
+            >
+              <span>
+                <span className="block text-[14px] font-semibold text-navy">Private listing</span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-muted">
+                  Hide this class from the public marketplace. You can still share it by link or invite.
+                </span>
+              </span>
+              <Toggle on={draft.privateListing} />
+            </button>
+          )}
 
           <label className="block">
             <FieldLabel>Description</FieldLabel>

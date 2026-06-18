@@ -8,6 +8,7 @@ import {
   FileText, Image as ImageIcon, MapPin, MessageSquare, Phone, Play, Plus,
   RotateCcw, Search, ShieldCheck, StickyNote, UserRound, Users, X,
   AlertTriangle, Bell, Flag, Tag as TagIcon, Pencil, Scale, MoreVertical,
+  Share2, Download, ReceiptText, CalendarClock, Home, Smartphone,
 } from "lucide-react";
 import {
   Sheet, DarkButton, GhostButton, Avatar, MiniCalendar, TimeChips, StatusPill,
@@ -15,8 +16,12 @@ import {
 import { useAppStore, type ApptStatus } from "@/lib/store/appStore";
 import {
   clientNotes, clientRows, contactFor, disputedClients, formCategories, formTemplates, services,
-  serviceCategories, tagPresets,
+  serviceCategories, staffMembers, tagPresets,
 } from "@/lib/data/product";
+import {
+  appointmentActivity, appointmentTypes, discountCodes, waitlistCandidates,
+  type AppointmentActivityEvent,
+} from "@/lib/data/finalisation";
 import { defaultCategories } from "@/lib/tokens/categories";
 
 // Category colour for the service accent bar. Aliases bridge the legacy
@@ -36,6 +41,9 @@ interface BookingNote {
 }
 
 type ManageMode = "allergy" | "staffnote" | "patch" | "tag" | "change" | null;
+type BookingTab = "Booking" | "Activity";
+type PolicyMode = "enforce" | "waive" | "custom";
+type RefundChoice = "full" | "deposit" | "custom";
 
 /**
  * Booking page — a full-page takeover opened from any appointment card,
@@ -104,6 +112,21 @@ export function AppointmentSheetHost() {
   const [formSheet, setFormSheet] = useState(false);
   const [formQuery, setFormQuery] = useState("");
   const [formCat, setFormCat] = useState("All");
+  const [tab, setTab] = useState<BookingTab>("Booking");
+  const [apptType, setApptType] = useState<"salon" | "mobile" | "online">("salon");
+  const [staffOverride, setStaffOverride] = useState<string | null>(null);
+  const [locationOverride, setLocationOverride] = useState("Salon Soho");
+  const [discountCodeId, setDiscountCodeId] = useState<string | null>(null);
+  const [lineDiscounts, setLineDiscounts] = useState<Record<string, string>>({});
+  const [pendingExtras, setPendingExtras] = useState<string[]>([]);
+  const [activity, setActivity] = useState<AppointmentActivityEvent[]>(appointmentActivity);
+  const [sharedForms, setSharedForms] = useState<string[]>([]);
+  const [downloadedForms, setDownloadedForms] = useState<string[]>([]);
+  const [policyMode, setPolicyMode] = useState<PolicyMode>("enforce");
+  const [refundChoice, setRefundChoice] = useState<RefundChoice>("deposit");
+  const [customRefund, setCustomRefund] = useState("");
+  const [waitlistOffered, setWaitlistOffered] = useState<string | null>(null);
+  const [notifyMove, setNotifyMove] = useState(false);
 
   const open = apptSheet !== null;
   useEffect(() => {
@@ -148,6 +171,21 @@ export function AppointmentSheetHost() {
       setFormSheet(false);
       setFormQuery("");
       setFormCat("All");
+      setTab("Booking");
+      setApptType("salon");
+      setStaffOverride(null);
+      setLocationOverride("Salon Soho");
+      setDiscountCodeId(null);
+      setLineDiscounts({});
+      setPendingExtras([]);
+      setActivity(appointmentActivity);
+      setSharedForms([]);
+      setDownloadedForms([]);
+      setPolicyMode("enforce");
+      setRefundChoice("deposit");
+      setCustomRefund("");
+      setWaitlistOffered(null);
+      setNotifyMove(false);
     }
   }, [open]);
 
@@ -171,7 +209,22 @@ export function AppointmentSheetHost() {
   const priceOf = (name: string) => findSvc(name)?.price ?? 0;
   const basePrice = priceOverride ?? (svcOverride ? priceOf(svcOverride) : a.price ?? priceOf(a.service));
   const baseDuration = durationOverride ?? findSvc(svcName)?.duration ?? a.duration;
-  const totalPrice = basePrice + extras.reduce((sum, e) => sum + priceOf(e), 0);
+  const selectedCode = discountCodes.find((c) => c.id === discountCodeId);
+  const discountFor = (name: string, price: number) => {
+    const manual = Math.min(parseFloat(lineDiscounts[name] || "0") || 0, price);
+    const code = selectedCode
+      ? selectedCode.type === "percent"
+        ? (price * selectedCode.value) / 100
+        : Math.min(selectedCode.value, price)
+      : 0;
+    return Math.round(Math.min(price, Math.max(manual, code)) * 100) / 100;
+  };
+  const finalPriceOf = (name: string, price: number) => Math.max(0, Math.round((price - discountFor(name, price)) * 100) / 100);
+  const baseFinalPrice = finalPriceOf(svcName, basePrice);
+  const extrasTotal = extras.reduce((sum, e) => sum + finalPriceOf(e, priceOf(e)), 0);
+  const originalTotal = basePrice + extras.reduce((sum, e) => sum + priceOf(e), 0);
+  const totalPrice = baseFinalPrice + extrasTotal;
+  const totalDiscount = Math.max(0, originalTotal - totalPrice);
 
   // Client identity (can be swapped from the booking page).
   const clientName = clientOverride?.name ?? a.client;
@@ -193,6 +246,22 @@ export function AppointmentSheetHost() {
   const notes = clientNotes[clientName];
   const allergies = [...(notes?.allergies ?? []), ...localAllergies];
   const tags = [...(clientOverride ? [] : a.tags ?? []), ...localTags];
+  const staffName = staffOverride ?? a.staff;
+  const depositPaid = a.deposit ?? 0;
+  const paymentLabel =
+    totalPrice <= 0 ? "Paid by subscription"
+    : depositPaid > 0 ? `Deposit paid · £${depositPaid} / £${totalPrice}`
+    : status === "Done" ? "Paid in full"
+    : "Unpaid";
+  const typeMeta = appointmentTypes.find((t) => t.id === apptType) ?? appointmentTypes[0];
+  const typeIcon = apptType === "online" ? <Camera size={13} strokeWidth={1.9} /> : apptType === "mobile" ? <Smartphone size={13} strokeWidth={1.9} /> : <Home size={13} strokeWidth={1.9} />;
+
+  const logEvent = (title: string, body: string, kind: AppointmentActivityEvent["kind"]) => {
+    setActivity((events) => [
+      { id: `local-${events.length + 1}`, time: "Now", title, body, kind },
+      ...events,
+    ]);
+  };
 
   // Forms on this booking: the seeded consultation form + anything added.
   const forms: { name: string; sub: string }[] = [
@@ -218,7 +287,12 @@ export function AppointmentSheetHost() {
 
   const goPay = () => { close(); useAppStore.getState().startAppointmentCheckout(); router.push("/app/checkout"); };
 
-  const openService = (mode: "add" | "change") => { setSvcQuery(""); setSvcCat("All"); setServiceSheet(mode); };
+  const openService = (mode: "add" | "change") => {
+    setSvcQuery("");
+    setSvcCat("All");
+    setPendingExtras([]);
+    setServiceSheet(mode);
+  };
   const openManage = (mode: ManageMode) => { setManageOpen(false); setManageDraft(""); setClientQuery(""); setTagQuery(""); setManageMode(mode); };
 
   // Tag picker: presets plus any already on the booking, searchable.
@@ -241,12 +315,31 @@ export function AppointmentSheetHost() {
       >
         <span className="flex items-baseline justify-between gap-3">
           <span className="truncate text-[15px] font-semibold text-navy">{name}</span>
-          <span className="shrink-0 text-[15px] font-semibold text-navy">£{price}</span>
+          <span className="shrink-0 text-right text-[15px] font-semibold text-navy">
+            £{finalPriceOf(name, price)}
+            {discountFor(name, price) > 0 && <span className="block text-[11px] font-medium text-muted line-through">£{price}</span>}
+          </span>
         </span>
         <span className="block pt-0.5 text-[12px] text-muted">
-          {a.time} · {durationLabel ?? findSvc(name)?.duration ?? a.duration} · {a.staff}
+          {a.time} · {durationLabel ?? findSvc(name)?.duration ?? a.duration} · {staffName}
         </span>
       </button>
+      <label className="flex w-16 shrink-0 flex-col self-center rounded-xl bg-canvas px-2 py-1.5">
+        <span className="text-[9px] font-semibold uppercase tracking-[0.06em] text-muted">Disc</span>
+        <span className="flex items-center gap-0.5">
+          <span className="text-[11px] font-bold text-muted">£</span>
+          <input
+            value={lineDiscounts[name] ?? ""}
+            onChange={(e) => {
+              setLineDiscounts((d) => ({ ...d, [name]: e.target.value.replace(/[^0-9.]/g, "") }));
+              setDirty(true);
+            }}
+            inputMode="decimal"
+            aria-label={`${name} discount`}
+            className="min-w-0 flex-1 bg-transparent text-[12px] font-bold text-navy focus:outline-none"
+          />
+        </span>
+      </label>
       {onEdit && (
         <button
           type="button"
@@ -328,6 +421,56 @@ export function AppointmentSheetHost() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        <div className="mb-3 flex rounded-full bg-white p-1 shadow-sm">
+          {(["Booking", "Activity"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded-full py-2 text-[13px] font-semibold transition-colors ${
+                tab === t ? "bg-fg-primary text-white" : "text-muted"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "Activity" ? (
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-[14px] font-bold text-navy">
+                <ReceiptText size={15} strokeWidth={1.8} />
+                Evidence tracker
+              </p>
+              <p className="pt-1 text-[12px] leading-snug text-muted">
+                Price changes, reminders, payment links, forms, disputes, cancellations and policy outcomes are logged here.
+              </p>
+            </div>
+            {activity.map((e) => (
+              <div key={e.id} className="rounded-2xl bg-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-canvas text-secondary">
+                    {e.kind === "payment" ? <CreditCard size={15} strokeWidth={1.8} />
+                      : e.kind === "form" ? <FileText size={15} strokeWidth={1.8} />
+                      : e.kind === "policy" ? <ShieldCheck size={15} strokeWidth={1.8} />
+                      : e.kind === "dispute" ? <Scale size={15} strokeWidth={1.8} />
+                      : e.kind === "edit" ? <Pencil size={15} strokeWidth={1.8} />
+                      : <CalendarClock size={15} strokeWidth={1.8} />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-[14px] font-semibold text-navy">{e.title}</span>
+                      <span className="shrink-0 text-[11px] text-muted">{e.time}</span>
+                    </span>
+                    <span className="block pt-1 text-[12px] leading-snug text-secondary">{e.body}</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
         {/* ── Active dispute — urgent, sits above everything ── */}
         {disputed && (
           <div className="mb-3 flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 p-4">
@@ -351,20 +494,73 @@ export function AppointmentSheetHost() {
           </div>
         )}
 
+        <div className="mb-3 flex flex-wrap gap-2">
+          <StatusPill tone={depositPaid > 0 ? "amber" : status === "Done" ? "dark" : "light"}>{paymentLabel}</StatusPill>
+          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-secondary shadow-sm">
+            {typeIcon}
+            {typeMeta.label}
+          </span>
+          {selectedCode && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-secondary shadow-sm">
+              <TagIcon size={12} strokeWidth={2} />
+              {selectedCode.code}
+            </span>
+          )}
+        </div>
+
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {appointmentTypes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => {
+                setApptType(t.id);
+                setDirty(true);
+                logEvent("Appointment type changed", `Type set to ${t.label}.`, "edit");
+              }}
+              className={`rounded-2xl border px-2 py-2.5 text-center ${
+                apptType === t.id ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              <span className="block text-[12px] font-bold">{t.label}</span>
+              <span className={`block pt-0.5 text-[10px] leading-tight ${apptType === t.id ? "text-white/70" : "text-muted"}`}>{t.sub}</span>
+            </button>
+          ))}
+        </div>
+
         {/* ── At a glance — three-column summary (date/time already in the header) ── */}
         <div className="mb-3 grid grid-cols-3 divide-x divide-border rounded-2xl bg-white shadow-sm">
-          <div className="px-3 py-3.5">
+          <button
+            type="button"
+            onClick={() => {
+              const idx = staffMembers.indexOf(staffName);
+              const next = staffMembers[(idx + 1) % staffMembers.length] ?? a.staff;
+              setStaffOverride(next);
+              setDirty(true);
+              logEvent("Staff changed", `Staff changed from ${staffName} to ${next}.`, "edit");
+            }}
+            className="px-3 py-3.5 text-left"
+          >
             <span className="flex items-center gap-1.5 text-[11px] text-muted"><UserRound size={12} strokeWidth={1.8} /> With</span>
-            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{a.staff}</span>
-          </div>
+            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{staffName}</span>
+          </button>
           <div className="px-3 py-3.5">
             <span className="flex items-center gap-1.5 text-[11px] text-muted"><Clock size={12} strokeWidth={1.8} /> Duration</span>
             <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{baseDuration}</span>
           </div>
-          <div className="px-3 py-3.5">
+          <button
+            type="button"
+            onClick={() => {
+              const next = locationOverride === "Salon Soho" ? "Client address" : locationOverride === "Client address" ? "Online link" : "Salon Soho";
+              setLocationOverride(next);
+              setDirty(true);
+              logEvent("Location changed", `Location changed from ${locationOverride} to ${next}.`, "edit");
+            }}
+            className="px-3 py-3.5 text-left"
+          >
             <span className="flex items-center gap-1.5 text-[11px] text-muted"><MapPin size={12} strokeWidth={1.8} /> Location</span>
-            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">Salon Soho</span>
-          </div>
+            <span className="mt-1 block truncate text-[13px] font-semibold text-navy">{locationOverride}</span>
+          </button>
         </div>
 
         {/* ── Client card: identity, quick contact, profile edits ── */}
@@ -450,6 +646,55 @@ export function AppointmentSheetHost() {
           Add service
         </button>
 
+        <div className="mt-3 rounded-2xl bg-white p-4 shadow-sm">
+          <p className="text-[13px] font-bold text-navy">Discount code</p>
+          <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none]">
+            {discountCodes.map((code) => {
+              const on = discountCodeId === code.id;
+              return (
+                <button
+                  key={code.id}
+                  type="button"
+                  onClick={() => {
+                    setDiscountCodeId(on ? null : code.id);
+                    setDirty(true);
+                    logEvent(on ? "Discount code removed" : "Discount code applied", `${code.code} ${on ? "removed from" : "applied to"} this booking.`, "payment");
+                  }}
+                  className={`w-[142px] shrink-0 rounded-xl border px-3 py-2.5 text-left ${
+                    on ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-canvas text-navy"
+                  }`}
+                >
+                  <span className="block text-[12px] font-bold">{code.label}</span>
+                  <span className={`block truncate pt-0.5 text-[10px] ${on ? "text-white/70" : "text-muted"}`}>{code.scope}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3 text-[13px]">
+            <span className="text-secondary">Original total</span>
+            <span className="font-semibold text-navy">£{originalTotal}</span>
+          </div>
+          {totalDiscount > 0 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]">
+              <span className="text-secondary">Discounts</span>
+              <span className="font-semibold text-navy">−£{totalDiscount}</span>
+            </div>
+          )}
+          {depositPaid > 0 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[13px]">
+              <span className="text-secondary">Deposit paid</span>
+              <span className="font-semibold text-navy">−£{depositPaid}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between border-t border-border bg-canvas px-4 py-3.5">
+            <span className="text-[14px] font-bold text-navy">Balance due</span>
+            <span className="text-[18px] font-bold text-navy">£{Math.max(0, totalPrice - depositPaid)}</span>
+          </div>
+        </div>
+
         {/* ── Forms ── */}
         <SectionHeader title="Forms" onAdd={() => { setFormQuery(""); setFormCat("All"); setFormSheet(true); }} addLabel="Add form" />
         {forms.length > 0 ? (
@@ -463,8 +708,32 @@ export function AppointmentSheetHost() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-semibold text-navy">{f.name}</span>
-                    <span className="block pt-0.5 text-[12px] text-muted">{f.sub}</span>
+                    <span className="block pt-0.5 text-[12px] text-muted">
+                      {sharedForms.includes(f.name) ? "Shared by native sheet" : downloadedForms.includes(f.name) ? "Downloaded" : f.sub}
+                    </span>
                   </span>
+                  <button
+                    type="button"
+                    aria-label={`Download ${f.name}`}
+                    onClick={() => {
+                      setDownloadedForms((d) => (d.includes(f.name) ? d : [...d, f.name]));
+                      logEvent("Form downloaded", `${f.name} downloaded from the booking card.`, "form");
+                    }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-canvas text-navy"
+                  >
+                    <Download size={13} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Share ${f.name}`}
+                    onClick={() => {
+                      setSharedForms((s) => (s.includes(f.name) ? s : [...s, f.name]));
+                      logEvent("Form shared", `${f.name} shared via native OS sheet.`, "form");
+                    }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-canvas text-navy"
+                  >
+                    <Share2 size={13} strokeWidth={2} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setReminded((r) => (r.includes(f.name) ? r : [...r, f.name]))}
@@ -530,6 +799,8 @@ export function AppointmentSheetHost() {
             <span className="text-[13px] font-semibold text-navy">Add a note</span>
             <span className="text-[12px] text-muted">Products, formulas, before &amp; after photos</span>
           </button>
+        )}
+          </>
         )}
       </div>
 
@@ -607,6 +878,7 @@ export function AppointmentSheetHost() {
             .map((s) => {
               const isCurrent = serviceSheet === "change" && s.name === svcName;
               const alreadyAdded = serviceSheet === "add" && (extras.includes(s.name) || s.name === svcName);
+              const pending = pendingExtras.includes(s.name);
               return (
                 <button
                   key={s.id}
@@ -616,11 +888,12 @@ export function AppointmentSheetHost() {
                     if (serviceSheet === "change") {
                       setSvcOverride(s.name);
                       setExtras((x) => x.filter((e) => e !== s.name));
+                      setDirty(true);
+                      logEvent("Service changed", `Primary service changed to ${s.name}.`, "edit");
+                      setServiceSheet(null);
                     } else {
-                      setExtras((x) => [...x, s.name]);
+                      setPendingExtras((x) => (x.includes(s.name) ? x.filter((e) => e !== s.name) : [...x, s.name]));
                     }
-                    setDirty(true);
-                    setServiceSheet(null);
                   }}
                   className="flex items-center justify-between border-b border-border py-4 text-left last:border-0 disabled:opacity-40"
                 >
@@ -636,12 +909,27 @@ export function AppointmentSheetHost() {
                   </span>
                   <span className="flex items-center gap-2 text-[15px] font-bold text-navy">
                     £{s.price}
-                    {isCurrent ? <Check size={15} strokeWidth={2.5} /> : <ChevronRight size={15} className="text-muted" />}
+                    {isCurrent || pending ? <Check size={15} strokeWidth={2.5} /> : <ChevronRight size={15} className="text-muted" />}
                   </span>
                 </button>
               );
             })}
         </div>
+        {serviceSheet === "add" && (
+          <div className="sticky bottom-0 -mx-6 mt-4 bg-white px-6 pb-1 pt-3">
+            <DarkButton
+              disabled={pendingExtras.length === 0}
+              onClick={() => {
+                setExtras((x) => [...x, ...pendingExtras.filter((e) => !x.includes(e))]);
+                setDirty(true);
+                logEvent("Services added", `${pendingExtras.join(", ")} added to this appointment.`, "edit");
+                setServiceSheet(null);
+              }}
+            >
+              {pendingExtras.length ? `Add ${pendingExtras.length} service${pendingExtras.length === 1 ? "" : "s"}` : "Select services"}
+            </DarkButton>
+          </div>
+        )}
       </Sheet>
 
       {/* ── Reschedule ── */}
@@ -658,6 +946,8 @@ export function AppointmentSheetHost() {
               if (a.live) setMovedTo(label);
               else setLocalMoved(label);
               setDirty(true);
+              setNotifyMove(true);
+              logEvent("Appointment moved", `Moved from ${a.time} to ${label}. Client notification pending.`, "edit");
               setRescheduleSheet(false);
             }}
           >
@@ -666,18 +956,126 @@ export function AppointmentSheetHost() {
         </div>
       </Sheet>
 
+      <Sheet open={notifyMove} onClose={() => setNotifyMove(false)} title={`Notify ${firstName}?`} sub="Appointment moved">
+        <div className="rounded-2xl bg-canvas p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Message preview</p>
+          <p className="pt-2 text-[14px] leading-relaxed text-navy">
+            Hi {firstName}, your {svcName} appointment has moved from {a.time} to {moved ?? localMoved}. Reply here if that no longer works.
+          </p>
+        </div>
+        <div className="pt-5">
+          <DarkButton onClick={() => { logEvent("Client notified", `${firstName} was notified about the move to ${moved ?? localMoved}.`, "message"); setNotifyMove(false); }}>
+            Send update
+          </DarkButton>
+          <div className="grid grid-cols-2 gap-2.5 pt-3">
+            <button type="button" onClick={() => { logEvent("Move notification skipped", `${firstName} was not notified about the move.`, "message"); setNotifyMove(false); }} className="h-11 rounded-full border border-border text-[13px] font-semibold text-navy">Skip</button>
+            <button
+              type="button"
+              onClick={() => {
+                if (a.live) setMovedTo(null);
+                else setLocalMoved(null);
+                logEvent("Move undone", `Move from ${a.time} was undone.`, "edit");
+                setNotifyMove(false);
+              }}
+              className="h-11 rounded-full border border-border text-[13px] font-semibold text-navy"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      </Sheet>
+
       {/* ── Cancel ── */}
-      <Sheet open={cancelSheet} onClose={() => setCancelSheet(false)} title="Cancel appointment">
-        <p className="pb-5 text-[14px] leading-relaxed text-secondary">
-          {clientName} · {svcName} · {a.staff} at {a.time}. We&rsquo;ll let them know and free up the slot.
-        </p>
+      <Sheet open={cancelSheet} onClose={() => setCancelSheet(false)} title="Cancel / no-show" sub={`${clientName} · ${svcName}`}>
+        <div className="rounded-2xl border border-warning/30 bg-warning/[0.06] p-4">
+          <p className="text-[13px] font-bold text-navy">Policy outcome</p>
+          <p className="pt-1 text-[12px] leading-snug text-secondary">
+            24h cancellation policy applies. Calculated outcome: keep the £{depositPaid || 40} deposit and refund £{Math.max(0, totalPrice - (depositPaid || 40))}.
+          </p>
+        </div>
+        <p className="px-1 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Policy handling</p>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            ["enforce", "Enforce"],
+            ["waive", "Waive"],
+            ["custom", "Custom"],
+          ] as [PolicyMode, string][]).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setPolicyMode(mode)}
+              className={`rounded-full border py-2 text-[12px] font-semibold ${policyMode === mode ? "border-fg-primary bg-fg-primary text-white" : "border-border text-navy"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="px-1 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Refund amount</p>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            ["full", "Full"],
+            ["deposit", "Deposit only"],
+            ["custom", "Custom"],
+          ] as [RefundChoice, string][]).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setRefundChoice(mode)}
+              className={`rounded-2xl border px-2 py-3 text-[12px] font-semibold ${refundChoice === mode ? "border-fg-primary bg-fg-primary text-white" : "border-border text-navy"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {refundChoice === "custom" && (
+          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border px-4">
+            <span className="text-[18px] font-bold text-muted">£</span>
+            <input
+              value={customRefund}
+              onChange={(e) => setCustomRefund(e.target.value.replace(/[^0-9.]/g, ""))}
+              inputMode="decimal"
+              placeholder="Custom amount"
+              className="h-12 min-w-0 flex-1 bg-transparent text-[18px] font-bold text-navy placeholder:text-[14px] placeholder:font-normal placeholder:text-muted focus:outline-none"
+            />
+          </div>
+        )}
+        <p className="px-1 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Offer freed slot to waitlist</p>
+        <div className="flex flex-col gap-2.5 pb-4">
+          {waitlistCandidates.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => {
+                setWaitlistOffered(w.id);
+                logEvent("Waitlist offered", `Freed slot offered to ${w.name}.`, "message");
+              }}
+              className={`flex items-center gap-3 rounded-2xl border p-3 text-left ${
+                waitlistOffered === w.id ? "border-fg-primary bg-fg-primary text-white" : "border-border bg-white text-navy"
+              }`}
+            >
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${waitlistOffered === w.id ? "bg-white/15 text-white" : "bg-canvas text-secondary"}`}>{w.initials}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold">{w.name}</span>
+                <span className={`block truncate pt-0.5 text-[11px] ${waitlistOffered === w.id ? "text-white/70" : "text-muted"}`}>{w.service} · {w.preference}</span>
+              </span>
+              <span className="text-[11px] font-bold">{waitlistOffered === w.id ? "Offered" : "Offer"}</span>
+            </button>
+          ))}
+        </div>
         <DarkButton
           onClick={() => {
             if (a.live) setApptStatus("cancelled");
-            close();
+            setLocalStatus("Cancelled");
+            logEvent(
+              "Cancellation policy resolved",
+              `${policyMode} policy · ${refundChoice === "custom" ? `£${customRefund || 0}` : refundChoice} refund selected. ${waitlistOffered ? "Waitlist slot offered." : "No waitlist offer sent."}`,
+              "policy",
+            );
+            setCancelSheet(false);
+            setTab("Activity");
           }}
         >
-          Cancel appointment
+          Cancel and log outcome
         </DarkButton>
         <div className="pt-3">
           <GhostButton onClick={() => setCancelSheet(false)}>Keep it</GhostButton>
@@ -697,6 +1095,7 @@ export function AppointmentSheetHost() {
               : []),
             { icon: <MessageSquare size={17} strokeWidth={1.8} />, label: `Message ${firstName}`, run: () => { setActionsOpen(false); router.push(`/app/messages/${slug}`); } },
             { icon: <RotateCcw size={17} strokeWidth={1.8} />, label: "Reschedule", run: () => { setActionsOpen(false); setDay(null); setTime(null); setRescheduleSheet(true); } },
+            { icon: <AlertTriangle size={17} strokeWidth={1.8} />, label: "Mark no-show", run: () => { setActionsOpen(false); setLocalStatus("No-show"); setCancelSheet(true); logEvent("No-show started", `${clientName} marked as no-show. Policy review opened.`, "policy"); }, danger: true },
             { icon: <X size={17} strokeWidth={1.8} />, label: "Cancel appointment", run: () => { setActionsOpen(false); setCancelSheet(true); }, danger: true },
           ].map((q) => (
             <button

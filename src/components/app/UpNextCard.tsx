@@ -63,6 +63,7 @@ export function UpNextCard({ compact }: { compact?: boolean }) {
       time: appt.time,
       duration: appt.duration,
       price: appt.price,
+      deposit: appt.deposit,
       tags: appt.tags,
       live: true,
     });

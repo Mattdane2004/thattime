@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, Clock, MapPin, Package } from "lucide-react";
 import { useOffersStore } from "@/lib/store/offersStore";
+import { formatServiceBundleMoney, serviceBundlePrice, serviceBundleSavings } from "@/lib/data/serviceBundles";
 
 // Service preview — how clients see an offer. Functional port of the legacy
 // that-time-app /routes/ServicePreview.jsx (the full client booking flow is the
@@ -11,6 +12,8 @@ import { useOffersStore } from "@/lib/store/offersStore";
 export default function ServicePreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const offer = useOffersStore((s) => s.offers.find((o) => o.id === params.id));
+  const activeBundles = offer?.serviceBundles?.filter((bundle) => bundle.active) ?? [];
+  const bundleOffer = offer;
 
   const locationLabel = (() => {
     const m = offer?.locationModes;
@@ -45,6 +48,29 @@ export default function ServicePreviewPage({ params }: { params: { id: string } 
           {locationLabel && (
             <div className="mt-5 flex items-center gap-2 text-[13px] text-secondary">
               <MapPin size={15} className="text-muted" />{locationLabel}
+            </div>
+          )}
+
+          {bundleOffer && activeBundles.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <div className="text-[13px] font-semibold text-navy">Bundle options</div>
+              {activeBundles.map((bundle) => {
+                const savings = serviceBundleSavings(bundleOffer, bundle);
+                return (
+                  <div key={bundle.id} className="flex items-center gap-3 rounded-2xl border border-border bg-canvas px-4 py-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-secondary">
+                      <Package size={15} strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-semibold text-navy">{bundle.name}</span>
+                      <span className="block truncate text-[12px] text-muted">
+                        {bundle.quantity} bookings · save {formatServiceBundleMoney(savings)}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[14px] font-semibold text-navy">{formatServiceBundleMoney(serviceBundlePrice(bundleOffer, bundle))}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

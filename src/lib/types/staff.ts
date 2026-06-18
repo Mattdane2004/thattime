@@ -66,12 +66,40 @@ export interface StaffPermissions {
   team: boolean;
   reports: boolean;
   settings: boolean;
+  /** Can change their own working hours (gates the editable join-flow week). */
+  scheduleSelfEdit: boolean;
+  /** Can see everyone's shifts, not just their own. */
+  viewTeamSchedule: boolean;
+}
+
+/**
+ * Employee vs freelancer/chair-renter. Drives whether the owner sets a schedule
+ * (freelancers self-schedule, so they're off the owner rota) and the direction
+ * of pay (employees are paid; freelancers pay the owner rent/commission).
+ */
+export type MemberType = "employee" | "freelancer";
+
+/** Which way commission flows: to the member (employee) or to the owner (chair-renter). */
+export type CommissionDirection = "to_member" | "to_owner";
+
+/**
+ * Pay is built from independent components so a member can mix several (a low
+ * chair rent AND a commission, say) and any of them can be left unset ("set up
+ * later"). Settlement (bank details, payouts) is handled later via Stripe.
+ */
+export interface PayComponents {
+  /** Fixed salary label, e.g. "2,400/mo" or "32,000/yr". */
+  salary?: string;
+  /** Hourly rate in £, e.g. "12.50". */
+  hourly?: string;
+  /** Commission on services delivered. */
+  commission?: { rate: number; direction: CommissionDirection };
+  /** Chair/room rent a freelancer pays the business. */
+  chairRent?: { amount: string; frequency: "weekly" | "monthly" };
 }
 
 export interface StaffPayment {
-  type: "employee" | "contractor";
-  payRate: string;
-  commission: number;
+  components: PayComponents;
   tips: boolean;
   payoutStatus: string;
 }
@@ -94,6 +122,8 @@ export interface Staff {
   phone: string;
   /** Human-readable job title shown under the name. */
   role: string;
+  /** Employee vs freelancer/chair-renter — drives scheduling and pay direction. */
+  memberType: MemberType;
   systemRoles: SystemRole[];
   active: boolean;
   status: StaffStatus;
